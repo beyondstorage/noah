@@ -27,7 +27,7 @@ func TestListDirTask_run(t *testing.T) {
 	task.SetDirFunc(func(*typ.Object) {})
 	task.SetFileFunc(func(*typ.Object) {})
 
-	store.EXPECT().ListDir(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
+	store.EXPECT().List(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
 		assert.Equal(t, testPath, path)
 		return nil
 	})

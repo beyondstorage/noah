@@ -9,7 +9,7 @@ import (
 
 func (t *ListDirTask) new() {}
 func (t *ListDirTask) run() {
-	err := t.GetStorage().ListDir(
+	err := t.GetStorage().List(
 		t.GetPath(),
 		pairs.WithDirFunc(t.GetDirFunc()),
 		pairs.WithFileFunc(t.GetFileFunc()),
