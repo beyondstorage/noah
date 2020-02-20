@@ -65,6 +65,17 @@ A task with progress is the most fluent, natural way in implement.
 And noah was designed to be a task-driven frame, so I think it's
 proper to return progress state while task is running.
 
+There is another question: How to define the progress?
+Firstly, it is easy to treat file-transfer-type task's total size
+divided by read bytes as the progress. However, what if other type
+tasks? Such as remove a dir or sync a dir?
+So, how about treating the whole, including sub-task, giant task as
+one, and the total task divided by task-done count as the progress?
+In this way, we could unify the stream transfer task, file transfer
+task and other time-consuming task. All we need to do is, get the
+count of total sub-task, add after each task done, and finish the
+task as usual.
+
 ## Compatibility
 
 No breaking changes.
