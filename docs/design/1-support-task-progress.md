@@ -16,9 +16,14 @@ The task caller may use the state for implementing the process bar and so on.
 
 So I propose following changes:
 
-- Add a type (maybe like: progress by percent) in time-cost task,
-  so that we can get progress now.
-- Set progress state asynchronously in the progress of task running.
+- Add a type `State`, which contains `status description`,
+  `task progress remain (or done)` and `task ptogress total`
+  in task.
+- Init a global progress center for every registered task.
+  and each task reports its `State` into the progress center
+  every 500ms (configurable).
+- Add a unify component to combine all tasks' state and compose
+  the output.
 
 After all these work, we can work well with progress bar:
 
@@ -39,21 +44,22 @@ func main()  {
     t.SetCheckTasks(nil)
 
     closeSig := make(chan struct{})
- 	bar := progressbar.New(16 * 1024 * 1024)
  	defer func() {
         close(closeSig)
- 	    bar.Finish()
     }()
 
     go func() {
+        state := <-t.GetProgressState()
+        bar := progressbar.New64(state.GetTotal())
         for {
             select{
-            case <-time.Tick(time.Second):
-                bar.Set(t.GetProgressState())
+            case s := <-t.GetProgressState():
+                bar.Set(s.GetDone())
             case <-closeSig:
                 return
             }
         }
+        bar.Finish()
     }()
     t.Run()
 }
@@ -65,16 +71,17 @@ A task with progress is the most fluent, natural way in implement.
 And noah was designed to be a task-driven frame, so I think it's
 proper to return progress state while task is running.
 
-There is another question: How to define the progress?
-Firstly, it is easy to treat file-transfer-type task's total size
-divided by read bytes as the progress. However, what if other type
-tasks? Such as remove a dir or sync a dir?
-So, how about treating the whole, including sub-task, giant task as
-one, and the total task divided by task-done count as the progress?
-In this way, we could unify the stream transfer task, file transfer
-task and other time-consuming task. All we need to do is, get the
-count of total sub-task, add after each task done, and finish the
-task as usual.
+### Why not get task total at very beginning
+
+We cannot handle sub-task count when init a task. Because task-list
+is implemented as async task, and we can't get the total from object
+storage services.
+
+### Why not set callback func between task and its sub-task
+
+Many tasks were submitted asynchronously, so if we want to set callback
+func between tasks, we may need to add a lot of mutex to avoid data race.
+It will cost too much in performance.
 
 ## Compatibility
 
