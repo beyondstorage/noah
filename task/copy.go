@@ -9,6 +9,7 @@ import (
 	"github.com/Xuanwo/storage/types/pairs"
 
 	"github.com/qingstor/noah/constants"
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
 )
@@ -222,7 +223,11 @@ func (t *CopyPartialStreamTask) run() {
 
 func (t *CopySingleFileTask) new() {}
 func (t *CopySingleFileTask) run() {
-	r, err := t.GetSourceStorage().Read(t.GetSourcePath())
+	readDone := 0
+	r, err := t.GetSourceStorage().Read(t.GetSourcePath(), pairs.WithReadCallbackFunc(func(b []byte) {
+		readDone += len(b)
+		progress.SetState(t.GetID(), progress.NewState(t.Name(), "reading", int64(readDone), t.GetSize()))
+	}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -230,7 +235,12 @@ func (t *CopySingleFileTask) run() {
 	defer r.Close()
 
 	// TODO: add checksum support
-	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()))
+	writeDone := 0
+	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
+		pairs.WithReadCallbackFunc(func(b []byte) {
+			writeDone += len(b)
+			progress.SetState(t.GetID(), progress.NewState(t.Name(), "writing", int64(writeDone), t.GetSize()))
+		}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return

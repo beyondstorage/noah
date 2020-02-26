@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -23,6 +24,7 @@ type BetweenStorageCheckTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -43,6 +45,7 @@ func NewBetweenStorageCheck(task navvy.Task) *BetweenStorageCheckTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -81,11 +84,18 @@ func (t *BetweenStorageCheckTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *BetweenStorageCheckTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *BetweenStorageCheckTask) Name() string {
+	return "BetweenStorageCheck"
 }
 
 // String will implement Stringer interface.
@@ -105,6 +115,7 @@ type CopyDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.CheckTasks
@@ -124,6 +135,7 @@ func NewCopyDir(task navvy.Task) *CopyDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -166,11 +178,18 @@ func (t *CopyDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyDirTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyDirTask) Name() string {
+	return "CopyDir"
 }
 
 // String will implement Stringer interface.
@@ -190,6 +209,7 @@ type CopyFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.CheckTasks
@@ -209,6 +229,7 @@ func NewCopyFile(task navvy.Task) *CopyFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -251,11 +272,18 @@ func (t *CopyFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyFileTask) Name() string {
+	return "CopyFile"
 }
 
 // String will implement Stringer interface.
@@ -275,6 +303,7 @@ type CopyLargeFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -297,6 +326,7 @@ func NewCopyLargeFile(task navvy.Task) *CopyLargeFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -343,11 +373,18 @@ func (t *CopyLargeFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyLargeFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyLargeFileTask) Name() string {
+	return "CopyLargeFile"
 }
 
 // String will implement Stringer interface.
@@ -367,6 +404,7 @@ type CopyPartialFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -391,6 +429,7 @@ func NewCopyPartialFile(task navvy.Task) *CopyPartialFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -445,11 +484,18 @@ func (t *CopyPartialFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyPartialFileTask) Name() string {
+	return "CopyPartialFile"
 }
 
 // String will implement Stringer interface.
@@ -469,6 +515,7 @@ type CopyPartialStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.BytesPool
@@ -494,6 +541,7 @@ func NewCopyPartialStream(task navvy.Task) *CopyPartialStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -544,11 +592,18 @@ func (t *CopyPartialStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialStreamTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyPartialStreamTask) Name() string {
+	return "CopyPartialStream"
 }
 
 // String will implement Stringer interface.
@@ -568,6 +623,7 @@ type CopySingleFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -588,6 +644,7 @@ func NewCopySingleFile(task navvy.Task) *CopySingleFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -634,11 +691,18 @@ func (t *CopySingleFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySingleFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopySingleFileTask) Name() string {
+	return "CopySingleFile"
 }
 
 // String will implement Stringer interface.
@@ -658,6 +722,7 @@ type CopySmallFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -678,6 +743,7 @@ func NewCopySmallFile(task navvy.Task) *CopySmallFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -720,11 +786,18 @@ func (t *CopySmallFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySmallFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopySmallFileTask) Name() string {
+	return "CopySmallFile"
 }
 
 // String will implement Stringer interface.
@@ -744,6 +817,7 @@ type CopyStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -765,6 +839,7 @@ func NewCopyStream(task navvy.Task) *CopyStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -803,11 +878,18 @@ func (t *CopyStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyStreamTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CopyStreamTask) Name() string {
+	return "CopyStream"
 }
 
 // String will implement Stringer interface.
@@ -827,6 +909,7 @@ type CreateStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Service
@@ -844,6 +927,7 @@ func NewCreateStorage(task navvy.Task) *CreateStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -870,11 +954,18 @@ func (t *CreateStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CreateStorageTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *CreateStorageTask) Name() string {
+	return "CreateStorage"
 }
 
 // String will implement Stringer interface.
@@ -894,6 +985,7 @@ type DeleteDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Path
@@ -910,6 +1002,7 @@ func NewDeleteDir(task navvy.Task) *DeleteDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -940,11 +1033,18 @@ func (t *DeleteDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteDirTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *DeleteDirTask) Name() string {
+	return "DeleteDir"
 }
 
 // String will implement Stringer interface.
@@ -964,6 +1064,7 @@ type DeleteFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Path
@@ -980,6 +1081,7 @@ func NewDeleteFile(task navvy.Task) *DeleteFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1010,11 +1112,18 @@ func (t *DeleteFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *DeleteFileTask) Name() string {
+	return "DeleteFile"
 }
 
 // String will implement Stringer interface.
@@ -1034,6 +1143,7 @@ type DeleteSegmentTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.SegmentID
@@ -1050,6 +1160,7 @@ func NewDeleteSegment(task navvy.Task) *DeleteSegmentTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1080,11 +1191,18 @@ func (t *DeleteSegmentTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteSegmentTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *DeleteSegmentTask) Name() string {
+	return "DeleteSegment"
 }
 
 // String will implement Stringer interface.
@@ -1104,6 +1222,7 @@ type DeleteStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Force
@@ -1121,6 +1240,7 @@ func NewDeleteStorage(task navvy.Task) *DeleteStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1155,11 +1275,18 @@ func (t *DeleteStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteStorageTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *DeleteStorageTask) Name() string {
+	return "DeleteStorage"
 }
 
 // String will implement Stringer interface.
@@ -1179,6 +1306,7 @@ type IsDestinationObjectExistTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationObject
@@ -1195,6 +1323,7 @@ func NewIsDestinationObjectExist(task navvy.Task) *IsDestinationObjectExistTask 
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1221,11 +1350,18 @@ func (t *IsDestinationObjectExistTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *IsDestinationObjectExistTask) Name() string {
+	return "IsDestinationObjectExist"
 }
 
 // String will implement Stringer interface.
@@ -1245,6 +1381,7 @@ type IsSizeEqualTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationObject
@@ -1262,6 +1399,7 @@ func NewIsSizeEqual(task navvy.Task) *IsSizeEqualTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1292,11 +1430,18 @@ func (t *IsSizeEqualTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsSizeEqualTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *IsSizeEqualTask) Name() string {
+	return "IsSizeEqual"
 }
 
 // String will implement Stringer interface.
@@ -1316,6 +1461,7 @@ type IsUpdateAtGreaterTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationObject
@@ -1333,6 +1479,7 @@ func NewIsUpdateAtGreater(task navvy.Task) *IsUpdateAtGreaterTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1363,11 +1510,18 @@ func (t *IsUpdateAtGreaterTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *IsUpdateAtGreaterTask) Name() string {
+	return "IsUpdateAtGreater"
 }
 
 // String will implement Stringer interface.
@@ -1387,6 +1541,7 @@ type ListDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DirFunc
@@ -1405,6 +1560,7 @@ func NewListDir(task navvy.Task) *ListDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1443,11 +1599,18 @@ func (t *ListDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListDirTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *ListDirTask) Name() string {
+	return "ListDir"
 }
 
 // String will implement Stringer interface.
@@ -1467,6 +1630,7 @@ type ListSegmentTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Path
@@ -1484,6 +1648,7 @@ func NewListSegment(task navvy.Task) *ListSegmentTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1518,11 +1683,18 @@ func (t *ListSegmentTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListSegmentTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *ListSegmentTask) Name() string {
+	return "ListSegment"
 }
 
 // String will implement Stringer interface.
@@ -1542,6 +1714,7 @@ type ListStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Service
@@ -1559,6 +1732,7 @@ func NewListStorage(task navvy.Task) *ListStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1593,11 +1767,18 @@ func (t *ListStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListStorageTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *ListStorageTask) Name() string {
+	return "ListStorage"
 }
 
 // String will implement Stringer interface.
@@ -1617,6 +1798,7 @@ type MD5SumFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Offset
@@ -1636,6 +1818,7 @@ func NewMD5SumFile(task navvy.Task) *MD5SumFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1674,11 +1857,18 @@ func (t *MD5SumFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *MD5SumFileTask) Name() string {
+	return "MD5SumFile"
 }
 
 // String will implement Stringer interface.
@@ -1698,6 +1888,7 @@ type MD5SumStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Content
@@ -1714,6 +1905,7 @@ func NewMD5SumStream(task navvy.Task) *MD5SumStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1740,11 +1932,18 @@ func (t *MD5SumStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumStreamTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *MD5SumStreamTask) Name() string {
+	return "MD5SumStream"
 }
 
 // String will implement Stringer interface.
@@ -1764,6 +1963,7 @@ type MoveDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -1782,6 +1982,7 @@ func NewMoveDir(task navvy.Task) *MoveDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1820,11 +2021,18 @@ func (t *MoveDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveDirTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *MoveDirTask) Name() string {
+	return "MoveDir"
 }
 
 // String will implement Stringer interface.
@@ -1844,6 +2052,7 @@ type MoveFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -1862,6 +2071,7 @@ func NewMoveFile(task navvy.Task) *MoveFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1900,11 +2110,18 @@ func (t *MoveFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *MoveFileTask) Name() string {
+	return "MoveFile"
 }
 
 // String will implement Stringer interface.
@@ -1924,6 +2141,7 @@ type ReachFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Expire
@@ -1942,6 +2160,7 @@ func NewReachFile(task navvy.Task) *ReachFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1976,11 +2195,18 @@ func (t *ReachFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ReachFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *ReachFileTask) Name() string {
+	return "ReachFile"
 }
 
 // String will implement Stringer interface.
@@ -2000,6 +2226,7 @@ type SegmentCompleteTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Path
@@ -2017,6 +2244,7 @@ func NewSegmentComplete(task navvy.Task) *SegmentCompleteTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2051,11 +2279,18 @@ func (t *SegmentCompleteTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentCompleteTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *SegmentCompleteTask) Name() string {
+	return "SegmentComplete"
 }
 
 // String will implement Stringer interface.
@@ -2075,6 +2310,7 @@ type SegmentFileCopyTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -2097,6 +2333,7 @@ func NewSegmentFileCopy(task navvy.Task) *SegmentFileCopyTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2151,11 +2388,18 @@ func (t *SegmentFileCopyTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentFileCopyTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *SegmentFileCopyTask) Name() string {
+	return "SegmentFileCopy"
 }
 
 // String will implement Stringer interface.
@@ -2175,6 +2419,7 @@ type SegmentInitTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.PartSize
@@ -2193,6 +2438,7 @@ func NewSegmentInit(task navvy.Task) *SegmentInitTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2227,11 +2473,18 @@ func (t *SegmentInitTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentInitTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *SegmentInitTask) Name() string {
+	return "SegmentInit"
 }
 
 // String will implement Stringer interface.
@@ -2251,6 +2504,7 @@ type SegmentStreamCopyTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Content
@@ -2272,6 +2526,7 @@ func NewSegmentStreamCopy(task navvy.Task) *SegmentStreamCopyTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2322,11 +2577,18 @@ func (t *SegmentStreamCopyTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentStreamCopyTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *SegmentStreamCopyTask) Name() string {
+	return "SegmentStreamCopy"
 }
 
 // String will implement Stringer interface.
@@ -2346,6 +2608,7 @@ type StatFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.Path
@@ -2363,6 +2626,7 @@ func NewStatFile(task navvy.Task) *StatFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2393,11 +2657,18 @@ func (t *StatFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *StatFileTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *StatFileTask) Name() string {
+	return "StatFile"
 }
 
 // String will implement Stringer interface.
@@ -2417,6 +2688,7 @@ type SyncTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.State
 
 	// Input value
 	types.DestinationPath
@@ -2436,6 +2708,7 @@ func NewSync(task navvy.Task) *SyncTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
+	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2478,11 +2751,18 @@ func (t *SyncTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
+
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SyncTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// Name will return the name of the task.
+func (t *SyncTask) Name() string {
+	return "Sync"
 }
 
 // String will implement Stringer interface.

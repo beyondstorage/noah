@@ -11,6 +11,7 @@ import (
 	"github.com/Xuanwo/storage/types"
 
 	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/schedule"
 )
 
@@ -2844,6 +2845,65 @@ func LoadSourceType(t navvy.Task, v SourceTypeSetter) {
 	}
 
 	v.SetSourceType(x.GetSourceType())
+}
+
+type State struct {
+	valid bool
+	v     progress.State
+
+	l sync.RWMutex
+}
+
+type StateGetter interface {
+	GetState() progress.State
+}
+
+func (o *State) GetState() progress.State {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("State value is not valid")
+	}
+	return o.v
+}
+
+type StateSetter interface {
+	SetState(progress.State)
+}
+
+func (o *State) SetState(v progress.State) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type StateValidator interface {
+	ValidateState() bool
+}
+
+func (o *State) ValidateState() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadState(t navvy.Task, v StateSetter) {
+	x, ok := t.(interface {
+		StateGetter
+		StateValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateState() {
+		return
+	}
+
+	v.SetState(x.GetState())
 }
 
 type Storage struct {

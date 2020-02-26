@@ -47,6 +47,7 @@
   "SourceService": "storage.Servicer",
   "SourceStorage": "storage.Storager",
   "SourceType": "types.ObjectType",
+  "State": "progress.State",
   "Storage": "storage.Storager",
   "StorageName": "string",
   "StoragerFunc": "storage.StoragerFunc",

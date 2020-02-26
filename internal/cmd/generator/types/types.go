@@ -62,6 +62,7 @@ import (
 	"github.com/Xuanwo/storage/pkg/segment"
 	"github.com/Xuanwo/storage/types"
 
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/fault"
 )
