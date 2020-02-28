@@ -3,7 +3,7 @@ package task
 import (
 	"errors"
 
-	typ "github.com/Xuanwo/storage/types"
+	"github.com/Xuanwo/storage/services"
 
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -21,7 +21,7 @@ func (t *BetweenStorageCheckTask) run() {
 	// If Destination Object not exist, we will set DestinationObject to nil.
 	// So we can check its existences later.
 	dst, err := t.GetDestinationStorage().Stat(t.GetDestinationPath())
-	if err != nil && !errors.Is(err, typ.ErrObjectNotExist) {
+	if err != nil && !errors.Is(err, services.ErrObjectNotExist) {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
