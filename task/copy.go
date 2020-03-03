@@ -36,6 +36,9 @@ func (t *CopyFileTask) new() {}
 func (t *CopyFileTask) run() {
 	check := NewBetweenStorageCheck(t)
 	t.GetScheduler().Sync(check)
+	if t.GetFault().HasError() {
+		return
+	}
 
 	// Execute check tasks
 	for _, v := range t.GetCheckTasks() {

@@ -1,9 +1,11 @@
 package task
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/Xuanwo/storage/services"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -30,12 +32,12 @@ func TestBetweenStorageCheckTask_run(t *testing.T) {
 		{
 			"dst object not exist",
 			nil,
-			typ.ErrObjectNotExist,
+			services.ErrObjectNotExist,
 		},
 		{
 			"error",
 			nil,
-			typ.ErrUnhandledError,
+			errors.New("unhandled error"),
 		},
 	}
 
@@ -74,7 +76,7 @@ func TestBetweenStorageCheckTask_run(t *testing.T) {
 			if tt.expectObject != nil {
 				assert.NotNil(t, task.GetDestinationObject())
 			} else {
-				if tt.expectErr == typ.ErrObjectNotExist {
+				if tt.expectErr == services.ErrObjectNotExist {
 					assert.Nil(t, task.GetDestinationObject())
 				} else {
 					assert.Panics(t, func() {
