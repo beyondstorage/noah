@@ -223,11 +223,7 @@ func (t *CopyPartialStreamTask) run() {
 
 func (t *CopySingleFileTask) new() {}
 func (t *CopySingleFileTask) run() {
-	readDone := 0
-	r, err := t.GetSourceStorage().Read(t.GetSourcePath(), pairs.WithReadCallbackFunc(func(b []byte) {
-		readDone += len(b)
-		progress.SetState(t.GetID(), progress.NewState(t.Name(), "reading", int64(readDone), t.GetSize()))
-	}))
+	r, err := t.GetSourceStorage().Read(t.GetSourcePath())
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -245,4 +241,5 @@ func (t *CopySingleFileTask) run() {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }

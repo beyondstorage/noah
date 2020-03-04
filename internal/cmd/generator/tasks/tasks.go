@@ -128,7 +128,6 @@ import (
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/progress"
 )
 
 var _ navvy.Pool
@@ -165,7 +164,6 @@ func New{{ .Name }}(task navvy.Task) *{{ .Name }}Task {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -197,8 +195,6 @@ func (t *{{ .Name }}Task) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.

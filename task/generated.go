@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -45,7 +44,6 @@ func NewBetweenStorageCheck(task navvy.Task) *BetweenStorageCheckTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -84,8 +82,6 @@ func (t *BetweenStorageCheckTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -135,7 +131,6 @@ func NewCopyDir(task navvy.Task) *CopyDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -178,8 +173,6 @@ func (t *CopyDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -229,7 +222,6 @@ func NewCopyFile(task navvy.Task) *CopyFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -272,8 +264,6 @@ func (t *CopyFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -326,7 +316,6 @@ func NewCopyLargeFile(task navvy.Task) *CopyLargeFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -373,8 +362,6 @@ func (t *CopyLargeFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -429,7 +416,6 @@ func NewCopyPartialFile(task navvy.Task) *CopyPartialFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -484,8 +470,6 @@ func (t *CopyPartialFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -541,7 +525,6 @@ func NewCopyPartialStream(task navvy.Task) *CopyPartialStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -592,8 +575,6 @@ func (t *CopyPartialStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -644,7 +625,6 @@ func NewCopySingleFile(task navvy.Task) *CopySingleFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -691,8 +671,6 @@ func (t *CopySingleFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -743,7 +721,6 @@ func NewCopySmallFile(task navvy.Task) *CopySmallFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -786,8 +763,6 @@ func (t *CopySmallFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -839,7 +814,6 @@ func NewCopyStream(task navvy.Task) *CopyStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -878,8 +852,6 @@ func (t *CopyStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -927,7 +899,6 @@ func NewCreateStorage(task navvy.Task) *CreateStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -954,8 +925,6 @@ func (t *CreateStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1002,7 +971,6 @@ func NewDeleteDir(task navvy.Task) *DeleteDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1033,8 +1001,6 @@ func (t *DeleteDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1081,7 +1047,6 @@ func NewDeleteFile(task navvy.Task) *DeleteFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1112,8 +1077,6 @@ func (t *DeleteFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1160,7 +1123,6 @@ func NewDeleteSegment(task navvy.Task) *DeleteSegmentTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1191,8 +1153,6 @@ func (t *DeleteSegmentTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1240,7 +1200,6 @@ func NewDeleteStorage(task navvy.Task) *DeleteStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1275,8 +1234,6 @@ func (t *DeleteStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1323,7 +1280,6 @@ func NewIsDestinationObjectExist(task navvy.Task) *IsDestinationObjectExistTask 
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1350,8 +1306,6 @@ func (t *IsDestinationObjectExistTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1399,7 +1353,6 @@ func NewIsSizeEqual(task navvy.Task) *IsSizeEqualTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1430,8 +1383,6 @@ func (t *IsSizeEqualTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1479,7 +1430,6 @@ func NewIsUpdateAtGreater(task navvy.Task) *IsUpdateAtGreaterTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1510,8 +1460,6 @@ func (t *IsUpdateAtGreaterTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1560,7 +1508,6 @@ func NewListDir(task navvy.Task) *ListDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1599,8 +1546,6 @@ func (t *ListDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1648,7 +1593,6 @@ func NewListSegment(task navvy.Task) *ListSegmentTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1683,8 +1627,6 @@ func (t *ListSegmentTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1732,7 +1674,6 @@ func NewListStorage(task navvy.Task) *ListStorageTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1767,8 +1708,6 @@ func (t *ListStorageTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1818,7 +1757,6 @@ func NewMD5SumFile(task navvy.Task) *MD5SumFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1857,8 +1795,6 @@ func (t *MD5SumFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1905,7 +1841,6 @@ func NewMD5SumStream(task navvy.Task) *MD5SumStreamTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -1932,8 +1867,6 @@ func (t *MD5SumStreamTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1982,7 +1915,6 @@ func NewMoveDir(task navvy.Task) *MoveDirTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2021,8 +1953,6 @@ func (t *MoveDirTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2071,7 +2001,6 @@ func NewMoveFile(task navvy.Task) *MoveFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2110,8 +2039,6 @@ func (t *MoveFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2160,7 +2087,6 @@ func NewReachFile(task navvy.Task) *ReachFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2195,8 +2121,6 @@ func (t *ReachFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2244,7 +2168,6 @@ func NewSegmentComplete(task navvy.Task) *SegmentCompleteTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2279,8 +2202,6 @@ func (t *SegmentCompleteTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2333,7 +2254,6 @@ func NewSegmentFileCopy(task navvy.Task) *SegmentFileCopyTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2388,8 +2308,6 @@ func (t *SegmentFileCopyTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2438,7 +2356,6 @@ func NewSegmentInit(task navvy.Task) *SegmentInitTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2473,8 +2390,6 @@ func (t *SegmentInitTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2526,7 +2441,6 @@ func NewSegmentStreamCopy(task navvy.Task) *SegmentStreamCopyTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2577,8 +2491,6 @@ func (t *SegmentStreamCopyTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2626,7 +2538,6 @@ func NewStatFile(task navvy.Task) *StatFileTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2657,8 +2568,6 @@ func (t *StatFileTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2708,7 +2617,6 @@ func NewSync(task navvy.Task) *SyncTask {
 	t.loadInput(task)
 	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
-	progress.SetState(t.GetID(), progress.InitState(t.Name()))
 	t.new()
 	return t
 }
@@ -2751,8 +2659,6 @@ func (t *SyncTask) Run() {
 	t.run()
 	t.GetScheduler().Wait()
 	log.Debugf("Finished %s", t)
-
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name()))
 }
 
 // TriggerFault will be used to trigger a task related fault.

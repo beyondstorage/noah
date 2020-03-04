@@ -14,7 +14,7 @@ type Namer interface {
 	Name() string
 }
 
-const finishedTotal int64 = -1
+const finishedStatus string = "finished"
 
 var center sync.Map         // center is the private sync map for progress data
 var dataChan chan *sync.Map // dataChan is the chan for center trans
@@ -39,17 +39,17 @@ type State struct {
 
 // Finished specify whether a state is finished
 func (s State) Finished() bool {
-	return s.Total == finishedTotal
+	return s.Status == finishedStatus
 }
 
 // InitState init a progress state
 func InitState(name string) State {
-	return NewState(name, "initing", 0, 0)
+	return NewState(name, "initing", 0, 1)
 }
 
 // FinishedState new a finished state
-func FinishedState(name string) State {
-	return NewState(name, "finished", 0, finishedTotal)
+func FinishedState(name string, total int64) State {
+	return NewState(name, finishedStatus, total, total)
 }
 
 // NewState is the conductor of state
@@ -77,6 +77,7 @@ func GetState(id taskID) (State, error) {
 	return v.(State), nil
 }
 
+// Start create a channel to get center for client
 func Start(d time.Duration) <-chan *sync.Map {
 	go func() {
 		tc := time.NewTicker(d)
