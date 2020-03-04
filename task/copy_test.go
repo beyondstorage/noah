@@ -460,6 +460,7 @@ func TestCopySingleFileTask_run(t *testing.T) {
 	dstPath := uuid.New().String()
 
 	task := CopySingleFileTask{}
+	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
