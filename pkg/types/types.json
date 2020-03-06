@@ -1,7 +1,7 @@
 {
-  "BarTaskID": "string",
   "ByteSize": "string",
   "BytesPool": "*sync.Pool",
+  "CallbackFunc": "func(bt BasicTask)",
   "CheckTasks": "[]func(t navvy.Task) navvy.Task",
   "Content": "*bytes.Buffer",
   "Delete": "bool",
@@ -13,7 +13,6 @@
   "DestinationType": "types.ObjectType",
   "DirFunc": "func(*types.Object)",
   "Done": "bool",
-  "DoneCount": "*int64",
   "EnableBenchmark": "bool",
   "ExpectSize": "int64",
   "Expire": "int",

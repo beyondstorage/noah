@@ -15,65 +15,12 @@ import (
 	"github.com/qingstor/noah/pkg/schedule"
 )
 
-type BarTaskID struct {
-	valid bool
-	v     string
-
-	l sync.RWMutex
+type BasicTask interface {
+	FaultGetter
+	IDGetter
+	SchedulerGetter
+	CallbackFuncGetter
 }
-
-type BarTaskIDGetter interface {
-	GetBarTaskID() string
-}
-
-func (o *BarTaskID) GetBarTaskID() string {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("BarTaskID value is not valid")
-	}
-	return o.v
-}
-
-type BarTaskIDSetter interface {
-	SetBarTaskID(string)
-}
-
-func (o *BarTaskID) SetBarTaskID(v string) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type BarTaskIDValidator interface {
-	ValidateBarTaskID() bool
-}
-
-func (o *BarTaskID) ValidateBarTaskID() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadBarTaskID(t navvy.Task, v BarTaskIDSetter) {
-	x, ok := t.(interface {
-		BarTaskIDGetter
-		BarTaskIDValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateBarTaskID() {
-		return
-	}
-
-	v.SetBarTaskID(x.GetBarTaskID())
-}
-
 type ByteSize struct {
 	valid bool
 	v     string
@@ -190,6 +137,65 @@ func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
 	}
 
 	v.SetBytesPool(x.GetBytesPool())
+}
+
+type CallbackFunc struct {
+	valid bool
+	v     func(bt BasicTask)
+
+	l sync.RWMutex
+}
+
+type CallbackFuncGetter interface {
+	GetCallbackFunc() func(bt BasicTask)
+}
+
+func (o *CallbackFunc) GetCallbackFunc() func(bt BasicTask) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("CallbackFunc value is not valid")
+	}
+	return o.v
+}
+
+type CallbackFuncSetter interface {
+	SetCallbackFunc(func(bt BasicTask))
+}
+
+func (o *CallbackFunc) SetCallbackFunc(v func(bt BasicTask)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type CallbackFuncValidator interface {
+	ValidateCallbackFunc() bool
+}
+
+func (o *CallbackFunc) ValidateCallbackFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
+	x, ok := t.(interface {
+		CallbackFuncGetter
+		CallbackFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateCallbackFunc() {
+		return
+	}
+
+	v.SetCallbackFunc(x.GetCallbackFunc())
 }
 
 type CheckTasks struct {
@@ -839,65 +845,6 @@ func LoadDone(t navvy.Task, v DoneSetter) {
 	}
 
 	v.SetDone(x.GetDone())
-}
-
-type DoneCount struct {
-	valid bool
-	v     *int64
-
-	l sync.RWMutex
-}
-
-type DoneCountGetter interface {
-	GetDoneCount() *int64
-}
-
-func (o *DoneCount) GetDoneCount() *int64 {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("DoneCount value is not valid")
-	}
-	return o.v
-}
-
-type DoneCountSetter interface {
-	SetDoneCount(*int64)
-}
-
-func (o *DoneCount) SetDoneCount(v *int64) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type DoneCountValidator interface {
-	ValidateDoneCount() bool
-}
-
-func (o *DoneCount) ValidateDoneCount() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadDoneCount(t navvy.Task, v DoneCountSetter) {
-	x, ok := t.(interface {
-		DoneCountGetter
-		DoneCountValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateDoneCount() {
-		return
-	}
-
-	v.SetDoneCount(x.GetDoneCount())
 }
 
 type EnableBenchmark struct {

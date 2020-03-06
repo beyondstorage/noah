@@ -67,6 +67,13 @@ import (
 	"github.com/qingstor/noah/pkg/fault"
 )
 
+type BasicTask interface {
+	FaultGetter
+	IDGetter
+	SchedulerGetter
+	CallbackFuncGetter
+}
+
 {{- range $k, $v := .Data }}
 type {{$k}} struct {
 	valid bool

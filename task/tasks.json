@@ -50,10 +50,8 @@
   "CopyPartialFile": {
     "description": "copy a partial file to between two storager",
     "input": [
-      "BarTaskID",
       "DestinationPath",
       "DestinationStorage",
-      "DoneCount",
       "Offset",
       "PartSize",
       "SegmentID",
