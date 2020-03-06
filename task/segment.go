@@ -5,6 +5,7 @@ import (
 
 	"github.com/Xuanwo/storage/types/pairs"
 
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 )
 
@@ -29,21 +30,34 @@ func (t *SegmentFileCopyTask) run() {
 	defer r.Close()
 
 	// TODO: Add checksum support.
-	err = t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), r)
+	writeDone := 0
+	err = t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), r,
+		pairs.WithReadCallbackFunc(func(b []byte) {
+			writeDone += len(b)
+			progress.SetState(t.GetID(), progress.NewState(t.Name(), "writing", int64(writeDone), t.GetSize()))
+		}),
+	)
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }
 
 func (t *SegmentStreamCopyTask) new() {}
 func (t *SegmentStreamCopyTask) run() {
 	// TODO: Add checksum support
-	err := t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), ioutil.NopCloser(t.GetContent()))
+	writeDone := 0
+	err := t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), ioutil.NopCloser(t.GetContent()),
+		pairs.WithReadCallbackFunc(func(b []byte) {
+			writeDone += len(b)
+			progress.SetState(t.GetID(), progress.NewState(t.Name(), "writing", int64(writeDone), t.GetSize()))
+		}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }
 
 func (t *SegmentCompleteTask) new() {}

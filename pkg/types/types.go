@@ -15,6 +15,65 @@ import (
 	"github.com/qingstor/noah/pkg/schedule"
 )
 
+type BarTaskID struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type BarTaskIDGetter interface {
+	GetBarTaskID() string
+}
+
+func (o *BarTaskID) GetBarTaskID() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("BarTaskID value is not valid")
+	}
+	return o.v
+}
+
+type BarTaskIDSetter interface {
+	SetBarTaskID(string)
+}
+
+func (o *BarTaskID) SetBarTaskID(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type BarTaskIDValidator interface {
+	ValidateBarTaskID() bool
+}
+
+func (o *BarTaskID) ValidateBarTaskID() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadBarTaskID(t navvy.Task, v BarTaskIDSetter) {
+	x, ok := t.(interface {
+		BarTaskIDGetter
+		BarTaskIDValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateBarTaskID() {
+		return
+	}
+
+	v.SetBarTaskID(x.GetBarTaskID())
+}
+
 type ByteSize struct {
 	valid bool
 	v     string
@@ -782,6 +841,65 @@ func LoadDone(t navvy.Task, v DoneSetter) {
 	v.SetDone(x.GetDone())
 }
 
+type DoneCount struct {
+	valid bool
+	v     *int64
+
+	l sync.RWMutex
+}
+
+type DoneCountGetter interface {
+	GetDoneCount() *int64
+}
+
+func (o *DoneCount) GetDoneCount() *int64 {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DoneCount value is not valid")
+	}
+	return o.v
+}
+
+type DoneCountSetter interface {
+	SetDoneCount(*int64)
+}
+
+func (o *DoneCount) SetDoneCount(v *int64) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DoneCountValidator interface {
+	ValidateDoneCount() bool
+}
+
+func (o *DoneCount) ValidateDoneCount() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDoneCount(t navvy.Task, v DoneCountSetter) {
+	x, ok := t.(interface {
+		DoneCountGetter
+		DoneCountValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDoneCount() {
+		return
+	}
+
+	v.SetDoneCount(x.GetDoneCount())
+}
+
 type EnableBenchmark struct {
 	valid bool
 	v     bool
@@ -1547,6 +1665,65 @@ func LoadObject(t navvy.Task, v ObjectSetter) {
 	}
 
 	v.SetObject(x.GetObject())
+}
+
+type ObjectFunc struct {
+	valid bool
+	v     func(*types.Object)
+
+	l sync.RWMutex
+}
+
+type ObjectFuncGetter interface {
+	GetObjectFunc() func(*types.Object)
+}
+
+func (o *ObjectFunc) GetObjectFunc() func(*types.Object) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ObjectFunc value is not valid")
+	}
+	return o.v
+}
+
+type ObjectFuncSetter interface {
+	SetObjectFunc(func(*types.Object))
+}
+
+func (o *ObjectFunc) SetObjectFunc(v func(*types.Object)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ObjectFuncValidator interface {
+	ValidateObjectFunc() bool
+}
+
+func (o *ObjectFunc) ValidateObjectFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadObjectFunc(t navvy.Task, v ObjectFuncSetter) {
+	x, ok := t.(interface {
+		ObjectFuncGetter
+		ObjectFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateObjectFunc() {
+		return
+	}
+
+	v.SetObjectFunc(x.GetObjectFunc())
 }
 
 type Offset struct {

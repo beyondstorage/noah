@@ -37,21 +37,23 @@
     "input": [
       "DestinationPath",
       "DestinationStorage",
-      "PartSize",
       "SourcePath",
       "SourceStorage",
       "TotalSize"
     ],
     "output": [
       "Offset",
+      "PartSize",
       "SegmentID"
     ]
   },
   "CopyPartialFile": {
     "description": "copy a partial file to between two storager",
     "input": [
+      "BarTaskID",
       "DestinationPath",
       "DestinationStorage",
+      "DoneCount",
       "Offset",
       "PartSize",
       "SegmentID",
@@ -191,10 +193,13 @@
   "ListDir": {
     "description": "list dirs",
     "input": [
-      "DirFunc",
-      "FileFunc",
       "Path",
       "Storage"
+    ],
+    "output": [
+      "DirFunc",
+      "FileFunc",
+      "ObjectFunc"
     ]
   },
   "ListSegment": {

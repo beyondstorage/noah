@@ -1,4 +1,5 @@
 {
+  "BarTaskID": "string",
   "ByteSize": "string",
   "BytesPool": "*sync.Pool",
   "CheckTasks": "[]func(t navvy.Task) navvy.Task",
@@ -12,6 +13,7 @@
   "DestinationType": "types.ObjectType",
   "DirFunc": "func(*types.Object)",
   "Done": "bool",
+  "DoneCount": "*int64",
   "EnableBenchmark": "bool",
   "ExpectSize": "int64",
   "Expire": "int",
@@ -25,6 +27,7 @@
   "MD5Sum": "[]byte",
   "Name": "string",
   "Object": "*types.Object",
+  "ObjectFunc": "func(*types.Object)",
   "Offset": "int64",
   "PartNumber": "int",
   "PartSize": "int64",

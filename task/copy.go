@@ -96,11 +96,15 @@ func (t *CopyLargeFileTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegmentID(initTask.GetSegmentID())
 
-	offset := int64(0)
+	offset, part, tmp := int64(0), int64(0), int64(0)
+	var doneCount = &tmp
 	for {
+		part++
 		t.SetOffset(offset)
 
 		x := NewCopyPartialFile(t)
+		x.SetBarTaskID(t.GetID())
+		x.SetDoneCount(doneCount)
 		t.GetScheduler().Async(x)
 		// While GetDone is true, this must be the last part.
 		if x.GetDone() {
@@ -109,10 +113,12 @@ func (t *CopyLargeFileTask) run() {
 
 		offset += x.GetSize()
 	}
+	progress.SetState(t.GetID(), progress.NewState(t.Name(), "copy parts", 0, part))
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
+	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), part))
 }
 
 func (t *CopyPartialFileTask) new() {
@@ -141,6 +147,8 @@ func (t *CopyPartialFileTask) run() {
 		return
 	}
 	t.GetScheduler().Sync(fileCopyTask)
+	*t.GetDoneCount()++
+	progress.UpdateState(t.GetBarTaskID(), *t.GetDoneCount())
 }
 
 func (t *CopyStreamTask) new() {

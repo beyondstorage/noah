@@ -2,6 +2,7 @@ package progress
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -16,16 +17,23 @@ type Namer interface {
 
 const finishedStatus string = "finished"
 
-var center sync.Map         // center is the private sync map for progress data
-var dataChan chan *sync.Map // dataChan is the chan for center trans
-var sigChan chan struct{}   // sigChan is the signal chan to end the center trans
+type progressCenter struct {
+	sync.Mutex
+	data map[taskID]State
+}
+
+var center *progressCenter // center is the private locked map for progress data
+// var center sync.Map // center is the private sync map for progress data
+var dataChan chan map[taskID]State // dataChan is the chan for center trans
+var sigChan chan struct{}          // sigChan is the signal chan to end the center trans
 
 var once sync.Once
 
 type taskID = string
 
 func init() {
-	dataChan = make(chan *sync.Map)
+	center = &progressCenter{data: make(map[taskID]State)}
+	dataChan = make(chan map[taskID]State)
 	sigChan = make(chan struct{})
 }
 
@@ -35,6 +43,10 @@ type State struct {
 	Status   string
 	Done     int64
 	Total    int64
+}
+
+func (s State) String() string {
+	return fmt.Sprintf("name: %s, status: %s, %d/%d", s.TaskName, s.Status, s.Done, s.Total)
 }
 
 // Finished specify whether a state is finished
@@ -64,27 +76,43 @@ func NewState(name, status string, done, total int64) State {
 
 // SetState set the task's state with specific ID
 func SetState(id taskID, s State) {
-	center.Store(id, s)
+	center.Lock()
+	defer center.Unlock()
+	center.data[id] = s
 }
 
 // GetState get a task's state with specific ID
 // if the task not exists, return ErrTaskNotExist err
 func GetState(id taskID) (State, error) {
-	v, ok := center.Load(id)
+	center.Lock()
+	defer center.Unlock()
+	v, ok := center.data[id]
 	if !ok {
 		return State{}, ErrTaskNotExist
 	}
-	return v.(State), nil
+	return v, nil
+}
+
+// UpdateState just update the done field with given id
+func UpdateState(id taskID, done int64) {
+	center.Lock()
+	defer center.Unlock()
+	state, ok := center.data[id]
+	if !ok {
+		return
+	}
+	state.Done = done
+	center.data[id] = state
 }
 
 // Start create a channel to get center for client
-func Start(d time.Duration) <-chan *sync.Map {
+func Start(d time.Duration) <-chan map[taskID]State {
 	go func() {
 		tc := time.NewTicker(d)
 		for {
 			select {
 			case <-tc.C:
-				dataChan <- &center
+				dataChan <- center.GetData()
 			case <-sigChan:
 				return
 			}
@@ -102,4 +130,15 @@ func End() {
 		close(sigChan)
 		close(dataChan)
 	})
+}
+
+// GetData copy the data from pc
+func (pc *progressCenter) GetData() map[taskID]State {
+	pc.Lock()
+	defer pc.Unlock()
+	res := make(map[taskID]State, len(pc.data))
+	for k, v := range pc.data {
+		res[k] = v
+	}
+	return res
 }
