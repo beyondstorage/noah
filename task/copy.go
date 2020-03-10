@@ -114,12 +114,11 @@ func (t *CopyLargeFileTask) run() {
 
 		offset += x.GetSize()
 	}
-	progress.SetState(t.GetID(), progress.NewState(t.Name(), "copy parts", 0, part))
+	progress.SetState(t.GetID(), progress.NewState(t.GetSourcePath(), "copy part:", 0, part))
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), part))
 }
 
 func (t *CopyPartialFileTask) new() {
@@ -148,8 +147,6 @@ func (t *CopyPartialFileTask) run() {
 		return
 	}
 	t.GetScheduler().Sync(fileCopyTask)
-	// *t.GetDoneCount()++
-	// progress.UpdateState(t.GetBarTaskID(), *t.GetDoneCount())
 }
 
 func (t *CopyStreamTask) new() {
@@ -175,10 +172,15 @@ func (t *CopyStreamTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegmentID(initTask.GetSegmentID())
 
-	offset := int64(0)
+	offset, part, doneCount := int64(0), int64(0), int64(0)
 	for {
+		part++
 		x := NewCopyPartialStream(t)
 		x.SetOffset(offset)
+		x.SetCallbackFunc(func(bt types.BasicTask) {
+			doneCount++
+			progress.UpdateState(t.GetID(), doneCount)
+		})
 		t.GetScheduler().Async(x)
 
 		if x.GetDone() {
@@ -186,6 +188,7 @@ func (t *CopyStreamTask) run() {
 		}
 		offset += x.GetSize()
 	}
+	progress.SetState(t.GetID(), progress.NewState(t.GetSourcePath(), "copy stream part:", 0, part))
 
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
@@ -244,11 +247,10 @@ func (t *CopySingleFileTask) run() {
 	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
 		pairs.WithReadCallbackFunc(func(b []byte) {
 			writeDone += len(b)
-			progress.SetState(t.GetID(), progress.NewState(t.Name(), "writing", int64(writeDone), t.GetSize()))
+			progress.SetState(t.GetID(), progress.NewState(t.GetSourcePath(), "copy:", int64(writeDone), t.GetSize()))
 		}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }

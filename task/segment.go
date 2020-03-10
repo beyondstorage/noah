@@ -41,7 +41,6 @@ func (t *SegmentFileCopyTask) run() {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }
 
 func (t *SegmentStreamCopyTask) new() {}
@@ -57,7 +56,6 @@ func (t *SegmentStreamCopyTask) run() {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
-	progress.SetState(t.GetID(), progress.FinishedState(t.Name(), int64(writeDone)))
 }
 
 func (t *SegmentCompleteTask) new() {}

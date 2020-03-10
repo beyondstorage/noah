@@ -1,6 +1,8 @@
 package task
 
 import (
+	"fmt"
+
 	"github.com/Xuanwo/storage"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
@@ -20,6 +22,7 @@ func (t *ListDirTask) run() {
 	if t.ValidateObjectFunc() {
 		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
 	}
+	fmt.Println("listing:", t.GetPath())
 	err := t.GetStorage().List(
 		t.GetPath(), ps...,
 	)
