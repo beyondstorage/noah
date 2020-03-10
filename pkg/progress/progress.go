@@ -4,16 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 )
 
 // ErrTaskNotExist returns when try to get a non-exist task in center
 var ErrTaskNotExist = errors.New("task not exist")
-
-// Namer is the interface for Name() call
-type Namer interface {
-	Name() string
-}
 
 const finishedStatus string = "finished"
 
@@ -22,12 +16,9 @@ type progressCenter struct {
 	data map[taskID]State
 }
 
-var center *progressCenter // center is the private locked map for progress data
-// var center sync.Map // center is the private sync map for progress data
+var center *progressCenter         // center is the private locked map for progress data
 var dataChan chan map[taskID]State // dataChan is the chan for center trans
 var sigChan chan struct{}          // sigChan is the signal chan to end the center trans
-
-var once sync.Once
 
 type taskID = string
 
@@ -51,7 +42,7 @@ func (s State) String() string {
 
 // Finished specify whether a state is finished
 func (s State) Finished() bool {
-	return s.Status == finishedStatus
+	return s.Total > 0 && s.Done >= s.Total
 }
 
 // InitState init a progress state
@@ -105,39 +96,12 @@ func UpdateState(id taskID, done int64) {
 	center.data[id] = state
 }
 
-// Start create a channel to get center for client
-func Start(d time.Duration) <-chan map[taskID]State {
-	go func() {
-		tc := time.NewTicker(d)
-		for {
-			select {
-			case <-tc.C:
-				dataChan <- center.GetData()
-			case <-sigChan:
-				return
-			}
-		}
-	}()
-	return dataChan
-}
-
-// End close the sigChan to
-// 1. close the sigChan to stop the goroutine in Start()
-// 2. close the dataChan for client
-// use once to ensure only close once
-func End() {
-	once.Do(func() {
-		close(sigChan)
-		close(dataChan)
-	})
-}
-
-// GetData copy the data from pc
-func (pc *progressCenter) GetData() map[taskID]State {
-	pc.Lock()
-	defer pc.Unlock()
-	res := make(map[taskID]State, len(pc.data))
-	for k, v := range pc.data {
+// GetData copy the data from center
+func GetData() map[taskID]State {
+	center.Lock()
+	defer center.Unlock()
+	res := make(map[taskID]State, len(center.data))
+	for k, v := range center.data {
 		res[k] = v
 	}
 	return res
