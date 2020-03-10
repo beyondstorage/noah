@@ -231,3 +231,22 @@ func NewErrUserInputDestinationPathInvalid(err error, destinationPath string) er
 
 	return f
 }
+
+type UserInputDestinationTypeDirNeeded struct {
+	err error
+}
+
+func (f *UserInputDestinationTypeDirNeeded) Error() string {
+	return fmt.Sprintf(`User input destination type should be a directory when: {%v}`, f.err)
+}
+
+func (f *UserInputDestinationTypeDirNeeded) Unwrap() error {
+	return f.err
+}
+
+func NewErrUserInputDestinationTypeDirNeeded(err error) error {
+	f := &UserInputDestinationTypeDirNeeded{}
+	f.err = err
+
+	return f
+}

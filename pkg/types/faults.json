@@ -56,5 +56,8 @@
       "DestinationPath"
     ],
     "message": "`User input key [%s] is invalid`, f.GetDestinationPath()"
+  },
+  "UserInputDestinationTypeDirNeeded": {
+    "message": "`User input destination type should be a directory when: {%v}`, f.err"
   }
 }
