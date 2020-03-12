@@ -663,6 +663,65 @@ func LoadDestinationType(t navvy.Task, v DestinationTypeSetter) {
 	v.SetDestinationType(x.GetDestinationType())
 }
 
+type DestinationWorkDir struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type DestinationWorkDirGetter interface {
+	GetDestinationWorkDir() string
+}
+
+func (o *DestinationWorkDir) GetDestinationWorkDir() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DestinationWorkDir value is not valid")
+	}
+	return o.v
+}
+
+type DestinationWorkDirSetter interface {
+	SetDestinationWorkDir(string)
+}
+
+func (o *DestinationWorkDir) SetDestinationWorkDir(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DestinationWorkDirValidator interface {
+	ValidateDestinationWorkDir() bool
+}
+
+func (o *DestinationWorkDir) ValidateDestinationWorkDir() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDestinationWorkDir(t navvy.Task, v DestinationWorkDirSetter) {
+	x, ok := t.(interface {
+		DestinationWorkDirGetter
+		DestinationWorkDirValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDestinationWorkDir() {
+		return
+	}
+
+	v.SetDestinationWorkDir(x.GetDestinationWorkDir())
+}
+
 type DirFunc struct {
 	valid bool
 	v     func(*types.Object)
@@ -2905,6 +2964,65 @@ func LoadSourceType(t navvy.Task, v SourceTypeSetter) {
 	v.SetSourceType(x.GetSourceType())
 }
 
+type SourceWorkDir struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type SourceWorkDirGetter interface {
+	GetSourceWorkDir() string
+}
+
+func (o *SourceWorkDir) GetSourceWorkDir() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("SourceWorkDir value is not valid")
+	}
+	return o.v
+}
+
+type SourceWorkDirSetter interface {
+	SetSourceWorkDir(string)
+}
+
+func (o *SourceWorkDir) SetSourceWorkDir(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type SourceWorkDirValidator interface {
+	ValidateSourceWorkDir() bool
+}
+
+func (o *SourceWorkDir) ValidateSourceWorkDir() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadSourceWorkDir(t navvy.Task, v SourceWorkDirSetter) {
+	x, ok := t.(interface {
+		SourceWorkDirGetter
+		SourceWorkDirValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateSourceWorkDir() {
+		return
+	}
+
+	v.SetSourceWorkDir(x.GetSourceWorkDir())
+}
+
 type Storage struct {
 	valid bool
 	v     storage.Storager
@@ -3375,6 +3493,65 @@ func LoadWholeFile(t navvy.Task, v WholeFileSetter) {
 	}
 
 	v.SetWholeFile(x.GetWholeFile())
+}
+
+type WorkDir struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type WorkDirGetter interface {
+	GetWorkDir() string
+}
+
+func (o *WorkDir) GetWorkDir() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("WorkDir value is not valid")
+	}
+	return o.v
+}
+
+type WorkDirSetter interface {
+	SetWorkDir(string)
+}
+
+func (o *WorkDir) SetWorkDir(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type WorkDirValidator interface {
+	ValidateWorkDir() bool
+}
+
+func (o *WorkDir) ValidateWorkDir() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadWorkDir(t navvy.Task, v WorkDirSetter) {
+	x, ok := t.(interface {
+		WorkDirGetter
+		WorkDirValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateWorkDir() {
+		return
+	}
+
+	v.SetWorkDir(x.GetWorkDir())
 }
 
 type Zone struct {
