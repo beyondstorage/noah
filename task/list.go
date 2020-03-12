@@ -1,17 +1,21 @@
 package task
 
 import (
-	"fmt"
-
 	"github.com/Xuanwo/storage"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
 
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 )
 
-func (t *ListDirTask) new() {}
+func (t *ListDirTask) new() {
+	t.SetCallbackFunc(func(bt types.BasicTask) {
+		progress.SetState(t.GetID(), progress.NewState(t.GetPath(), progress.ListingStatus, 1, 1))
+	})
+}
 func (t *ListDirTask) run() {
+	progress.SetState(t.GetID(), progress.NewState(t.GetPath(), progress.ListingStatus, 0, 1))
 	ps := make([]*typ.Pair, 0)
 	if t.ValidateDirFunc() {
 		ps = append(ps, pairs.WithDirFunc(t.GetDirFunc()))
@@ -22,7 +26,6 @@ func (t *ListDirTask) run() {
 	if t.ValidateObjectFunc() {
 		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
 	}
-	fmt.Println("listing:", t.GetPath())
 	err := t.GetStorage().List(
 		t.GetPath(), ps...,
 	)

@@ -11,21 +11,20 @@ var ErrTaskNotExist = errors.New("task not exist")
 
 const finishedStatus string = "finished"
 
+// ListingStatus used to specify a state is listing
+const ListingStatus string = "listing"
+
 type progressCenter struct {
 	sync.Mutex
 	data map[taskID]State
 }
 
-var center *progressCenter         // center is the private locked map for progress data
-var dataChan chan map[taskID]State // dataChan is the chan for center trans
-var sigChan chan struct{}          // sigChan is the signal chan to end the center trans
+var center *progressCenter // center is the private locked map for progress data
 
 type taskID = string
 
 func init() {
 	center = &progressCenter{data: make(map[taskID]State)}
-	dataChan = make(chan map[taskID]State)
-	sigChan = make(chan struct{})
 }
 
 // State is for the progress of a task
@@ -43,6 +42,11 @@ func (s State) String() string {
 // Finished specify whether a state is finished
 func (s State) Finished() bool {
 	return s.Total > 0 && s.Done >= s.Total
+}
+
+// IsListing specify whether a state is listing
+func (s State) IsListing() bool {
+	return s.Status == ListingStatus
 }
 
 // InitState init a progress state
@@ -72,9 +76,9 @@ func SetState(id taskID, s State) {
 	center.data[id] = s
 }
 
-// GetState get a task's state with specific ID
+// GetStateByID get a task's state with specific ID
 // if the task not exists, return ErrTaskNotExist err
-func GetState(id taskID) (State, error) {
+func GetStateByID(id taskID) (State, error) {
 	center.Lock()
 	defer center.Unlock()
 	v, ok := center.data[id]
@@ -96,8 +100,8 @@ func UpdateState(id taskID, done int64) {
 	center.data[id] = state
 }
 
-// GetData copy the data from center
-func GetData() map[taskID]State {
+// GetStates copy and return the state data from center
+func GetStates() map[taskID]State {
 	center.Lock()
 	defer center.Unlock()
 	res := make(map[taskID]State, len(center.data))
