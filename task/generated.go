@@ -279,13 +279,13 @@ type CopyLargeFileTask struct {
 	// Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.PartSize
 	types.SourcePath
 	types.SourceStorage
 	types.TotalSize
 
 	// Output value
 	types.Offset
+	types.PartSize
 	types.SegmentID
 }
 
@@ -309,9 +309,6 @@ func (t *CopyLargeFileTask) validateInput() {
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task CopyLargeFile value DestinationStorage is invalid"))
 	}
-	if !t.ValidatePartSize() {
-		panic(fmt.Errorf("Task CopyLargeFile value PartSize is invalid"))
-	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task CopyLargeFile value SourcePath is invalid"))
 	}
@@ -329,7 +326,6 @@ func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
 	types.LoadPool(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadPartSize(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
 	types.LoadTotalSize(task, t)
@@ -352,7 +348,7 @@ func (t *CopyLargeFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyLargeFileTask) String() string {
-	return fmt.Sprintf("CopyLargeFileTask {DestinationPath: %v, DestinationStorage: %v, PartSize: %v, SourcePath: %v, SourceStorage: %v, TotalSize: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartSize(), t.GetSourcePath(), t.GetSourceStorage(), t.GetTotalSize())
+	return fmt.Sprintf("CopyLargeFileTask {DestinationPath: %v, DestinationStorage: %v, SourcePath: %v, SourceStorage: %v, TotalSize: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetSourcePath(), t.GetSourceStorage(), t.GetTotalSize())
 }
 
 // NewCopyLargeFileTask will create a CopyLargeFileTask which meets navvy.Task.
@@ -1389,12 +1385,13 @@ type ListDirTask struct {
 	types.Scheduler
 
 	// Input value
-	types.DirFunc
-	types.FileFunc
 	types.Path
 	types.Storage
 
 	// Output value
+	types.DirFunc
+	types.FileFunc
+	types.ObjectFunc
 }
 
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
@@ -1411,12 +1408,6 @@ func NewListDir(task navvy.Task) *ListDirTask {
 
 // validateInput will validate all input before run task.
 func (t *ListDirTask) validateInput() {
-	if !t.ValidateDirFunc() {
-		panic(fmt.Errorf("Task ListDir value DirFunc is invalid"))
-	}
-	if !t.ValidateFileFunc() {
-		panic(fmt.Errorf("Task ListDir value FileFunc is invalid"))
-	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListDir value Path is invalid"))
 	}
@@ -1429,8 +1420,6 @@ func (t *ListDirTask) validateInput() {
 func (t *ListDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadDirFunc(task, t)
-	types.LoadFileFunc(task, t)
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
 }

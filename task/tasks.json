@@ -37,13 +37,13 @@
     "input": [
       "DestinationPath",
       "DestinationStorage",
-      "PartSize",
       "SourcePath",
       "SourceStorage",
       "TotalSize"
     ],
     "output": [
       "Offset",
+      "PartSize",
       "SegmentID"
     ]
   },
@@ -191,10 +191,13 @@
   "ListDir": {
     "description": "list dirs",
     "input": [
-      "DirFunc",
-      "FileFunc",
       "Path",
       "Storage"
+    ],
+    "output": [
+      "DirFunc",
+      "FileFunc",
+      "ObjectFunc"
     ]
   },
   "ListSegment": {
