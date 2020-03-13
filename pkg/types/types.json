@@ -10,7 +10,6 @@
   "DestinationService": "storage.Servicer",
   "DestinationStorage": "storage.Storager",
   "DestinationType": "types.ObjectType",
-  "DestinationWorkDir": "string",
   "DirFunc": "func(*types.Object)",
   "Done": "bool",
   "EnableBenchmark": "bool",
@@ -49,7 +48,6 @@
   "SourceService": "storage.Servicer",
   "SourceStorage": "storage.Storager",
   "SourceType": "types.ObjectType",
-  "SourceWorkDir": "string",
   "Storage": "storage.Storager",
   "StorageName": "string",
   "StoragerFunc": "storage.StoragerFunc",
@@ -58,6 +56,5 @@
   "URL": "string",
   "Update": "bool",
   "WholeFile": "bool",
-  "WorkDir": "string",
   "Zone": "string"
 }
