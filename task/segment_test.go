@@ -80,6 +80,7 @@ func TestSegmentFileCopyTask_run(t *testing.T) {
 	dstPath := uuid.New().String()
 
 	task := SegmentFileCopyTask{}
+	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
@@ -94,12 +95,13 @@ func TestSegmentFileCopyTask_run(t *testing.T) {
 		assert.Equal(t, srcPath, path)
 		return srcReader, nil
 	})
-	dstSegmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(path string, offset, size int64, r io.Reader) (err error) {
-		assert.Equal(t, dstSegmentID, path)
-		assert.Equal(t, int64(0), offset)
-		assert.Equal(t, srcSize, size)
-		return nil
-	})
+	dstSegmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(path string, offset, size int64, r io.Reader, pair *typ.Pair) (err error) {
+			assert.Equal(t, dstSegmentID, path)
+			assert.Equal(t, int64(0), offset)
+			assert.Equal(t, srcSize, size)
+			return nil
+		})
 
 	task.run()
 	assert.Empty(t, task.GetFault().Error())
@@ -111,22 +113,26 @@ func TestSegmentStreamCopyTask_run(t *testing.T) {
 
 	srcSize := int64(1024)
 	dstSegmentID := uuid.New().String()
+	dstPath := uuid.New().String()
 	segmenter := mock.NewMockSegmenter(ctrl)
 
 	task := SegmentStreamCopyTask{}
+	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
+	task.SetDestinationPath(dstPath)
 	task.SetDestinationSegmenter(segmenter)
 	task.SetSize(srcSize)
 	task.SetOffset(0)
 	task.SetSegmentID(dstSegmentID)
 	task.SetContent(&bytes.Buffer{})
 
-	segmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(path string, offset, size int64, r io.Reader) (err error) {
-		assert.Equal(t, dstSegmentID, path)
-		assert.Equal(t, int64(0), offset)
-		assert.Equal(t, srcSize, size)
-		return nil
-	})
+	segmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(path string, offset, size int64, r io.Reader, pair *typ.Pair) (err error) {
+			assert.Equal(t, dstSegmentID, path)
+			assert.Equal(t, int64(0), offset)
+			assert.Equal(t, srcSize, size)
+			return nil
+		})
 
 	task.run()
 	assert.Empty(t, task.GetFault().Error())

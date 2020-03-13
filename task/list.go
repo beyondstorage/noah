@@ -5,11 +5,17 @@ import (
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
 
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 )
 
-func (t *ListDirTask) new() {}
+func (t *ListDirTask) new() {
+	t.SetCallbackFunc(func(types.IDGetter) {
+		progress.FinishState(t.GetID())
+	})
+}
 func (t *ListDirTask) run() {
+	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
 	ps := make([]*typ.Pair, 0)
 	if t.ValidateDirFunc() {
 		ps = append(ps, pairs.WithDirFunc(t.GetDirFunc()))

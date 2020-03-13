@@ -1,6 +1,7 @@
 {
   "ByteSize": "string",
   "BytesPool": "*sync.Pool",
+  "CallbackFunc": "func(idg IDGetter)",
   "CheckTasks": "[]func(t navvy.Task) navvy.Task",
   "Content": "*bytes.Buffer",
   "Delete": "bool",

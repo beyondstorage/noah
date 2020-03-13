@@ -143,6 +143,7 @@ type {{ .Name }}Task struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 {{- range $k, $v := .Input }}
@@ -193,6 +194,9 @@ func (t *{{ .Name }}Task) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 

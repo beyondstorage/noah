@@ -23,6 +23,7 @@ type BetweenStorageCheckTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -80,6 +81,9 @@ func (t *BetweenStorageCheckTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -105,6 +109,7 @@ type CopyDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.CheckTasks
@@ -165,6 +170,9 @@ func (t *CopyDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -190,6 +198,7 @@ type CopyFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.CheckTasks
@@ -250,6 +259,9 @@ func (t *CopyFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -275,6 +287,7 @@ type CopyLargeFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -338,6 +351,9 @@ func (t *CopyLargeFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -363,6 +379,7 @@ type CopyPartialFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -440,6 +457,9 @@ func (t *CopyPartialFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -465,6 +485,7 @@ type CopyPartialStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.BytesPool
@@ -539,6 +560,9 @@ func (t *CopyPartialStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -564,6 +588,7 @@ type CopySingleFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -629,6 +654,9 @@ func (t *CopySingleFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -654,6 +682,7 @@ type CopySmallFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -715,6 +744,9 @@ func (t *CopySmallFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -740,6 +772,7 @@ type CopyStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -798,6 +831,9 @@ func (t *CopyStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -823,6 +859,7 @@ type CreateStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Service
@@ -865,6 +902,9 @@ func (t *CreateStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -890,6 +930,7 @@ type DeleteDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -935,6 +976,9 @@ func (t *DeleteDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -960,6 +1004,7 @@ type DeleteFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -1005,6 +1050,9 @@ func (t *DeleteFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1030,6 +1078,7 @@ type DeleteSegmentTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.SegmentID
@@ -1075,6 +1124,9 @@ func (t *DeleteSegmentTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1100,6 +1152,7 @@ type DeleteStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Force
@@ -1150,6 +1203,9 @@ func (t *DeleteStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1175,6 +1231,7 @@ type IsDestinationObjectExistTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationObject
@@ -1216,6 +1273,9 @@ func (t *IsDestinationObjectExistTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1241,6 +1301,7 @@ type IsSizeEqualTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationObject
@@ -1287,6 +1348,9 @@ func (t *IsSizeEqualTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1312,6 +1376,7 @@ type IsUpdateAtGreaterTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationObject
@@ -1358,6 +1423,9 @@ func (t *IsUpdateAtGreaterTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1383,6 +1451,7 @@ type ListDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -1431,6 +1500,9 @@ func (t *ListDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1456,6 +1528,7 @@ type ListSegmentTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -1506,6 +1579,9 @@ func (t *ListSegmentTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1531,6 +1607,7 @@ type ListStorageTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Service
@@ -1581,6 +1658,9 @@ func (t *ListStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1606,6 +1686,7 @@ type MD5SumFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Offset
@@ -1662,6 +1743,9 @@ func (t *MD5SumFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1687,6 +1771,7 @@ type MD5SumStreamTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Content
@@ -1728,6 +1813,9 @@ func (t *MD5SumStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1753,6 +1841,7 @@ type MoveDirTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -1808,6 +1897,9 @@ func (t *MoveDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1833,6 +1925,7 @@ type MoveFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -1888,6 +1981,9 @@ func (t *MoveFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1913,6 +2009,7 @@ type ReachFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Expire
@@ -1964,6 +2061,9 @@ func (t *ReachFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -1989,6 +2089,7 @@ type SegmentCompleteTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -2039,6 +2140,9 @@ func (t *SegmentCompleteTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -2064,6 +2168,7 @@ type SegmentFileCopyTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -2139,6 +2244,9 @@ func (t *SegmentFileCopyTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -2164,6 +2272,7 @@ type SegmentInitTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.PartSize
@@ -2215,6 +2324,9 @@ func (t *SegmentInitTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -2240,6 +2352,7 @@ type SegmentStreamCopyTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Content
@@ -2310,6 +2423,9 @@ func (t *SegmentStreamCopyTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -2335,6 +2451,7 @@ type StatFileTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.Path
@@ -2381,6 +2498,9 @@ func (t *StatFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
@@ -2406,6 +2526,7 @@ type SyncTask struct {
 	types.ID
 	types.Pool
 	types.Scheduler
+	types.CallbackFunc
 
 	// Input value
 	types.DestinationPath
@@ -2466,6 +2587,9 @@ func (t *SyncTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
 	log.Debugf("Finished %s", t)
 }
 
