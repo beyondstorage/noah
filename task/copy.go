@@ -9,6 +9,7 @@ import (
 	"github.com/Xuanwo/storage/types/pairs"
 
 	"github.com/qingstor/noah/constants"
+	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
 )
@@ -95,11 +96,16 @@ func (t *CopyLargeFileTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegmentID(initTask.GetSegmentID())
 
-	offset := int64(0)
+	offset, part, doneCount := int64(0), int64(0), int64(0)
 	for {
+		part++
 		t.SetOffset(offset)
 
 		x := NewCopyPartialFile(t)
+		x.SetCallbackFunc(func(types.IDGetter) {
+			doneCount++
+			progress.UpdateState(t.GetID(), doneCount)
+		})
 		t.GetScheduler().Async(x)
 		// While GetDone is true, this must be the last part.
 		if x.GetDone() {
@@ -108,6 +114,7 @@ func (t *CopyLargeFileTask) run() {
 
 		offset += x.GetSize()
 	}
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy part:", part))
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
@@ -165,10 +172,15 @@ func (t *CopyStreamTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegmentID(initTask.GetSegmentID())
 
-	offset := int64(0)
+	offset, part, doneCount := int64(0), int64(0), int64(0)
 	for {
+		part++
 		x := NewCopyPartialStream(t)
 		x.SetOffset(offset)
+		x.SetCallbackFunc(func(types.IDGetter) {
+			doneCount++
+			progress.UpdateState(t.GetID(), doneCount)
+		})
 		t.GetScheduler().Async(x)
 
 		if x.GetDone() {
@@ -176,6 +188,7 @@ func (t *CopyStreamTask) run() {
 		}
 		offset += x.GetSize()
 	}
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy stream part:", part))
 
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
@@ -229,8 +242,14 @@ func (t *CopySingleFileTask) run() {
 	}
 	defer r.Close()
 
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
 	// TODO: add checksum support
-	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()))
+	writeDone := 0
+	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
+		pairs.WithReadCallbackFunc(func(b []byte) {
+			writeDone += len(b)
+			progress.UpdateState(t.GetID(), int64(writeDone))
+		}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return

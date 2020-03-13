@@ -20,12 +20,14 @@ func TestListDirTask_run(t *testing.T) {
 	store := mock.NewMockStorager(ctrl)
 	testPath := uuid.New().String()
 
-	task := ListDirTask{}
+	task := &ListDirTask{}
+	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetStorage(store)
 	task.SetPath(testPath)
 	task.SetDirFunc(func(*typ.Object) {})
 	task.SetFileFunc(func(*typ.Object) {})
+	task.SetObjectFunc(func(*typ.Object) {})
 
 	store.EXPECT().List(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
 		assert.Equal(t, testPath, path)

@@ -132,6 +132,65 @@ func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
 	v.SetBytesPool(x.GetBytesPool())
 }
 
+type CallbackFunc struct {
+	valid bool
+	v     func(idg IDGetter)
+
+	l sync.RWMutex
+}
+
+type CallbackFuncGetter interface {
+	GetCallbackFunc() func(idg IDGetter)
+}
+
+func (o *CallbackFunc) GetCallbackFunc() func(idg IDGetter) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("CallbackFunc value is not valid")
+	}
+	return o.v
+}
+
+type CallbackFuncSetter interface {
+	SetCallbackFunc(func(idg IDGetter))
+}
+
+func (o *CallbackFunc) SetCallbackFunc(v func(idg IDGetter)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type CallbackFuncValidator interface {
+	ValidateCallbackFunc() bool
+}
+
+func (o *CallbackFunc) ValidateCallbackFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
+	x, ok := t.(interface {
+		CallbackFuncGetter
+		CallbackFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateCallbackFunc() {
+		return
+	}
+
+	v.SetCallbackFunc(x.GetCallbackFunc())
+}
+
 type CheckTasks struct {
 	valid bool
 	v     []func(t navvy.Task) navvy.Task

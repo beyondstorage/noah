@@ -156,6 +156,7 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 	segmentID := uuid.New().String()
 
 	task := &CopyLargeFileTask{}
+	task.SetID(uuid.New().String())
 	task.SetPool(navvy.NewPool(10))
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
@@ -328,7 +329,7 @@ func TestCopyStreamTask_run(t *testing.T) {
 
 	task := &CopyStreamTask{}
 	task.new()
-
+	task.SetID(uuid.New().String())
 	task.SetPool(navvy.NewPool(10))
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
@@ -460,6 +461,7 @@ func TestCopySingleFileTask_run(t *testing.T) {
 	dstPath := uuid.New().String()
 
 	task := CopySingleFileTask{}
+	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
