@@ -1548,6 +1548,65 @@ func LoadObject(t navvy.Task, v ObjectSetter) {
 	v.SetObject(x.GetObject())
 }
 
+type ObjectFunc struct {
+	valid bool
+	v     func(*types.Object)
+
+	l sync.RWMutex
+}
+
+type ObjectFuncGetter interface {
+	GetObjectFunc() func(*types.Object)
+}
+
+func (o *ObjectFunc) GetObjectFunc() func(*types.Object) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ObjectFunc value is not valid")
+	}
+	return o.v
+}
+
+type ObjectFuncSetter interface {
+	SetObjectFunc(func(*types.Object))
+}
+
+func (o *ObjectFunc) SetObjectFunc(v func(*types.Object)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ObjectFuncValidator interface {
+	ValidateObjectFunc() bool
+}
+
+func (o *ObjectFunc) ValidateObjectFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadObjectFunc(t navvy.Task, v ObjectFuncSetter) {
+	x, ok := t.(interface {
+		ObjectFuncGetter
+		ObjectFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateObjectFunc() {
+		return
+	}
+
+	v.SetObjectFunc(x.GetObjectFunc())
+}
+
 type Offset struct {
 	valid bool
 	v     int64

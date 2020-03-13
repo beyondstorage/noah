@@ -25,6 +25,7 @@
   "MD5Sum": "[]byte",
   "Name": "string",
   "Object": "*types.Object",
+  "ObjectFunc": "func(*types.Object)",
   "Offset": "int64",
   "PartNumber": "int",
   "PartSize": "int64",
