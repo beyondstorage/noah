@@ -1294,6 +1294,76 @@ func NewIsDestinationObjectExistTask(task navvy.Task) navvy.Task {
 	return NewIsDestinationObjectExist(task)
 }
 
+// IsDestinationObjectNotExistTask will .
+type IsDestinationObjectNotExistTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Input value
+	types.DestinationObject
+
+	// Output value
+	types.Result
+}
+
+// NewIsDestinationObjectNotExist will create a IsDestinationObjectNotExistTask struct and fetch inherited data from parent task.
+func NewIsDestinationObjectNotExist(task navvy.Task) *IsDestinationObjectNotExistTask {
+	t := &IsDestinationObjectNotExistTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *IsDestinationObjectNotExistTask) validateInput() {
+	if !t.ValidateDestinationObject() {
+		panic(fmt.Errorf("Task IsDestinationObjectNotExist value DestinationObject is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *IsDestinationObjectNotExistTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+	types.LoadDestinationObject(task, t)
+}
+
+// Run implement navvy.Task
+func (t *IsDestinationObjectNotExistTask) Run() {
+	t.validateInput()
+
+	log.Debugf("Started %s", t)
+	t.run()
+	t.GetScheduler().Wait()
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()(t)
+	}
+	log.Debugf("Finished %s", t)
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *IsDestinationObjectNotExistTask) String() string {
+	return fmt.Sprintf("IsDestinationObjectNotExistTask {DestinationObject: %v}", t.GetDestinationObject())
+}
+
+// NewIsDestinationObjectNotExistTask will create a IsDestinationObjectNotExistTask which meets navvy.Task.
+func NewIsDestinationObjectNotExistTask(task navvy.Task) navvy.Task {
+	return NewIsDestinationObjectNotExist(task)
+}
+
 // IsSizeEqualTask will .
 type IsSizeEqualTask struct {
 	// Predefined value
@@ -2531,9 +2601,14 @@ type SyncTask struct {
 	// Input value
 	types.DestinationPath
 	types.DestinationStorage
+	types.DryRun
+	types.DryRunFunc
+	types.Existing
 	types.IgnoreExisting
+	types.Recursive
 	types.SourcePath
 	types.SourceStorage
+	types.Update
 
 	// Output value
 }
@@ -2558,14 +2633,29 @@ func (t *SyncTask) validateInput() {
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task Sync value DestinationStorage is invalid"))
 	}
+	if !t.ValidateDryRun() {
+		panic(fmt.Errorf("Task Sync value DryRun is invalid"))
+	}
+	if !t.ValidateDryRunFunc() {
+		panic(fmt.Errorf("Task Sync value DryRunFunc is invalid"))
+	}
+	if !t.ValidateExisting() {
+		panic(fmt.Errorf("Task Sync value Existing is invalid"))
+	}
 	if !t.ValidateIgnoreExisting() {
 		panic(fmt.Errorf("Task Sync value IgnoreExisting is invalid"))
+	}
+	if !t.ValidateRecursive() {
+		panic(fmt.Errorf("Task Sync value Recursive is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task Sync value SourcePath is invalid"))
 	}
 	if !t.ValidateSourceStorage() {
 		panic(fmt.Errorf("Task Sync value SourceStorage is invalid"))
+	}
+	if !t.ValidateUpdate() {
+		panic(fmt.Errorf("Task Sync value Update is invalid"))
 	}
 }
 
@@ -2575,9 +2665,14 @@ func (t *SyncTask) loadInput(task navvy.Task) {
 	types.LoadPool(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
+	types.LoadDryRun(task, t)
+	types.LoadDryRunFunc(task, t)
+	types.LoadExisting(task, t)
 	types.LoadIgnoreExisting(task, t)
+	types.LoadRecursive(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	types.LoadUpdate(task, t)
 }
 
 // Run implement navvy.Task
@@ -2600,7 +2695,7 @@ func (t *SyncTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SyncTask) String() string {
-	return fmt.Sprintf("SyncTask {DestinationPath: %v, DestinationStorage: %v, IgnoreExisting: %v, SourcePath: %v, SourceStorage: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetIgnoreExisting(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("SyncTask {DestinationPath: %v, DestinationStorage: %v, DryRun: %v, Existing: %v, IgnoreExisting: %v, Recursive: %v, SourcePath: %v, SourceStorage: %v, Update: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetDryRun(), t.GetExisting(), t.GetIgnoreExisting(), t.GetRecursive(), t.GetSourcePath(), t.GetSourceStorage(), t.GetUpdate())
 }
 
 // NewSyncTask will create a SyncTask which meets navvy.Task.

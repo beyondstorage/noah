@@ -33,6 +33,11 @@ func (t *IsDestinationObjectExistTask) run() {
 	t.SetResult(t.GetDestinationObject() != nil)
 }
 
+func (t *IsDestinationObjectNotExistTask) new() {}
+func (t *IsDestinationObjectNotExistTask) run() {
+	t.SetResult(t.GetDestinationObject() == nil)
+}
+
 func (t *IsSizeEqualTask) new() {}
 func (t *IsSizeEqualTask) run() {
 	t.SetResult(t.GetSourceObject().Size == t.GetDestinationObject().Size)
@@ -40,7 +45,10 @@ func (t *IsSizeEqualTask) run() {
 
 func (t *IsUpdateAtGreaterTask) new() {}
 func (t *IsUpdateAtGreaterTask) run() {
-	t.SetResult(
-		t.GetSourceObject().UpdatedAt.After(t.GetDestinationObject().UpdatedAt),
-	)
+	// if destination object not exist, always consider src is newer
+	if t.GetDestinationObject() == nil {
+		t.SetResult(true)
+	} else {
+		t.SetResult(t.GetSourceObject().UpdatedAt.After(t.GetDestinationObject().UpdatedAt))
+	}
 }

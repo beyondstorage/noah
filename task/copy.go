@@ -45,11 +45,11 @@ func (t *CopyFileTask) run() {
 	for _, v := range t.GetCheckTasks() {
 		ct := v(check)
 		t.GetScheduler().Sync(ct)
+		// If either check not pass, do not copy this file.
 		if result := ct.(types.ResultGetter); !result.GetResult() {
-			break
+			return
 		}
-		// If all check passed, we should return directly.
-		return
+		// If all check passed, we should continue do copy works.
 	}
 
 	srcSize := check.GetSourceObject().Size

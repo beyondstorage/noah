@@ -840,6 +840,124 @@ func LoadDone(t navvy.Task, v DoneSetter) {
 	v.SetDone(x.GetDone())
 }
 
+type DryRun struct {
+	valid bool
+	v     bool
+
+	l sync.RWMutex
+}
+
+type DryRunGetter interface {
+	GetDryRun() bool
+}
+
+func (o *DryRun) GetDryRun() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DryRun value is not valid")
+	}
+	return o.v
+}
+
+type DryRunSetter interface {
+	SetDryRun(bool)
+}
+
+func (o *DryRun) SetDryRun(v bool) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DryRunValidator interface {
+	ValidateDryRun() bool
+}
+
+func (o *DryRun) ValidateDryRun() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDryRun(t navvy.Task, v DryRunSetter) {
+	x, ok := t.(interface {
+		DryRunGetter
+		DryRunValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDryRun() {
+		return
+	}
+
+	v.SetDryRun(x.GetDryRun())
+}
+
+type DryRunFunc struct {
+	valid bool
+	v     func(*types.Object)
+
+	l sync.RWMutex
+}
+
+type DryRunFuncGetter interface {
+	GetDryRunFunc() func(*types.Object)
+}
+
+func (o *DryRunFunc) GetDryRunFunc() func(*types.Object) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DryRunFunc value is not valid")
+	}
+	return o.v
+}
+
+type DryRunFuncSetter interface {
+	SetDryRunFunc(func(*types.Object))
+}
+
+func (o *DryRunFunc) SetDryRunFunc(v func(*types.Object)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DryRunFuncValidator interface {
+	ValidateDryRunFunc() bool
+}
+
+func (o *DryRunFunc) ValidateDryRunFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDryRunFunc(t navvy.Task, v DryRunFuncSetter) {
+	x, ok := t.(interface {
+		DryRunFuncGetter
+		DryRunFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDryRunFunc() {
+		return
+	}
+
+	v.SetDryRunFunc(x.GetDryRunFunc())
+}
+
 type EnableBenchmark struct {
 	valid bool
 	v     bool
@@ -897,6 +1015,65 @@ func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
 	}
 
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
+}
+
+type Existing struct {
+	valid bool
+	v     bool
+
+	l sync.RWMutex
+}
+
+type ExistingGetter interface {
+	GetExisting() bool
+}
+
+func (o *Existing) GetExisting() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("Existing value is not valid")
+	}
+	return o.v
+}
+
+type ExistingSetter interface {
+	SetExisting(bool)
+}
+
+func (o *Existing) SetExisting(v bool) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ExistingValidator interface {
+	ValidateExisting() bool
+}
+
+func (o *Existing) ValidateExisting() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadExisting(t navvy.Task, v ExistingSetter) {
+	x, ok := t.(interface {
+		ExistingGetter
+		ExistingValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateExisting() {
+		return
+	}
+
+	v.SetExisting(x.GetExisting())
 }
 
 type ExpectSize struct {
