@@ -135,6 +135,14 @@ func TestIsDestinationObjectExistTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestIsDestinationObjectNotExistTask_TriggerFault(t *testing.T) {
+	task := &IsDestinationObjectNotExistTask{}
+	task.SetFault(fault.New())
+	err := errors.New("test error")
+	task.TriggerFault(err)
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestIsSizeEqualTask_TriggerFault(t *testing.T) {
 	task := &IsSizeEqualTask{}
 	task.SetFault(fault.New())

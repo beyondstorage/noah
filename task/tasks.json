@@ -168,6 +168,15 @@
       "Result"
     ]
   },
+  "IsDestinationObjectNotExist": {
+    "description": "",
+    "input": [
+      "DestinationObject"
+    ],
+    "output": [
+      "Result"
+    ]
+  },
   "IsSizeEqual": {
     "description": "",
     "input": [
@@ -325,9 +334,14 @@
     "input": [
       "DestinationPath",
       "DestinationStorage",
+      "DryRun",
+      "DryRunFunc",
+      "Existing",
       "IgnoreExisting",
+      "Recursive",
       "SourcePath",
-      "SourceStorage"
+      "SourceStorage",
+      "Update"
     ]
   }
 }
