@@ -62,6 +62,7 @@ func (t *DeleteStorageTask) run() {
 			listSegments.SetPath("")
 			listSegments.SetSegmentFunc(func(s *segment.Segment) {
 				sf := NewDeleteSegment(t)
+				sf.SetSegmenter(segmenter)
 				sf.SetSegmentID(s.ID)
 
 				t.GetScheduler().Async(sf)

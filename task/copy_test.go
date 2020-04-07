@@ -133,7 +133,9 @@ func TestCopySmallFileTask_run(t *testing.T) {
 			assert.Equal(t, int64(0), v.GetOffset())
 			v.SetMD5Sum([]byte("string"))
 		case *CopySingleFileTask:
-			assert.Equal(t, []byte("string"), v.GetMD5Sum())
+			// TODO: add md5 sum back after md5check added
+			// assert.Equal(t, []byte("string"), v.GetMD5Sum())
+			assert.Nil(t, v.GetMD5Sum())
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
@@ -297,7 +299,9 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 			assert.Equal(t, int64(512), v.GetOffset())
 			v.SetMD5Sum([]byte("string"))
 		case *SegmentFileCopyTask:
-			assert.Equal(t, []byte("string"), v.GetMD5Sum())
+			// TODO: add md5 sum back after md5check added
+			// assert.Equal(t, []byte("string"), v.GetMD5Sum())
+			assert.Nil(t, v.GetMD5Sum())
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}

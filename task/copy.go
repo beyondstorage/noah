@@ -66,13 +66,14 @@ func (t *CopyFileTask) run() {
 
 func (t *CopySmallFileTask) new() {}
 func (t *CopySmallFileTask) run() {
-	md5Task := NewMD5SumFile(t)
-	utils.ChooseSourceStorage(md5Task, t)
-	md5Task.SetOffset(0)
-	t.GetScheduler().Sync(md5Task)
+	// TODO: add md5 sum back after md5check added
+	// md5Task := NewMD5SumFile(t)
+	// utils.ChooseSourceStorage(md5Task, t)
+	// md5Task.SetOffset(0)
+	// t.GetScheduler().Sync(md5Task)
 
 	fileCopyTask := NewCopySingleFile(t)
-	fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+	fileCopyTask.SetMD5Sum(nil)
 	t.GetScheduler().Sync(fileCopyTask)
 }
 
@@ -135,12 +136,13 @@ func (t *CopyPartialFileTask) new() {
 	}
 }
 func (t *CopyPartialFileTask) run() {
-	md5Task := NewMD5SumFile(t)
-	utils.ChooseSourceStorage(md5Task, t)
-	t.GetScheduler().Sync(md5Task)
+	// TODO: add md5 sum back after md5check added
+	// md5Task := NewMD5SumFile(t)
+	// utils.ChooseSourceStorage(md5Task, t)
+	// t.GetScheduler().Sync(md5Task)
 
 	fileCopyTask := NewSegmentFileCopy(t)
-	fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+	fileCopyTask.SetMD5Sum(nil)
 	err := utils.ChooseDestinationSegmenter(fileCopyTask, t)
 	if err != nil {
 		t.TriggerFault(err)
@@ -220,8 +222,9 @@ func (t *CopyPartialStreamTask) new() {
 	}
 }
 func (t *CopyPartialStreamTask) run() {
-	md5sumTask := NewMD5SumStream(t)
-	t.GetScheduler().Sync(md5sumTask)
+	// TODO: add md5 sum back after md5check added
+	// md5sumTask := NewMD5SumStream(t)
+	// t.GetScheduler().Sync(md5sumTask)
 
 	copyTask := NewSegmentStreamCopy(t)
 	err := utils.ChooseDestinationSegmenter(copyTask, t)
@@ -229,7 +232,7 @@ func (t *CopyPartialStreamTask) run() {
 		t.TriggerFault(err)
 		return
 	}
-	copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
+	copyTask.SetMD5Sum(nil)
 	t.GetScheduler().Sync(copyTask)
 }
 
