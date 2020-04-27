@@ -53,38 +53,56 @@ func ChooseSourceStorage(x interface {
 	x.SetStorage(y.GetSourceStorage())
 }
 
-// ChooseDestinationStorageAsSegmenter will choose the destination storage as a segmenter.
-func ChooseDestinationStorageAsSegmenter(x interface {
+// ChooseSourceStorageAsDirLister will choose the source storage to fill as the dir lister.
+func ChooseSourceStorageAsDirLister(x interface {
 	types.PathSetter
-	types.SegmenterSetter
+	types.DirListerSetter
+}, y interface {
+	types.SourcePathGetter
+	types.SourceStorageGetter
+}) (err error) {
+	x.SetPath(y.GetSourcePath())
+
+	lister, ok := y.GetSourceStorage().(storage.DirLister)
+	if !ok {
+		return types.NewErrStorageInsufficientAbility(nil)
+	}
+	x.SetDirLister(lister)
+	return
+}
+
+// ChooseDestinationStorageAsIndexSegmenter will choose the destination storage as a segmenter.
+func ChooseDestinationStorageAsIndexSegmenter(x interface {
+	types.PathSetter
+	types.IndexSegmenterSetter
 }, y interface {
 	types.DestinationPathGetter
 	types.DestinationStorageGetter
 }) (err error) {
 	x.SetPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.Segmenter)
+	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
-	x.SetSegmenter(segmenter)
+	x.SetIndexSegmenter(segmenter)
 	return
 }
 
-// ChooseDestinationSegmenter will choose the destination storage as a segmenter.
-func ChooseDestinationSegmenter(x interface {
+// ChooseDestinationIndexSegmenter will choose the destination storage as a segmenter.
+func ChooseDestinationIndexSegmenter(x interface {
 	types.DestinationPathSetter
-	types.DestinationSegmenterSetter
+	types.DestinationIndexSegmenterSetter
 }, y interface {
 	types.DestinationPathGetter
 	types.DestinationStorageGetter
 }) (err error) {
 	x.SetDestinationPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.Segmenter)
+	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
-	x.SetDestinationSegmenter(segmenter)
+	x.SetDestinationIndexSegmenter(segmenter)
 	return
 }

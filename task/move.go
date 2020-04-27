@@ -9,7 +9,12 @@ import (
 func (t *MoveDirTask) new() {}
 func (t *MoveDirTask) run() {
 	x := NewListDir(t)
-	utils.ChooseSourceStorage(x, t)
+	err := utils.ChooseSourceStorageAsDirLister(x, t)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewMoveFile(t)
 		sf.SetSourcePath(o.Name)

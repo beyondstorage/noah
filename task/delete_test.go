@@ -6,6 +6,7 @@ import (
 
 	"github.com/Xuanwo/navvy"
 	"github.com/Xuanwo/storage"
+	"github.com/Xuanwo/storage/pkg/segment"
 	"github.com/Xuanwo/storage/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -40,7 +41,7 @@ func TestDeleteDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	store := mock.NewMockStorager(ctrl)
+	store := mock.NewMockDirLister(ctrl)
 	sche := mock.NewMockScheduler(ctrl)
 	path := uuid.New().String()
 
@@ -49,7 +50,7 @@ func TestDeleteDirTask_run(t *testing.T) {
 	task.SetPool(navvy.NewPool(10))
 	task.SetScheduler(sche)
 	task.SetPath(path)
-	task.SetStorage(store)
+	task.SetDirLister(store)
 
 	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 		switch v := task.(type) {
@@ -68,16 +69,16 @@ func TestDeleteSegmentTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	segmenter := mock.NewMockSegmenter(ctrl)
-	segmentID := uuid.New().String()
+	segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
+	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 	task := DeleteSegmentTask{}
 	task.SetFault(fault.New())
-	task.SetSegmenter(segmenter)
-	task.SetSegmentID(segmentID)
+	task.SetPrefixSegmentsLister(segmenter)
+	task.SetSegment(seg)
 
-	segmenter.EXPECT().AbortSegment(gomock.Any()).Do(func(id string) error {
-		assert.Equal(t, segmentID, id)
+	segmenter.EXPECT().AbortSegment(gomock.Any()).Do(func(inputSeg segment.Segment) error {
+		assert.Equal(t, seg, inputSeg)
 		return nil
 	})
 
@@ -154,7 +155,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		sche := mock.NewMockScheduler(ctrl)
 		srv := mock.NewMockServicer(ctrl)
 		store := mock.NewMockStorager(ctrl)
-		segmenter := mock.NewMockSegmenter(ctrl)
+		segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
 		storageName := uuid.New().String()
 
 		task := DeleteStorageTask{}
@@ -173,7 +174,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 			assert.Equal(t, storageName, name)
 			return struct {
 				storage.Storager
-				storage.Segmenter
+				storage.PrefixSegmentsLister
 			}{
 				store,
 				segmenter,

@@ -368,6 +368,65 @@ func LoadDelete(t navvy.Task, v DeleteSetter) {
 	v.SetDelete(x.GetDelete())
 }
 
+type DestinationIndexSegmenter struct {
+	valid bool
+	v     storage.IndexSegmenter
+
+	l sync.RWMutex
+}
+
+type DestinationIndexSegmenterGetter interface {
+	GetDestinationIndexSegmenter() storage.IndexSegmenter
+}
+
+func (o *DestinationIndexSegmenter) GetDestinationIndexSegmenter() storage.IndexSegmenter {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DestinationIndexSegmenter value is not valid")
+	}
+	return o.v
+}
+
+type DestinationIndexSegmenterSetter interface {
+	SetDestinationIndexSegmenter(storage.IndexSegmenter)
+}
+
+func (o *DestinationIndexSegmenter) SetDestinationIndexSegmenter(v storage.IndexSegmenter) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DestinationIndexSegmenterValidator interface {
+	ValidateDestinationIndexSegmenter() bool
+}
+
+func (o *DestinationIndexSegmenter) ValidateDestinationIndexSegmenter() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDestinationIndexSegmenter(t navvy.Task, v DestinationIndexSegmenterSetter) {
+	x, ok := t.(interface {
+		DestinationIndexSegmenterGetter
+		DestinationIndexSegmenterValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDestinationIndexSegmenter() {
+		return
+	}
+
+	v.SetDestinationIndexSegmenter(x.GetDestinationIndexSegmenter())
+}
+
 type DestinationObject struct {
 	valid bool
 	v     *types.Object
@@ -484,65 +543,6 @@ func LoadDestinationPath(t navvy.Task, v DestinationPathSetter) {
 	}
 
 	v.SetDestinationPath(x.GetDestinationPath())
-}
-
-type DestinationSegmenter struct {
-	valid bool
-	v     storage.Segmenter
-
-	l sync.RWMutex
-}
-
-type DestinationSegmenterGetter interface {
-	GetDestinationSegmenter() storage.Segmenter
-}
-
-func (o *DestinationSegmenter) GetDestinationSegmenter() storage.Segmenter {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("DestinationSegmenter value is not valid")
-	}
-	return o.v
-}
-
-type DestinationSegmenterSetter interface {
-	SetDestinationSegmenter(storage.Segmenter)
-}
-
-func (o *DestinationSegmenter) SetDestinationSegmenter(v storage.Segmenter) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type DestinationSegmenterValidator interface {
-	ValidateDestinationSegmenter() bool
-}
-
-func (o *DestinationSegmenter) ValidateDestinationSegmenter() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadDestinationSegmenter(t navvy.Task, v DestinationSegmenterSetter) {
-	x, ok := t.(interface {
-		DestinationSegmenterGetter
-		DestinationSegmenterValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateDestinationSegmenter() {
-		return
-	}
-
-	v.SetDestinationSegmenter(x.GetDestinationSegmenter())
 }
 
 type DestinationService struct {
@@ -779,6 +779,65 @@ func LoadDirFunc(t navvy.Task, v DirFuncSetter) {
 	}
 
 	v.SetDirFunc(x.GetDirFunc())
+}
+
+type DirLister struct {
+	valid bool
+	v     storage.DirLister
+
+	l sync.RWMutex
+}
+
+type DirListerGetter interface {
+	GetDirLister() storage.DirLister
+}
+
+func (o *DirLister) GetDirLister() storage.DirLister {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("DirLister value is not valid")
+	}
+	return o.v
+}
+
+type DirListerSetter interface {
+	SetDirLister(storage.DirLister)
+}
+
+func (o *DirLister) SetDirLister(v storage.DirLister) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type DirListerValidator interface {
+	ValidateDirLister() bool
+}
+
+func (o *DirLister) ValidateDirLister() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadDirLister(t navvy.Task, v DirListerSetter) {
+	x, ok := t.(interface {
+		DirListerGetter
+		DirListerValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateDirLister() {
+		return
+	}
+
+	v.SetDirLister(x.GetDirLister())
 }
 
 type Done struct {
@@ -1548,6 +1607,124 @@ func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
 }
 
+type Index struct {
+	valid bool
+	v     int
+
+	l sync.RWMutex
+}
+
+type IndexGetter interface {
+	GetIndex() int
+}
+
+func (o *Index) GetIndex() int {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("Index value is not valid")
+	}
+	return o.v
+}
+
+type IndexSetter interface {
+	SetIndex(int)
+}
+
+func (o *Index) SetIndex(v int) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type IndexValidator interface {
+	ValidateIndex() bool
+}
+
+func (o *Index) ValidateIndex() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadIndex(t navvy.Task, v IndexSetter) {
+	x, ok := t.(interface {
+		IndexGetter
+		IndexValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateIndex() {
+		return
+	}
+
+	v.SetIndex(x.GetIndex())
+}
+
+type IndexSegmenter struct {
+	valid bool
+	v     storage.IndexSegmenter
+
+	l sync.RWMutex
+}
+
+type IndexSegmenterGetter interface {
+	GetIndexSegmenter() storage.IndexSegmenter
+}
+
+func (o *IndexSegmenter) GetIndexSegmenter() storage.IndexSegmenter {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("IndexSegmenter value is not valid")
+	}
+	return o.v
+}
+
+type IndexSegmenterSetter interface {
+	SetIndexSegmenter(storage.IndexSegmenter)
+}
+
+func (o *IndexSegmenter) SetIndexSegmenter(v storage.IndexSegmenter) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type IndexSegmenterValidator interface {
+	ValidateIndexSegmenter() bool
+}
+
+func (o *IndexSegmenter) ValidateIndexSegmenter() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadIndexSegmenter(t navvy.Task, v IndexSegmenterSetter) {
+	x, ok := t.(interface {
+		IndexSegmenterGetter
+		IndexSegmenterValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateIndexSegmenter() {
+		return
+	}
+
+	v.SetIndexSegmenter(x.GetIndexSegmenter())
+}
+
 type LongFormat struct {
 	valid bool
 	v     bool
@@ -2197,6 +2374,124 @@ func LoadPool(t navvy.Task, v PoolSetter) {
 	v.SetPool(x.GetPool())
 }
 
+type PrefixLister struct {
+	valid bool
+	v     storage.PrefixLister
+
+	l sync.RWMutex
+}
+
+type PrefixListerGetter interface {
+	GetPrefixLister() storage.PrefixLister
+}
+
+func (o *PrefixLister) GetPrefixLister() storage.PrefixLister {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("PrefixLister value is not valid")
+	}
+	return o.v
+}
+
+type PrefixListerSetter interface {
+	SetPrefixLister(storage.PrefixLister)
+}
+
+func (o *PrefixLister) SetPrefixLister(v storage.PrefixLister) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type PrefixListerValidator interface {
+	ValidatePrefixLister() bool
+}
+
+func (o *PrefixLister) ValidatePrefixLister() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadPrefixLister(t navvy.Task, v PrefixListerSetter) {
+	x, ok := t.(interface {
+		PrefixListerGetter
+		PrefixListerValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidatePrefixLister() {
+		return
+	}
+
+	v.SetPrefixLister(x.GetPrefixLister())
+}
+
+type PrefixSegmentsLister struct {
+	valid bool
+	v     storage.PrefixSegmentsLister
+
+	l sync.RWMutex
+}
+
+type PrefixSegmentsListerGetter interface {
+	GetPrefixSegmentsLister() storage.PrefixSegmentsLister
+}
+
+func (o *PrefixSegmentsLister) GetPrefixSegmentsLister() storage.PrefixSegmentsLister {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("PrefixSegmentsLister value is not valid")
+	}
+	return o.v
+}
+
+type PrefixSegmentsListerSetter interface {
+	SetPrefixSegmentsLister(storage.PrefixSegmentsLister)
+}
+
+func (o *PrefixSegmentsLister) SetPrefixSegmentsLister(v storage.PrefixSegmentsLister) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type PrefixSegmentsListerValidator interface {
+	ValidatePrefixSegmentsLister() bool
+}
+
+func (o *PrefixSegmentsLister) ValidatePrefixSegmentsLister() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadPrefixSegmentsLister(t navvy.Task, v PrefixSegmentsListerSetter) {
+	x, ok := t.(interface {
+		PrefixSegmentsListerGetter
+		PrefixSegmentsListerValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidatePrefixSegmentsLister() {
+		return
+	}
+
+	v.SetPrefixSegmentsLister(x.GetPrefixSegmentsLister())
+}
+
 type Reacher struct {
 	valid bool
 	v     storage.Reacher
@@ -2551,18 +2846,77 @@ func LoadScheduler(t navvy.Task, v SchedulerSetter) {
 	v.SetScheduler(x.GetScheduler())
 }
 
+type Segment struct {
+	valid bool
+	v     segment.Segment
+
+	l sync.RWMutex
+}
+
+type SegmentGetter interface {
+	GetSegment() segment.Segment
+}
+
+func (o *Segment) GetSegment() segment.Segment {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("Segment value is not valid")
+	}
+	return o.v
+}
+
+type SegmentSetter interface {
+	SetSegment(segment.Segment)
+}
+
+func (o *Segment) SetSegment(v segment.Segment) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type SegmentValidator interface {
+	ValidateSegment() bool
+}
+
+func (o *Segment) ValidateSegment() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadSegment(t navvy.Task, v SegmentSetter) {
+	x, ok := t.(interface {
+		SegmentGetter
+		SegmentValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateSegment() {
+		return
+	}
+
+	v.SetSegment(x.GetSegment())
+}
+
 type SegmentFunc struct {
 	valid bool
-	v     func(*segment.Segment)
+	v     func(segment.Segment)
 
 	l sync.RWMutex
 }
 
 type SegmentFuncGetter interface {
-	GetSegmentFunc() func(*segment.Segment)
+	GetSegmentFunc() func(segment.Segment)
 }
 
-func (o *SegmentFunc) GetSegmentFunc() func(*segment.Segment) {
+func (o *SegmentFunc) GetSegmentFunc() func(segment.Segment) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -2573,10 +2927,10 @@ func (o *SegmentFunc) GetSegmentFunc() func(*segment.Segment) {
 }
 
 type SegmentFuncSetter interface {
-	SetSegmentFunc(func(*segment.Segment))
+	SetSegmentFunc(func(segment.Segment))
 }
 
-func (o *SegmentFunc) SetSegmentFunc(v func(*segment.Segment)) {
+func (o *SegmentFunc) SetSegmentFunc(v func(segment.Segment)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -2608,124 +2962,6 @@ func LoadSegmentFunc(t navvy.Task, v SegmentFuncSetter) {
 	}
 
 	v.SetSegmentFunc(x.GetSegmentFunc())
-}
-
-type SegmentID struct {
-	valid bool
-	v     string
-
-	l sync.RWMutex
-}
-
-type SegmentIDGetter interface {
-	GetSegmentID() string
-}
-
-func (o *SegmentID) GetSegmentID() string {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("SegmentID value is not valid")
-	}
-	return o.v
-}
-
-type SegmentIDSetter interface {
-	SetSegmentID(string)
-}
-
-func (o *SegmentID) SetSegmentID(v string) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type SegmentIDValidator interface {
-	ValidateSegmentID() bool
-}
-
-func (o *SegmentID) ValidateSegmentID() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadSegmentID(t navvy.Task, v SegmentIDSetter) {
-	x, ok := t.(interface {
-		SegmentIDGetter
-		SegmentIDValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateSegmentID() {
-		return
-	}
-
-	v.SetSegmentID(x.GetSegmentID())
-}
-
-type Segmenter struct {
-	valid bool
-	v     storage.Segmenter
-
-	l sync.RWMutex
-}
-
-type SegmenterGetter interface {
-	GetSegmenter() storage.Segmenter
-}
-
-func (o *Segmenter) GetSegmenter() storage.Segmenter {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("Segmenter value is not valid")
-	}
-	return o.v
-}
-
-type SegmenterSetter interface {
-	SetSegmenter(storage.Segmenter)
-}
-
-func (o *Segmenter) SetSegmenter(v storage.Segmenter) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type SegmenterValidator interface {
-	ValidateSegmenter() bool
-}
-
-func (o *Segmenter) ValidateSegmenter() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadSegmenter(t navvy.Task, v SegmenterSetter) {
-	x, ok := t.(interface {
-		SegmenterGetter
-		SegmenterValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateSegmenter() {
-		return
-	}
-
-	v.SetSegmenter(x.GetSegmenter())
 }
 
 type Service struct {

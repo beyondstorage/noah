@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Xuanwo/navvy"
+	"github.com/Xuanwo/storage"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
@@ -19,13 +20,20 @@ func TestMoveDirTask_run(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		sche := mock.NewMockScheduler(ctrl)
 		srcStore := mock.NewMockStorager(ctrl)
+		srcLister := mock.NewMockDirLister(ctrl)
+		src := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			srcStore, srcLister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 
 		task := MoveDirTask{}
 		task.SetFault(fault.New())
 		task.SetPool(navvy.NewPool(10))
 		task.SetSourcePath("source")
-		task.SetSourceStorage(srcStore)
+		task.SetSourceStorage(src)
 		task.SetDestinationPath("destination")
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)

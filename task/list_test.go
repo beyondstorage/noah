@@ -17,19 +17,19 @@ func TestListDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	store := mock.NewMockStorager(ctrl)
+	store := mock.NewMockDirLister(ctrl)
 	testPath := uuid.New().String()
 
 	task := &ListDirTask{}
 	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
-	task.SetStorage(store)
+	task.SetDirLister(store)
 	task.SetPath(testPath)
 	task.SetDirFunc(func(*typ.Object) {})
 	task.SetFileFunc(func(*typ.Object) {})
 	task.SetObjectFunc(func(*typ.Object) {})
 
-	store.EXPECT().List(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
+	store.EXPECT().ListDir(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
 		assert.Equal(t, testPath, path)
 		return nil
 	})
@@ -42,16 +42,16 @@ func TestListSegmentTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	segmenter := mock.NewMockSegmenter(ctrl)
+	segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
 	testPath := uuid.New().String()
 
 	task := ListSegmentTask{}
 	task.SetFault(fault.New())
-	task.SetSegmenter(segmenter)
+	task.SetPrefixSegmentsLister(segmenter)
 	task.SetPath(testPath)
-	task.SetSegmentFunc(func(segment *segment.Segment) {})
+	task.SetSegmentFunc(func(segment segment.Segment) {})
 
-	segmenter.EXPECT().ListSegments(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
+	segmenter.EXPECT().ListPrefixSegments(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
 		assert.Equal(t, testPath, path)
 		return nil
 	})

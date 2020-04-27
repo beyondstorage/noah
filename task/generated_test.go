@@ -167,6 +167,14 @@ func TestListDirTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestListPrefixTask_TriggerFault(t *testing.T) {
+	task := &ListPrefixTask{}
+	task.SetFault(fault.New())
+	err := errors.New("test error")
+	task.TriggerFault(err)
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestListSegmentTask_TriggerFault(t *testing.T) {
 	task := &ListSegmentTask{}
 	task.SetFault(fault.New())
