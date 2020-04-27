@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/Xuanwo/storage/pkg/segment"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -20,49 +21,47 @@ func TestSegmentInitTask_run(t *testing.T) {
 	defer ctrl.Finish()
 
 	t.Run("normal", func(t *testing.T) {
-		store := mock.NewMockSegmenter(ctrl)
+		store := mock.NewMockIndexSegmenter(ctrl)
 		path := uuid.New().String()
-		segmentID := uuid.New().String()
+		seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 		task := SegmentInitTask{}
-		task.SetSegmenter(store)
+		task.SetIndexSegmenter(store)
 		task.SetPath(path)
 		task.SetPartSize(1000)
 
-		store.EXPECT().InitSegment(gomock.Any(), gomock.Any()).DoAndReturn(
-			func(inputPath string, pairs ...*typ.Pair) (string, error) {
+		store.EXPECT().InitIndexSegment(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(inputPath string, pairs ...*typ.Pair) (segment.Segment, error) {
 				assert.Equal(t, inputPath, path)
-				assert.Equal(t, pairs[0].Value.(int64), int64(1000))
-				return segmentID, nil
+				return seg, nil
 			},
 		)
 
 		task.run()
 
-		assert.Equal(t, segmentID, task.GetSegmentID())
+		assert.Equal(t, seg, task.GetSegment())
 	})
 
 	t.Run("init segment returned error", func(t *testing.T) {
-		store := mock.NewMockSegmenter(ctrl)
+		store := mock.NewMockIndexSegmenter(ctrl)
 		path := uuid.New().String()
 
 		task := SegmentInitTask{}
 		task.SetFault(fault.New())
-		task.SetSegmenter(store)
+		task.SetIndexSegmenter(store)
 		task.SetPath(path)
 		task.SetPartSize(1000)
 
-		store.EXPECT().InitSegment(gomock.Any(), gomock.Any()).DoAndReturn(
+		store.EXPECT().InitIndexSegment(gomock.Any(), gomock.Any()).DoAndReturn(
 			func(inputPath string, pairs ...*typ.Pair) (string, error) {
 				assert.Equal(t, inputPath, path)
-				assert.Equal(t, pairs[0].Value.(int64), int64(1000))
 				return "", errors.New("test")
 			},
 		)
 
 		task.run()
 
-		assert.False(t, task.ValidateSegmentID())
+		assert.False(t, task.ValidateSegment())
 		assert.True(t, task.GetFault().HasError())
 	})
 }
@@ -75,8 +74,8 @@ func TestSegmentFileCopyTask_run(t *testing.T) {
 	srcPath := uuid.New().String()
 	srcReader := mock.NewMockReadCloser(ctrl)
 	srcSize := int64(1024)
-	dstSegmentID := uuid.New().String()
-	dstSegmenter := mock.NewMockSegmenter(ctrl)
+	dstSegment := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
+	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
 	dstPath := uuid.New().String()
 
 	task := SegmentFileCopyTask{}
@@ -85,20 +84,21 @@ func TestSegmentFileCopyTask_run(t *testing.T) {
 	task.SetSourcePath(srcPath)
 	task.SetSourceStorage(srcStore)
 	task.SetDestinationPath(dstPath)
-	task.SetDestinationSegmenter(dstSegmenter)
+	task.SetDestinationIndexSegmenter(dstSegmenter)
 	task.SetSize(srcSize)
 	task.SetOffset(0)
-	task.SetSegmentID(dstSegmentID)
+	task.SetSegment(dstSegment)
+	task.SetIndex(1)
 
 	srcReader.EXPECT().Close()
 	srcStore.EXPECT().Read(gomock.Any(), gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
 		assert.Equal(t, srcPath, path)
 		return srcReader, nil
 	})
-	dstSegmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(path string, offset, size int64, r io.Reader, pair *typ.Pair) (err error) {
-			assert.Equal(t, dstSegmentID, path)
-			assert.Equal(t, int64(0), offset)
+	dstSegmenter.EXPECT().WriteIndexSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(inputSeg segment.Segment, r io.Reader, index int, size int64, pair *typ.Pair) (err error) {
+			assert.Equal(t, dstSegment, inputSeg)
+			assert.Equal(t, 1, index)
 			assert.Equal(t, srcSize, size)
 			return nil
 		})
@@ -112,26 +112,27 @@ func TestSegmentStreamCopyTask_run(t *testing.T) {
 	defer ctrl.Finish()
 
 	srcSize := int64(1024)
-	dstSegmentID := uuid.New().String()
+	dstSegment := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 	dstPath := uuid.New().String()
-	segmenter := mock.NewMockSegmenter(ctrl)
+	segmenter := mock.NewMockIndexSegmenter(ctrl)
 
 	task := SegmentStreamCopyTask{}
 	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetDestinationPath(dstPath)
-	task.SetDestinationSegmenter(segmenter)
+	task.SetDestinationIndexSegmenter(segmenter)
 	task.SetSize(srcSize)
 	task.SetOffset(0)
-	task.SetSegmentID(dstSegmentID)
+	task.SetSegment(dstSegment)
 	task.SetContent(&bytes.Buffer{})
+	task.SetIndex(0)
 
-	segmenter.EXPECT().WriteSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(path string, offset, size int64, r io.Reader, pair *typ.Pair) (err error) {
-			assert.Equal(t, dstSegmentID, path)
-			assert.Equal(t, int64(0), offset)
+	segmenter.EXPECT().WriteIndexSegment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Do(func(inputSeg segment.Segment, r io.Reader, index int, size int64, pair ...*typ.Pair) {
+			assert.Equal(t, dstSegment, inputSeg)
+			assert.Equal(t, 0, index)
 			assert.Equal(t, srcSize, size)
-			return nil
+			return
 		})
 
 	task.run()
@@ -142,16 +143,16 @@ func TestSegmentCompleteTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	dstSegmentID := uuid.New().String()
-	segmenter := mock.NewMockSegmenter(ctrl)
+	dstSegment := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
+	segmenter := mock.NewMockIndexSegmenter(ctrl)
 
 	task := SegmentCompleteTask{}
 	task.SetFault(fault.New())
-	task.SetSegmenter(segmenter)
-	task.SetSegmentID(dstSegmentID)
+	task.SetIndexSegmenter(segmenter)
+	task.SetSegment(dstSegment)
 
-	segmenter.EXPECT().CompleteSegment(gomock.Any()).DoAndReturn(func(path string) (err error) {
-		assert.Equal(t, dstSegmentID, path)
+	segmenter.EXPECT().CompleteSegment(gomock.Any()).DoAndReturn(func(seg segment.Segment) (err error) {
+		assert.Equal(t, dstSegment, seg)
 		return nil
 	})
 

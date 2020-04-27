@@ -10,6 +10,7 @@ import (
 	"bou.ke/monkey"
 	"github.com/Xuanwo/navvy"
 	"github.com/Xuanwo/storage"
+	"github.com/Xuanwo/storage/pkg/segment"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -26,7 +27,14 @@ func TestCopyDirTask_run(t *testing.T) {
 
 	t.Run("normal", func(t *testing.T) {
 		sche := mock.NewMockScheduler(ctrl)
-		srcStore := mock.NewMockStorager(ctrl)
+		store := mock.NewMockStorager(ctrl)
+		lister := mock.NewMockDirLister(ctrl)
+		srcStore := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			store, lister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 
 		task := CopyDirTask{}
@@ -37,6 +45,7 @@ func TestCopyDirTask_run(t *testing.T) {
 		task.SetDestinationPath("destination")
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
+		task.SetCheckTasks(nil)
 
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			_, ok := task.(*ListDirTask)
@@ -151,9 +160,9 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 	srcStore := mock.NewMockStorager(ctrl)
 	srcPath := uuid.New().String()
 	dstStore := mock.NewMockStorager(ctrl)
-	dstSegmenter := mock.NewMockSegmenter(ctrl)
+	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
 	dstPath := uuid.New().String()
-	segmentID := uuid.New().String()
+	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 	task := &CopyLargeFileTask{}
 	task.SetID(uuid.New().String())
@@ -163,7 +172,7 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 	task.SetDestinationPath(dstPath)
 	task.SetDestinationStorage(struct {
 		storage.Storager
-		storage.Segmenter
+		storage.IndexSegmenter
 	}{
 		dstStore,
 		dstSegmenter,
@@ -177,10 +186,10 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 		switch v := task.(type) {
 		case *SegmentInitTask:
 			assert.Equal(t, dstPath, v.GetPath())
-			v.SetSegmentID(segmentID)
+			v.SetSegment(seg)
 		case *SegmentCompleteTask:
 			assert.Equal(t, dstPath, v.GetPath())
-			assert.Equal(t, segmentID, v.GetSegmentID())
+			assert.Equal(t, seg, v.GetSegment())
 		default:
 			panic(fmt.Errorf("invalid task %v", v))
 		}
@@ -190,7 +199,7 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 		case *CopyPartialFileTask:
 			assert.Equal(t, srcPath, v.GetSourcePath())
 			assert.Equal(t, dstPath, v.GetDestinationPath())
-			assert.Equal(t, segmentID, v.GetSegmentID())
+			assert.Equal(t, seg, v.GetSegment())
 			v.SetDone(true)
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
@@ -263,9 +272,9 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	srcStore := mock.NewMockStorager(ctrl)
 	srcPath := uuid.New().String()
 	dstStore := mock.NewMockStorager(ctrl)
-	dstSegmenter := mock.NewMockSegmenter(ctrl)
+	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
 	dstPath := uuid.New().String()
-	segmentID := uuid.New().String()
+	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 	task := &CopyPartialFileTask{}
 	task.SetFault(fault.New())
@@ -275,7 +284,7 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	task.SetDestinationPath(dstPath)
 	task.SetDestinationStorage(struct {
 		storage.Storager
-		storage.Segmenter
+		storage.IndexSegmenter
 	}{
 		dstStore,
 		dstSegmenter,
@@ -283,7 +292,8 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	task.SetScheduler(sche)
 	task.SetSize(1024)
 	task.SetOffset(512)
-	task.SetSegmentID(segmentID)
+	task.SetIndex(1)
+	task.SetSegment(seg)
 
 	srcStore.EXPECT().String().DoAndReturn(func() string { return "src" }).AnyTimes()
 	dstStore.EXPECT().String().DoAndReturn(func() string { return "dst" }).AnyTimes()
@@ -323,9 +333,9 @@ func TestCopyStreamTask_run(t *testing.T) {
 	srcStore := mock.NewMockStorager(ctrl)
 	srcPath := uuid.New().String()
 	dstStore := mock.NewMockStorager(ctrl)
-	dstSegmenter := mock.NewMockSegmenter(ctrl)
+	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
 	dstPath := uuid.New().String()
-	segmentID := uuid.New().String()
+	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 	task := &CopyStreamTask{}
 	task.new()
@@ -336,7 +346,7 @@ func TestCopyStreamTask_run(t *testing.T) {
 	task.SetDestinationPath(dstPath)
 	task.SetDestinationStorage(struct {
 		storage.Storager
-		storage.Segmenter
+		storage.IndexSegmenter
 	}{
 		dstStore,
 		dstSegmenter,
@@ -348,10 +358,10 @@ func TestCopyStreamTask_run(t *testing.T) {
 		switch v := task.(type) {
 		case *SegmentInitTask:
 			assert.Equal(t, dstPath, v.GetPath())
-			v.SetSegmentID(segmentID)
+			v.SetSegment(seg)
 		case *SegmentCompleteTask:
 			assert.Equal(t, dstPath, v.GetPath())
-			assert.Equal(t, segmentID, v.GetSegmentID())
+			assert.Equal(t, seg, v.GetSegment())
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
@@ -360,7 +370,7 @@ func TestCopyStreamTask_run(t *testing.T) {
 		switch v := task.(type) {
 		case *CopyPartialStreamTask:
 			assert.Equal(t, dstPath, v.GetDestinationPath())
-			assert.Equal(t, segmentID, v.GetSegmentID())
+			assert.Equal(t, seg, v.GetSegment())
 			v.SetDone(true)
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
@@ -413,8 +423,8 @@ func TestCopyPartialStreamTask_run(t *testing.T) {
 	sche := mock.NewMockScheduler(ctrl)
 	dstPath := uuid.New().String()
 	dstStore := mock.NewMockStorager(ctrl)
-	dstSegmenter := mock.NewMockSegmenter(ctrl)
-	segmentID := uuid.New().String()
+	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
+	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
 	task := CopyPartialStreamTask{}
 	task.SetPool(navvy.NewPool(10))
@@ -423,15 +433,16 @@ func TestCopyPartialStreamTask_run(t *testing.T) {
 	task.SetDestinationPath(dstPath)
 	task.SetDestinationStorage(struct {
 		storage.Storager
-		storage.Segmenter
+		storage.IndexSegmenter
 	}{
 		dstStore,
 		dstSegmenter,
 	})
 	task.SetContent(bytes.NewBuffer(nil))
 	task.SetOffset(0)
-	task.SetSegmentID(segmentID)
+	task.SetSegment(seg)
 	task.SetSize(0)
+	task.SetIndex(1)
 
 	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 		switch v := task.(type) {

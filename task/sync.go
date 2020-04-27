@@ -11,7 +11,12 @@ import (
 func (t *SyncTask) new() {}
 func (t *SyncTask) run() {
 	x := NewListDir(t)
-	utils.ChooseSourceStorage(x, t)
+	err := utils.ChooseSourceStorageAsDirLister(x, t)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+
 	if t.GetRecursive() {
 		x.SetDirFunc(func(o *typ.Object) {
 			sf := NewSync(t)

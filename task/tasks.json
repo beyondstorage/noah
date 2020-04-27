@@ -44,7 +44,7 @@
     "output": [
       "Offset",
       "PartSize",
-      "SegmentID"
+      "Segment"
     ]
   },
   "CopyPartialFile": {
@@ -52,9 +52,10 @@
     "input": [
       "DestinationPath",
       "DestinationStorage",
+      "Index",
       "Offset",
       "PartSize",
-      "SegmentID",
+      "Segment",
       "SourcePath",
       "SourceStorage",
       "TotalSize"
@@ -70,8 +71,9 @@
       "BytesPool",
       "DestinationPath",
       "DestinationStorage",
+      "Index",
       "PartSize",
-      "SegmentID",
+      "Segment",
       "SourcePath",
       "SourceStorage"
     ],
@@ -117,7 +119,7 @@
     "output": [
       "BytesPool",
       "PartSize",
-      "SegmentID"
+      "Segment"
     ]
   },
   "CreateStorage": {
@@ -133,8 +135,8 @@
   "DeleteDir": {
     "description": "will delete a dir recursively",
     "input": [
-      "Path",
-      "Storage"
+      "DirLister",
+      "Path"
     ]
   },
   "DeleteFile": {
@@ -147,8 +149,8 @@
   "DeleteSegment": {
     "description": "delete all segments with a given path",
     "input": [
-      "SegmentID",
-      "Segmenter"
+      "PrefixSegmentsLister",
+      "Segment"
     ]
   },
   "DeleteStorage": {
@@ -200,8 +202,20 @@
   "ListDir": {
     "description": "list dirs",
     "input": [
+      "DirLister",
+      "Path"
+    ],
+    "output": [
+      "DirFunc",
+      "FileFunc",
+      "ObjectFunc"
+    ]
+  },
+  "ListPrefix": {
+    "description": "list prefix",
+    "input": [
       "Path",
-      "Storage"
+      "PrefixLister"
     ],
     "output": [
       "DirFunc",
@@ -213,8 +227,8 @@
     "description": "list segments",
     "input": [
       "Path",
-      "SegmentFunc",
-      "Segmenter"
+      "PrefixSegmentsLister",
+      "SegmentFunc"
     ]
   },
   "ListStorage": {
@@ -278,19 +292,20 @@
   "SegmentComplete": {
     "description": "complete a segment",
     "input": [
+      "IndexSegmenter",
       "Path",
-      "SegmentID",
-      "Segmenter"
+      "Segment"
     ]
   },
   "SegmentFileCopy": {
     "description": "copy a segment file",
     "input": [
+      "DestinationIndexSegmenter",
       "DestinationPath",
-      "DestinationSegmenter",
+      "Index",
       "MD5Sum",
       "Offset",
-      "SegmentID",
+      "Segment",
       "Size",
       "SourcePath",
       "SourceStorage"
@@ -299,23 +314,24 @@
   "SegmentInit": {
     "description": "init a segment upload",
     "input": [
+      "IndexSegmenter",
       "PartSize",
-      "Path",
-      "Segmenter"
+      "Path"
     ],
     "output": [
-      "SegmentID"
+      "Segment"
     ]
   },
   "SegmentStreamCopy": {
     "description": "copy a segment stream",
     "input": [
       "Content",
+      "DestinationIndexSegmenter",
       "DestinationPath",
-      "DestinationSegmenter",
+      "Index",
       "MD5Sum",
       "Offset",
-      "SegmentID",
+      "Segment",
       "Size"
     ]
   },

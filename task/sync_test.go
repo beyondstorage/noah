@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Xuanwo/navvy"
+	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -21,6 +22,13 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche := mock.NewMockScheduler(ctrl)
 		srcStore := mock.NewMockStorager(ctrl)
+		srcLister := mock.NewMockDirLister(ctrl)
+		src := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			srcStore, srcLister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 		sourcePath := uuid.New().String()
 		dstPath := uuid.New().String()
@@ -30,7 +38,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
 		task.SetSourcePath(sourcePath)
-		task.SetSourceStorage(srcStore)
+		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
 		task.SetDryRun(false)
@@ -40,6 +48,8 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetRecursive(false)
 		task.SetUpdate(false)
 
+		srcStore.EXPECT().String().Do(func() {}).AnyTimes()
+		dstStore.EXPECT().String().Do(func() {}).AnyTimes()
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
@@ -59,6 +69,13 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche := mock.NewMockScheduler(ctrl)
 		srcStore := mock.NewMockStorager(ctrl)
+		srcLister := mock.NewMockDirLister(ctrl)
+		src := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			srcStore, srcLister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 		sourcePath := uuid.New().String()
 		dstPath := uuid.New().String()
@@ -68,7 +85,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
 		task.SetSourcePath(sourcePath)
-		task.SetSourceStorage(srcStore)
+		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
 		task.SetDryRun(false)
@@ -97,6 +114,13 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche := mock.NewMockScheduler(ctrl)
 		srcStore := mock.NewMockStorager(ctrl)
+		srcLister := mock.NewMockDirLister(ctrl)
+		src := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			srcStore, srcLister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 		sourcePath := uuid.New().String()
 		dstPath := uuid.New().String()
@@ -106,7 +130,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
 		task.SetSourcePath(sourcePath)
-		task.SetSourceStorage(srcStore)
+		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
 		task.SetDryRun(true)
@@ -137,6 +161,13 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche := mock.NewMockScheduler(ctrl)
 		srcStore := mock.NewMockStorager(ctrl)
+		srcLister := mock.NewMockDirLister(ctrl)
+		src := struct {
+			storage.Storager
+			storage.DirLister
+		}{
+			srcStore, srcLister,
+		}
 		dstStore := mock.NewMockStorager(ctrl)
 		sourcePath := uuid.New().String()
 		dstPath := uuid.New().String()
@@ -146,7 +177,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
 		task.SetSourcePath(sourcePath)
-		task.SetSourceStorage(srcStore)
+		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
 		task.SetDryRun(true)

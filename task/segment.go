@@ -11,13 +11,12 @@ import (
 
 func (t *SegmentInitTask) new() {}
 func (t *SegmentInitTask) run() {
-	id, err := t.GetSegmenter().InitSegment(t.GetPath(),
-		pairs.WithPartSize(t.GetPartSize()))
+	seg, err := t.GetIndexSegmenter().InitIndexSegment(t.GetPath())
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
-	t.SetSegmentID(id)
+	t.SetSegment(seg)
 }
 
 func (t *SegmentFileCopyTask) new() {}
@@ -32,7 +31,8 @@ func (t *SegmentFileCopyTask) run() {
 	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), "copy file part:", t.GetSize()))
 	// TODO: Add checksum support.
 	writeDone := 0
-	err = t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), r,
+	seg := t.GetSegment()
+	err = t.GetDestinationIndexSegmenter().WriteIndexSegment(seg, r, t.GetIndex(), t.GetSize(),
 		pairs.WithReadCallbackFunc(func(b []byte) {
 			writeDone += len(b)
 			progress.UpdateState(t.GetID(), int64(writeDone))
@@ -49,7 +49,8 @@ func (t *SegmentStreamCopyTask) run() {
 	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), "copy stream part:", t.GetSize()))
 	// TODO: Add checksum support
 	writeDone := 0
-	err := t.GetDestinationSegmenter().WriteSegment(t.GetSegmentID(), t.GetOffset(), t.GetSize(), ioutil.NopCloser(t.GetContent()),
+	err := t.GetDestinationIndexSegmenter().WriteIndexSegment(t.GetSegment(), ioutil.NopCloser(t.GetContent()),
+		t.GetIndex(), t.GetSize(),
 		pairs.WithReadCallbackFunc(func(b []byte) {
 			writeDone += len(b)
 			progress.UpdateState(t.GetID(), int64(writeDone))
@@ -62,7 +63,7 @@ func (t *SegmentStreamCopyTask) run() {
 
 func (t *SegmentCompleteTask) new() {}
 func (t *SegmentCompleteTask) run() {
-	err := t.GetSegmenter().CompleteSegment(t.GetSegmentID())
+	err := t.GetIndexSegmenter().CompleteSegment(t.GetSegment())
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return

@@ -34,7 +34,7 @@ func (t *DeleteDirTask) run() {
 
 func (t *DeleteSegmentTask) new() {}
 func (t *DeleteSegmentTask) run() {
-	if err := t.GetSegmenter().AbortSegment(t.GetSegmentID()); err != nil {
+	if err := t.GetPrefixSegmentsLister().AbortSegment(t.GetSegment()); err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
@@ -49,20 +49,23 @@ func (t *DeleteStorageTask) run() {
 			return
 		}
 
-		deleteDir := NewDeleteDir(t)
-		deleteDir.SetPath("")
-		deleteDir.SetStorage(store)
+		lister, ok := store.(storage.DirLister)
+		if ok {
+			deleteDir := NewDeleteDir(t)
+			deleteDir.SetPath("")
+			deleteDir.SetDirLister(lister)
 
-		t.GetScheduler().Async(deleteDir)
+			t.GetScheduler().Async(deleteDir)
+		}
 
-		segmenter, ok := store.(storage.Segmenter)
+		segmenter, ok := store.(storage.PrefixSegmentsLister)
 		if ok {
 			listSegments := NewListSegment(t)
-			listSegments.SetSegmenter(segmenter)
+			listSegments.SetPrefixSegmentsLister(segmenter)
 			listSegments.SetPath("")
-			listSegments.SetSegmentFunc(func(s *segment.Segment) {
+			listSegments.SetSegmentFunc(func(s segment.Segment) {
 				sf := NewDeleteSegment(t)
-				sf.SetSegmentID(s.ID)
+				sf.SetSegment(s)
 
 				t.GetScheduler().Async(sf)
 			})

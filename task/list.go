@@ -26,7 +26,34 @@ func (t *ListDirTask) run() {
 	if t.ValidateObjectFunc() {
 		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
 	}
-	err := t.GetStorage().List(
+	err := t.GetDirLister().ListDir(
+		t.GetPath(), ps...,
+	)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+}
+
+func (t *ListPrefixTask) new() {
+	t.SetCallbackFunc(func(types.IDGetter) {
+		progress.FinishState(t.GetID())
+	})
+}
+
+func (t *ListPrefixTask) run() {
+	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
+	ps := make([]*typ.Pair, 0)
+	if t.ValidateDirFunc() {
+		ps = append(ps, pairs.WithDirFunc(t.GetDirFunc()))
+	}
+	if t.ValidateFileFunc() {
+		ps = append(ps, pairs.WithFileFunc(t.GetFileFunc()))
+	}
+	if t.ValidateObjectFunc() {
+		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
+	}
+	err := t.GetPrefixLister().ListPrefix(
 		t.GetPath(), ps...,
 	)
 	if err != nil {
@@ -37,7 +64,7 @@ func (t *ListDirTask) run() {
 
 func (t *ListSegmentTask) new() {}
 func (t *ListSegmentTask) run() {
-	err := t.GetSegmenter().ListSegments(t.GetPath(),
+	err := t.GetPrefixSegmentsLister().ListPrefixSegments(t.GetPath(),
 		pairs.WithSegmentFunc(t.GetSegmentFunc()))
 	if err != nil {
 		t.TriggerFault(err)

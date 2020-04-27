@@ -17,7 +17,12 @@ import (
 func (t *CopyDirTask) new() {}
 func (t *CopyDirTask) run() {
 	x := NewListDir(t)
-	utils.ChooseSourceStorage(x, t)
+	err := utils.ChooseSourceStorageAsDirLister(x, t)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewCopyFile(t)
 		sf.SetSourcePath(o.Name)
@@ -87,18 +92,17 @@ func (t *CopyLargeFileTask) run() {
 	t.SetPartSize(partSize)
 
 	initTask := NewSegmentInit(t)
-	err = utils.ChooseDestinationStorageAsSegmenter(initTask, t)
+	err = utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 
 	t.GetScheduler().Sync(initTask)
-	t.SetSegmentID(initTask.GetSegmentID())
+	t.SetSegment(initTask.GetSegment())
 
-	offset, part, doneCount := int64(0), int64(0), int64(0)
+	offset, part, doneCount := int64(0), 0, int64(0)
 	for {
-		part++
 		t.SetOffset(offset)
 
 		x := NewCopyPartialFile(t)
@@ -106,6 +110,7 @@ func (t *CopyLargeFileTask) run() {
 			doneCount++
 			progress.UpdateState(t.GetID(), doneCount)
 		})
+		x.SetIndex(part)
 		t.GetScheduler().Async(x)
 		// While GetDone is true, this must be the last part.
 		if x.GetDone() {
@@ -113,8 +118,9 @@ func (t *CopyLargeFileTask) run() {
 		}
 
 		offset += x.GetSize()
+		part++
 	}
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy part:", part))
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy part:", int64(part)))
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
@@ -141,7 +147,7 @@ func (t *CopyPartialFileTask) run() {
 
 	fileCopyTask := NewSegmentFileCopy(t)
 	fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
-	err := utils.ChooseDestinationSegmenter(fileCopyTask, t)
+	err := utils.ChooseDestinationIndexSegmenter(fileCopyTask, t)
 	if err != nil {
 		t.TriggerFault(err)
 		return
@@ -159,7 +165,7 @@ func (t *CopyStreamTask) new() {
 }
 func (t *CopyStreamTask) run() {
 	initTask := NewSegmentInit(t)
-	err := utils.ChooseDestinationStorageAsSegmenter(initTask, t)
+	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -170,25 +176,27 @@ func (t *CopyStreamTask) run() {
 	t.SetPartSize(partSize)
 
 	t.GetScheduler().Sync(initTask)
-	t.SetSegmentID(initTask.GetSegmentID())
+	t.SetSegment(initTask.GetSegment())
 
-	offset, part, doneCount := int64(0), int64(0), int64(0)
+	offset, part, doneCount := int64(0), 0, int64(0)
 	for {
-		part++
 		x := NewCopyPartialStream(t)
 		x.SetOffset(offset)
 		x.SetCallbackFunc(func(types.IDGetter) {
 			doneCount++
 			progress.UpdateState(t.GetID(), doneCount)
 		})
+		x.SetIndex(part)
 		t.GetScheduler().Async(x)
 
 		if x.GetDone() {
 			break
 		}
+
 		offset += x.GetSize()
+		part++
 	}
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy stream part:", part))
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy stream part:", int64(part)))
 
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
@@ -224,7 +232,7 @@ func (t *CopyPartialStreamTask) run() {
 	t.GetScheduler().Sync(md5sumTask)
 
 	copyTask := NewSegmentStreamCopy(t)
-	err := utils.ChooseDestinationSegmenter(copyTask, t)
+	err := utils.ChooseDestinationIndexSegmenter(copyTask, t)
 	if err != nil {
 		t.TriggerFault(err)
 		return
