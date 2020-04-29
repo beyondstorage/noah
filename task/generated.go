@@ -591,7 +591,7 @@ func NewCopyPartialStreamTask(task navvy.Task) navvy.Task {
 	return NewCopyPartialStream(task)
 }
 
-// CopySingleFileTask will execute a file copy operation between towo storager.
+// CopySingleFileTask will execute a file copy operation between two storager.
 type CopySingleFileTask struct {
 	// Predefined value
 	types.Fault
@@ -1534,13 +1534,12 @@ type ListDirTask struct {
 	types.CallbackFunc
 
 	// Input value
+	types.DirFunc
 	types.DirLister
+	types.FileFunc
 	types.Path
 
 	// Output value
-	types.DirFunc
-	types.FileFunc
-	types.ObjectFunc
 }
 
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
@@ -1557,8 +1556,14 @@ func NewListDir(task navvy.Task) *ListDirTask {
 
 // validateInput will validate all input before run task.
 func (t *ListDirTask) validateInput() {
+	if !t.ValidateDirFunc() {
+		panic(fmt.Errorf("Task ListDir value DirFunc is invalid"))
+	}
 	if !t.ValidateDirLister() {
 		panic(fmt.Errorf("Task ListDir value DirLister is invalid"))
+	}
+	if !t.ValidateFileFunc() {
+		panic(fmt.Errorf("Task ListDir value FileFunc is invalid"))
 	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListDir value Path is invalid"))
@@ -1569,7 +1574,9 @@ func (t *ListDirTask) validateInput() {
 func (t *ListDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+	types.LoadDirFunc(task, t)
 	types.LoadDirLister(task, t)
+	types.LoadFileFunc(task, t)
 	types.LoadPath(task, t)
 }
 
@@ -1611,13 +1618,11 @@ type ListPrefixTask struct {
 	types.CallbackFunc
 
 	// Input value
+	types.ObjectFunc
 	types.Path
 	types.PrefixLister
 
 	// Output value
-	types.DirFunc
-	types.FileFunc
-	types.ObjectFunc
 }
 
 // NewListPrefix will create a ListPrefixTask struct and fetch inherited data from parent task.
@@ -1634,6 +1639,9 @@ func NewListPrefix(task navvy.Task) *ListPrefixTask {
 
 // validateInput will validate all input before run task.
 func (t *ListPrefixTask) validateInput() {
+	if !t.ValidateObjectFunc() {
+		panic(fmt.Errorf("Task ListPrefix value ObjectFunc is invalid"))
+	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListPrefix value Path is invalid"))
 	}
@@ -1646,6 +1654,7 @@ func (t *ListPrefixTask) validateInput() {
 func (t *ListPrefixTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+	types.LoadObjectFunc(task, t)
 	types.LoadPath(task, t)
 	types.LoadPrefixLister(task, t)
 }

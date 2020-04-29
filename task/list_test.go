@@ -27,9 +27,31 @@ func TestListDirTask_run(t *testing.T) {
 	task.SetPath(testPath)
 	task.SetDirFunc(func(*typ.Object) {})
 	task.SetFileFunc(func(*typ.Object) {})
-	task.SetObjectFunc(func(*typ.Object) {})
 
 	store.EXPECT().ListDir(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
+		assert.Equal(t, testPath, path)
+		return nil
+	})
+
+	task.run()
+	assert.Empty(t, task.GetFault().Error())
+}
+
+func TestListPrefixTask_run(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	store := mock.NewMockPrefixLister(ctrl)
+	testPath := uuid.New().String()
+
+	task := &ListPrefixTask{}
+	task.SetID(uuid.New().String())
+	task.SetFault(fault.New())
+	task.SetPrefixLister(store)
+	task.SetPath(testPath)
+	task.SetObjectFunc(func(*typ.Object) {})
+
+	store.EXPECT().ListPrefix(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
 		assert.Equal(t, testPath, path)
 		return nil
 	})
