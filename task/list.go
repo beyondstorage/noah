@@ -2,7 +2,6 @@ package task
 
 import (
 	"github.com/Xuanwo/storage"
-	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
 
 	"github.com/qingstor/noah/pkg/progress"
@@ -16,19 +15,8 @@ func (t *ListDirTask) new() {
 }
 func (t *ListDirTask) run() {
 	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
-	ps := make([]*typ.Pair, 0)
-	if t.ValidateDirFunc() {
-		ps = append(ps, pairs.WithDirFunc(t.GetDirFunc()))
-	}
-	if t.ValidateFileFunc() {
-		ps = append(ps, pairs.WithFileFunc(t.GetFileFunc()))
-	}
-	if t.ValidateObjectFunc() {
-		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
-	}
 	err := t.GetDirLister().ListDir(
-		t.GetPath(), ps...,
-	)
+		t.GetPath(), pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
 	if err != nil {
 		t.TriggerFault(err)
 		return
@@ -43,19 +31,8 @@ func (t *ListPrefixTask) new() {
 
 func (t *ListPrefixTask) run() {
 	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
-	ps := make([]*typ.Pair, 0)
-	if t.ValidateDirFunc() {
-		ps = append(ps, pairs.WithDirFunc(t.GetDirFunc()))
-	}
-	if t.ValidateFileFunc() {
-		ps = append(ps, pairs.WithFileFunc(t.GetFileFunc()))
-	}
-	if t.ValidateObjectFunc() {
-		ps = append(ps, pairs.WithObjectFunc(t.GetObjectFunc()))
-	}
 	err := t.GetPrefixLister().ListPrefix(
-		t.GetPath(), ps...,
-	)
+		t.GetPath(), pairs.WithObjectFunc(t.GetObjectFunc()))
 	if err != nil {
 		t.TriggerFault(err)
 		return
@@ -74,9 +51,10 @@ func (t *ListSegmentTask) run() {
 
 func (t *ListStorageTask) new() {}
 func (t *ListStorageTask) run() {
-	err := t.GetService().List(pairs.WithLocation(t.GetZone()), pairs.WithStoragerFunc(func(storager storage.Storager) {
-		t.GetStoragerFunc()(storager)
-	}))
+	err := t.GetService().List(pairs.WithLocation(t.GetZone()),
+		pairs.WithStoragerFunc(func(storager storage.Storager) {
+			t.GetStoragerFunc()(storager)
+		}))
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return

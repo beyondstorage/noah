@@ -85,7 +85,7 @@
     ]
   },
   "CopySingleFile": {
-    "description": "execute a file copy operation between towo storager",
+    "description": "execute a file copy operation between two storager",
     "input": [
       "DestinationPath",
       "DestinationStorage",
@@ -202,25 +202,18 @@
   "ListDir": {
     "description": "list dirs",
     "input": [
-      "DirLister",
-      "Path"
-    ],
-    "output": [
       "DirFunc",
+      "DirLister",
       "FileFunc",
-      "ObjectFunc"
+      "Path"
     ]
   },
   "ListPrefix": {
     "description": "list prefix",
     "input": [
+      "ObjectFunc",
       "Path",
       "PrefixLister"
-    ],
-    "output": [
-      "DirFunc",
-      "FileFunc",
-      "ObjectFunc"
     ]
   },
   "ListSegment": {
