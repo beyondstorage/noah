@@ -53,6 +53,8 @@ func TestSyncTask_run(t *testing.T) {
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
+				v.SetDirFunc(nil)
+				v.SetFileFunc(nil)
 				v.validateInput()
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
@@ -98,6 +100,8 @@ func TestSyncTask_run(t *testing.T) {
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
+				v.SetFileFunc(nil)
+				v.SetDirFunc(nil)
 				v.validateInput()
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
@@ -145,6 +149,8 @@ func TestSyncTask_run(t *testing.T) {
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
+				v.SetDirFunc(nil)
+				v.SetFileFunc(nil)
 				v.validateInput()
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
@@ -192,6 +198,8 @@ func TestSyncTask_run(t *testing.T) {
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
+				v.SetDirFunc(nil)
+				v.SetFileFunc(nil)
 				v.validateInput()
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
