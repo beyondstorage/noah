@@ -6,6 +6,7 @@ import (
 	typ "github.com/Xuanwo/storage/types"
 
 	"github.com/qingstor/noah/pkg/types"
+	"github.com/qingstor/noah/utils"
 )
 
 func (t *DeleteFileTask) new() {}
@@ -19,16 +20,53 @@ func (t *DeleteFileTask) run() {
 func (t *DeleteDirTask) new() {}
 func (t *DeleteDirTask) run() {
 	x := NewListDir(t)
+	err := utils.ChooseStorageAsDirLister(x, t)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleObjCallback()(o)
+			})
+		}
 		t.GetScheduler().Async(sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewDeleteDir(t)
 		sf.SetPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		}
 		t.GetScheduler().Sync(sf)
 	})
+	t.GetScheduler().Sync(x)
+}
+
+func (t *DeletePrefixTask) new() {}
+func (t *DeletePrefixTask) run() {
+	x := NewListPrefix(t)
+	err := utils.ChooseStorageAsPrefixLister(x, t)
+	if err != nil {
+		t.TriggerFault(err)
+		return
+	}
+
+	x.SetObjectFunc(func(o *typ.Object) {
+		sf := NewDeleteFile(t)
+		sf.SetPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleObjCallback()(o)
+			})
+		}
+		t.GetScheduler().Async(sf)
+	})
+
 	t.GetScheduler().Sync(x)
 }
 
@@ -49,14 +87,14 @@ func (t *DeleteStorageTask) run() {
 			return
 		}
 
-		lister, ok := store.(storage.DirLister)
-		if ok {
-			deleteDir := NewDeleteDir(t)
-			deleteDir.SetPath("")
-			deleteDir.SetDirLister(lister)
-
-			t.GetScheduler().Async(deleteDir)
+		deletePrefix := NewDeletePrefix(t)
+		deletePrefix.SetPath("")
+		deletePrefix.SetStorage(store)
+		if t.ValidateHandleObjCallback() {
+			deletePrefix.SetHandleObjCallback(t.GetHandleObjCallback())
 		}
+
+		t.GetScheduler().Async(deletePrefix)
 
 		segmenter, ok := store.(storage.PrefixSegmentsLister)
 		if ok {
@@ -65,8 +103,13 @@ func (t *DeleteStorageTask) run() {
 			listSegments.SetPath("")
 			listSegments.SetSegmentFunc(func(s segment.Segment) {
 				sf := NewDeleteSegment(t)
+				sf.SetPrefixSegmentsLister(segmenter)
 				sf.SetSegment(s)
-
+				if t.ValidateHandleSegmentCallback() {
+					sf.SetCallbackFunc(func() {
+						t.GetHandleSegmentCallback()(s)
+					})
+				}
 				t.GetScheduler().Async(sf)
 			})
 

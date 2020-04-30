@@ -41,7 +41,14 @@ func TestDeleteDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	store := mock.NewMockDirLister(ctrl)
+	mixer := struct {
+		storage.Storager
+		storage.DirLister
+	}{
+		mock.NewMockStorager(ctrl),
+		mock.NewMockDirLister(ctrl),
+	}
+
 	sche := mock.NewMockScheduler(ctrl)
 	path := uuid.New().String()
 
@@ -50,11 +57,46 @@ func TestDeleteDirTask_run(t *testing.T) {
 	task.SetPool(navvy.NewPool(10))
 	task.SetScheduler(sche)
 	task.SetPath(path)
-	task.SetDirLister(store)
+	task.SetStorage(mixer)
 
 	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 		switch v := task.(type) {
 		case *ListDirTask:
+			v.validateInput()
+		default:
+			panic(fmt.Errorf("unexpected task %v", v))
+		}
+	}).AnyTimes()
+
+	task.run()
+	assert.Empty(t, task.GetFault().Error())
+}
+
+func TestDeletePrefixTask_run(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mixer := struct {
+		storage.Storager
+		storage.PrefixLister
+	}{
+		mock.NewMockStorager(ctrl),
+		mock.NewMockPrefixLister(ctrl),
+	}
+
+	sche := mock.NewMockScheduler(ctrl)
+	path := uuid.New().String()
+
+	task := DeletePrefixTask{}
+	task.SetFault(fault.New())
+	task.SetPool(navvy.NewPool(10))
+	task.SetScheduler(sche)
+	task.SetPath(path)
+	task.SetStorage(mixer)
+
+	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		switch v := task.(type) {
+		case *ListPrefixTask:
 			v.validateInput()
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
@@ -136,7 +178,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		})
 		sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
-			case *DeleteDirTask:
+			case *DeletePrefixTask:
 				v.validateInput()
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
@@ -182,7 +224,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		})
 		sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {
-			case *DeleteDirTask:
+			case *DeletePrefixTask:
 				v.validateInput()
 			case *ListSegmentTask:
 				v.validateInput()

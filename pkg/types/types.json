@@ -23,6 +23,8 @@
   "Fault": "*fault.Fault",
   "FileFunc": "func(*types.Object)",
   "Force": "bool",
+  "HandleObjCallback": "func(*types.Object)",
+  "HandleSegmentCallback": "func(segment.Segment)",
   "HumanReadable": "bool",
   "ID": "string",
   "IgnoreExisting": "bool",

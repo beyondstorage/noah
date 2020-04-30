@@ -71,6 +71,42 @@ func ChooseSourceStorageAsDirLister(x interface {
 	return
 }
 
+// ChooseStorageAsDirLister will choose the storage to fill as the dir lister.
+func ChooseStorageAsDirLister(x interface {
+	types.PathSetter
+	types.DirListerSetter
+}, y interface {
+	types.PathGetter
+	types.StorageGetter
+}) (err error) {
+	x.SetPath(y.GetPath())
+
+	lister, ok := y.GetStorage().(storage.DirLister)
+	if !ok {
+		return types.NewErrStorageInsufficientAbility(nil)
+	}
+	x.SetDirLister(lister)
+	return
+}
+
+// ChooseStorageAsPrefixLister will choose the storage to fill as the prefix lister.
+func ChooseStorageAsPrefixLister(x interface {
+	types.PathSetter
+	types.PrefixListerSetter
+}, y interface {
+	types.PathGetter
+	types.StorageGetter
+}) (err error) {
+	x.SetPath(y.GetPath())
+
+	lister, ok := y.GetStorage().(storage.PrefixLister)
+	if !ok {
+		return types.NewErrStorageInsufficientAbility(nil)
+	}
+	x.SetPrefixLister(lister)
+	return
+}
+
 // ChooseDestinationStorageAsIndexSegmenter will choose the destination storage as a segmenter.
 func ChooseDestinationStorageAsIndexSegmenter(x interface {
 	types.PathSetter
