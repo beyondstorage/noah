@@ -9,7 +9,7 @@ import (
 )
 
 func (t *ListDirTask) new() {
-	t.SetCallbackFunc(func(types.IDGetter) {
+	t.SetCallbackFunc(func() {
 		progress.FinishState(t.GetID())
 	})
 }
@@ -24,7 +24,7 @@ func (t *ListDirTask) run() {
 }
 
 func (t *ListPrefixTask) new() {
-	t.SetCallbackFunc(func(types.IDGetter) {
+	t.SetCallbackFunc(func() {
 		progress.FinishState(t.GetID())
 	})
 }

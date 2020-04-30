@@ -81,8 +81,12 @@ func (t *BetweenStorageCheckTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -170,8 +174,12 @@ func (t *CopyDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -259,8 +267,12 @@ func (t *CopyFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -351,8 +363,12 @@ func (t *CopyLargeFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -462,8 +478,12 @@ func (t *CopyPartialFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -570,8 +590,12 @@ func (t *CopyPartialStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -664,8 +688,12 @@ func (t *CopySingleFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -754,8 +782,12 @@ func (t *CopySmallFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -841,8 +873,12 @@ func (t *CopyStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -912,8 +948,12 @@ func (t *CreateStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -986,8 +1026,12 @@ func (t *DeleteDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1060,8 +1104,12 @@ func (t *DeleteFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1134,8 +1182,12 @@ func (t *DeleteSegmentTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1213,8 +1265,12 @@ func (t *DeleteStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1283,8 +1339,12 @@ func (t *IsDestinationObjectExistTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1353,8 +1413,12 @@ func (t *IsDestinationObjectNotExistTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1428,8 +1492,12 @@ func (t *IsSizeEqualTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1503,8 +1571,12 @@ func (t *IsUpdateAtGreaterTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1587,8 +1659,12 @@ func (t *ListDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1666,8 +1742,12 @@ func (t *ListPrefixTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1745,8 +1825,12 @@ func (t *ListSegmentTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1824,8 +1908,12 @@ func (t *ListStorageTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1909,8 +1997,12 @@ func (t *MD5SumFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -1979,8 +2071,12 @@ func (t *MD5SumStreamTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2063,8 +2159,12 @@ func (t *MoveDirTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2147,8 +2247,12 @@ func (t *MoveFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2227,8 +2331,12 @@ func (t *ReachFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2306,8 +2414,12 @@ func (t *SegmentCompleteTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2415,8 +2527,12 @@ func (t *SegmentFileCopyTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2495,8 +2611,12 @@ func (t *SegmentInitTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2599,8 +2719,12 @@ func (t *SegmentStreamCopyTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2674,8 +2798,12 @@ func (t *StatFileTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
@@ -2788,8 +2916,12 @@ func (t *SyncTask) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }

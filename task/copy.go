@@ -106,7 +106,7 @@ func (t *CopyLargeFileTask) run() {
 		t.SetOffset(offset)
 
 		x := NewCopyPartialFile(t)
-		x.SetCallbackFunc(func(types.IDGetter) {
+		x.SetCallbackFunc(func() {
 			doneCount++
 			progress.UpdateState(t.GetID(), doneCount)
 		})
@@ -182,7 +182,7 @@ func (t *CopyStreamTask) run() {
 	for {
 		x := NewCopyPartialStream(t)
 		x.SetOffset(offset)
-		x.SetCallbackFunc(func(types.IDGetter) {
+		x.SetCallbackFunc(func() {
 			doneCount++
 			progress.UpdateState(t.GetID(), doneCount)
 		})
