@@ -386,6 +386,9 @@
       "SourcePath",
       "SourceStorage",
       "Update"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   }
 }

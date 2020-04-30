@@ -22,8 +22,14 @@ func (t *SyncTask) run() {
 			sf := NewSync(t)
 			sf.SetSourcePath(o.Name)
 			sf.SetDestinationPath(o.Name)
+			if t.ValidateHandleObjCallback() {
+				sf.SetHandleObjCallback(t.GetHandleObjCallback())
+			}
 			t.GetScheduler().Sync(sf)
 		})
+	} else {
+		// if not recursive, do nothing with dir
+		x.SetDirFunc(func(_ *typ.Object) {})
 	}
 
 	var fn []func(task navvy.Task) navvy.Task
@@ -46,26 +52,33 @@ func (t *SyncTask) run() {
 		sf := NewCopyFile(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
-		sf.SetCheckTasks(fn)
+		sf.SetCheckTasks(nil)
+
+		check := NewBetweenStorageCheck(sf)
+		sf.GetScheduler().Sync(check)
+		if sf.GetFault().HasError() {
+			return
+		}
+		for _, v := range fn {
+			ct := v(check)
+			sf.GetScheduler().Sync(ct)
+			// If any of checks not pass, do not copy this file.
+			if result := ct.(types.ResultGetter); !result.GetResult() {
+				return
+			}
+			// If all check passed, we should continue do copy works.
+		}
 
 		// if dry-run, only check, and call dry-run func if check passed
 		if t.GetDryRun() {
-			check := NewBetweenStorageCheck(sf)
-			sf.GetScheduler().Sync(check)
-			if sf.GetFault().HasError() {
-				return
-			}
-			for _, v := range fn {
-				ct := v(check)
-				sf.GetScheduler().Sync(ct)
-				// If any of checks not pass, do not copy this file.
-				if result := ct.(types.ResultGetter); !result.GetResult() {
-					return
-				}
-				// If all check passed, we should continue do copy works.
-			}
 			t.GetDryRunFunc()(o)
 			return
+		}
+
+		if t.ValidateHandleObjCallback() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleObjCallback()(o)
+			})
 		}
 		t.GetScheduler().Async(sf)
 	})
