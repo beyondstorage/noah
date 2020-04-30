@@ -134,16 +134,16 @@ func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
 
 type CallbackFunc struct {
 	valid bool
-	v     func(idg IDGetter)
+	v     func()
 
 	l sync.RWMutex
 }
 
 type CallbackFuncGetter interface {
-	GetCallbackFunc() func(idg IDGetter)
+	GetCallbackFunc() func()
 }
 
-func (o *CallbackFunc) GetCallbackFunc() func(idg IDGetter) {
+func (o *CallbackFunc) GetCallbackFunc() func() {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -154,10 +154,10 @@ func (o *CallbackFunc) GetCallbackFunc() func(idg IDGetter) {
 }
 
 type CallbackFuncSetter interface {
-	SetCallbackFunc(func(idg IDGetter))
+	SetCallbackFunc(func())
 }
 
-func (o *CallbackFunc) SetCallbackFunc(v func(idg IDGetter)) {
+func (o *CallbackFunc) SetCallbackFunc(v func()) {
 	o.l.Lock()
 	defer o.l.Unlock()
 

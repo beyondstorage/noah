@@ -194,8 +194,12 @@ func (t *{{ .Name }}Task) Run() {
 	log.Debugf("Started %s", t)
 	t.run()
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
 	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()(t)
+		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
 }
