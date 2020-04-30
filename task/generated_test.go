@@ -111,6 +111,14 @@ func TestDeleteFileTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestDeletePrefixTask_TriggerFault(t *testing.T) {
+	task := &DeletePrefixTask{}
+	task.SetFault(fault.New())
+	err := errors.New("test error")
+	task.TriggerFault(err)
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestDeleteSegmentTask_TriggerFault(t *testing.T) {
 	task := &DeleteSegmentTask{}
 	task.SetFault(fault.New())

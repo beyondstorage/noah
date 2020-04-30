@@ -985,8 +985,8 @@ type DeleteDirTask struct {
 	types.CallbackFunc
 
 	// Input value
-	types.DirLister
 	types.Path
+	types.Storage
 
 	// Output value
 	types.HandleObjCallback
@@ -1006,11 +1006,11 @@ func NewDeleteDir(task navvy.Task) *DeleteDirTask {
 
 // validateInput will validate all input before run task.
 func (t *DeleteDirTask) validateInput() {
-	if !t.ValidateDirLister() {
-		panic(fmt.Errorf("Task DeleteDir value DirLister is invalid"))
-	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task DeleteDir value Path is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task DeleteDir value Storage is invalid"))
 	}
 }
 
@@ -1018,8 +1018,8 @@ func (t *DeleteDirTask) validateInput() {
 func (t *DeleteDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadDirLister(task, t)
 	types.LoadPath(task, t)
+	types.LoadStorage(task, t)
 }
 
 // Run implement navvy.Task
@@ -1046,7 +1046,7 @@ func (t *DeleteDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteDirTask) String() string {
-	return fmt.Sprintf("DeleteDirTask {DirLister: %v, Path: %v}", t.GetDirLister(), t.GetPath())
+	return fmt.Sprintf("DeleteDirTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
 }
 
 // NewDeleteDirTask will create a DeleteDirTask which meets navvy.Task.
@@ -1131,6 +1131,85 @@ func (t *DeleteFileTask) String() string {
 // NewDeleteFileTask will create a DeleteFileTask which meets navvy.Task.
 func NewDeleteFileTask(task navvy.Task) navvy.Task {
 	return NewDeleteFile(task)
+}
+
+// DeletePrefixTask will will delete objects with given prefix from storage.
+type DeletePrefixTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Input value
+	types.Path
+	types.Storage
+
+	// Output value
+	types.HandleObjCallback
+}
+
+// NewDeletePrefix will create a DeletePrefixTask struct and fetch inherited data from parent task.
+func NewDeletePrefix(task navvy.Task) *DeletePrefixTask {
+	t := &DeletePrefixTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *DeletePrefixTask) validateInput() {
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task DeletePrefix value Path is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task DeletePrefix value Storage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *DeletePrefixTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+	types.LoadPath(task, t)
+	types.LoadStorage(task, t)
+}
+
+// Run implement navvy.Task
+func (t *DeletePrefixTask) Run() {
+	t.validateInput()
+
+	log.Debugf("Started %s", t)
+	t.run()
+	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	log.Debugf("Finished %s", t)
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *DeletePrefixTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *DeletePrefixTask) String() string {
+	return fmt.Sprintf("DeletePrefixTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
+}
+
+// NewDeletePrefixTask will create a DeletePrefixTask which meets navvy.Task.
+func NewDeletePrefixTask(task navvy.Task) navvy.Task {
+	return NewDeletePrefix(task)
 }
 
 // DeleteSegmentTask will delete all segments with a given path.
