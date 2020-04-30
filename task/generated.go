@@ -123,6 +123,7 @@ type CopyDirTask struct {
 	types.SourceStorage
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewCopyDir will create a CopyDirTask struct and fetch inherited data from parent task.
@@ -216,6 +217,7 @@ type CopyFileTask struct {
 	types.SourceStorage
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewCopyFile will create a CopyFileTask struct and fetch inherited data from parent task.
@@ -987,6 +989,7 @@ type DeleteDirTask struct {
 	types.Path
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewDeleteDir will create a DeleteDirTask struct and fetch inherited data from parent task.
@@ -1065,6 +1068,7 @@ type DeleteFileTask struct {
 	types.Storage
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewDeleteFile will create a DeleteFileTask struct and fetch inherited data from parent task.
@@ -1143,6 +1147,7 @@ type DeleteSegmentTask struct {
 	types.Segment
 
 	// Output value
+	types.HandleSegmentCallback
 }
 
 // NewDeleteSegment will create a DeleteSegmentTask struct and fetch inherited data from parent task.
@@ -1222,6 +1227,8 @@ type DeleteStorageTask struct {
 	types.StorageName
 
 	// Output value
+	types.HandleObjCallback
+	types.HandleSegmentCallback
 }
 
 // NewDeleteStorage will create a DeleteStorageTask struct and fetch inherited data from parent task.
@@ -2112,6 +2119,7 @@ type MoveDirTask struct {
 	types.SourceStorage
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewMoveDir will create a MoveDirTask struct and fetch inherited data from parent task.
@@ -2200,6 +2208,7 @@ type MoveFileTask struct {
 	types.SourceStorage
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewMoveFile will create a MoveFileTask struct and fetch inherited data from parent task.

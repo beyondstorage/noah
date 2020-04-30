@@ -27,12 +27,20 @@ func (t *CopyDirTask) run() {
 		sf := NewCopyFile(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleObjCallback()(o)
+			})
+		}
 		t.GetScheduler().Async(sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewCopyDir(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		}
 		t.GetScheduler().Sync(sf)
 	})
 	t.GetScheduler().Sync(x)

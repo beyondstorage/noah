@@ -1430,6 +1430,124 @@ func LoadForce(t navvy.Task, v ForceSetter) {
 	v.SetForce(x.GetForce())
 }
 
+type HandleObjCallback struct {
+	valid bool
+	v     func(*types.Object)
+
+	l sync.RWMutex
+}
+
+type HandleObjCallbackGetter interface {
+	GetHandleObjCallback() func(*types.Object)
+}
+
+func (o *HandleObjCallback) GetHandleObjCallback() func(*types.Object) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("HandleObjCallback value is not valid")
+	}
+	return o.v
+}
+
+type HandleObjCallbackSetter interface {
+	SetHandleObjCallback(func(*types.Object))
+}
+
+func (o *HandleObjCallback) SetHandleObjCallback(v func(*types.Object)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type HandleObjCallbackValidator interface {
+	ValidateHandleObjCallback() bool
+}
+
+func (o *HandleObjCallback) ValidateHandleObjCallback() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadHandleObjCallback(t navvy.Task, v HandleObjCallbackSetter) {
+	x, ok := t.(interface {
+		HandleObjCallbackGetter
+		HandleObjCallbackValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateHandleObjCallback() {
+		return
+	}
+
+	v.SetHandleObjCallback(x.GetHandleObjCallback())
+}
+
+type HandleSegmentCallback struct {
+	valid bool
+	v     func(segment.Segment)
+
+	l sync.RWMutex
+}
+
+type HandleSegmentCallbackGetter interface {
+	GetHandleSegmentCallback() func(segment.Segment)
+}
+
+func (o *HandleSegmentCallback) GetHandleSegmentCallback() func(segment.Segment) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("HandleSegmentCallback value is not valid")
+	}
+	return o.v
+}
+
+type HandleSegmentCallbackSetter interface {
+	SetHandleSegmentCallback(func(segment.Segment))
+}
+
+func (o *HandleSegmentCallback) SetHandleSegmentCallback(v func(segment.Segment)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type HandleSegmentCallbackValidator interface {
+	ValidateHandleSegmentCallback() bool
+}
+
+func (o *HandleSegmentCallback) ValidateHandleSegmentCallback() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadHandleSegmentCallback(t navvy.Task, v HandleSegmentCallbackSetter) {
+	x, ok := t.(interface {
+		HandleSegmentCallbackGetter
+		HandleSegmentCallbackValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateHandleSegmentCallback() {
+		return
+	}
+
+	v.SetHandleSegmentCallback(x.GetHandleSegmentCallback())
+}
+
 type HumanReadable struct {
 	valid bool
 	v     bool

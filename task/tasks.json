@@ -20,6 +20,9 @@
       "DestinationStorage",
       "SourcePath",
       "SourceStorage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "CopyFile": {
@@ -30,6 +33,9 @@
       "DestinationStorage",
       "SourcePath",
       "SourceStorage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "CopyLargeFile": {
@@ -135,8 +141,11 @@
   "DeleteDir": {
     "description": "will delete a dir recursively",
     "input": [
-      "DirLister",
-      "Path"
+      "Path",
+      "Storage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "DeleteFile": {
@@ -144,6 +153,19 @@
     "input": [
       "Path",
       "Storage"
+    ],
+    "output": [
+      "HandleObjCallback"
+    ]
+  },
+  "DeletePrefix": {
+    "description": "will delete objects with given prefix from storage",
+    "input": [
+      "Path",
+      "Storage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "DeleteSegment": {
@@ -151,6 +173,9 @@
     "input": [
       "PrefixSegmentsLister",
       "Segment"
+    ],
+    "output": [
+      "HandleSegmentCallback"
     ]
   },
   "DeleteStorage": {
@@ -159,6 +184,10 @@
       "Force",
       "Service",
       "StorageName"
+    ],
+    "output": [
+      "HandleObjCallback",
+      "HandleSegmentCallback"
     ]
   },
   "IsDestinationObjectExist": {
@@ -260,6 +289,9 @@
       "DestinationStorage",
       "SourcePath",
       "SourceStorage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "MoveFile": {
@@ -269,6 +301,9 @@
       "DestinationStorage",
       "SourcePath",
       "SourceStorage"
+    ],
+    "output": [
+      "HandleObjCallback"
     ]
   },
   "ReachFile": {

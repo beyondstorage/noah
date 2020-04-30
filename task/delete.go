@@ -22,11 +22,19 @@ func (t *DeleteDirTask) run() {
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleObjCallback()(o)
+			})
+		}
 		t.GetScheduler().Async(sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewDeleteDir(t)
 		sf.SetPath(o.Name)
+		if t.ValidateHandleObjCallback() {
+			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		}
 		t.GetScheduler().Sync(sf)
 	})
 	t.GetScheduler().Sync(x)
@@ -66,7 +74,11 @@ func (t *DeleteStorageTask) run() {
 			listSegments.SetSegmentFunc(func(s segment.Segment) {
 				sf := NewDeleteSegment(t)
 				sf.SetSegment(s)
-
+				if t.ValidateHandleSegmentCallback() {
+					sf.SetCallbackFunc(func() {
+						t.GetHandleSegmentCallback()(s)
+					})
+				}
 				t.GetScheduler().Async(sf)
 			})
 
