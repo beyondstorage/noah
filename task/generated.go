@@ -2933,6 +2933,7 @@ type SyncTask struct {
 	types.Update
 
 	// Output value
+	types.HandleObjCallback
 }
 
 // NewSync will create a SyncTask struct and fetch inherited data from parent task.
