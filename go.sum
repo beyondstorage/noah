@@ -39,8 +39,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/QcloudApi/qcloud_sign_golang v0.0.0-20141224014652-e4130a326409/go.mod h1:1pk82RBxDY/JZnPQrtqHlUFfCctgdorsd9M06fMynOM=
 github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27 h1:zSUdlUFOVurqOOXYregowl3LDoHimf8pjWeimSkzokM=
 github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27/go.mod h1:FfMsXg0w9OrzdLvhDHGzdBx35cw1qTpKLcGNC8RtgQA=
-github.com/Xuanwo/storage v1.0.1-0.20200427043315-089c5951ae88 h1:VkyjiJQgIgKTjOATo79kkNaVhE6K5rStXuv23sfcQIc=
-github.com/Xuanwo/storage v1.0.1-0.20200427043315-089c5951ae88/go.mod h1:p+dRany6wYreLJ7KNJ0sEVIq3gMi45Ugy6IpUY7ky1w=
+github.com/Xuanwo/storage v1.0.1-0.20200502101612-60c73c22fbc5 h1:GCTT8poBkJH6peP77LewbhH//GcSATr/jlmu0cLENuA=
+github.com/Xuanwo/storage v1.0.1-0.20200502101612-60c73c22fbc5/go.mod h1:t29CCpgJtuMsJsjrZX4dwLQItS+1zr+9v0Cd3jM/c/A=
 github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible/go.mod h1:T/Aws4fEfogEE9v+HPhhw+CntffsBHJ8nXQCwKr0/g8=
 github.com/aws/aws-sdk-go v1.30.12/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f/go.mod h1:AuiFmCCPBSrqvVMvuqFuk0qogytodnVFVSN5CeJB8Gc=
