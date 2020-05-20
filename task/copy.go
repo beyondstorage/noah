@@ -2,11 +2,13 @@ package task
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"sync"
 
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/progress"
@@ -102,6 +104,14 @@ func (t *CopyLargeFileTask) run() {
 	initTask := NewSegmentInit(t)
 	err = utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
+		tErr := &types.StorageInsufficientAbility{}
+		if errors.As(err, &tErr) {
+			log.Debugf("destination storage insufficient as index segmenter, transfer into copy small file")
+			st := NewCopySmallFile(t)
+			st.SetSize(t.GetTotalSize())
+			t.GetScheduler().Sync(st)
+			return
+		}
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
