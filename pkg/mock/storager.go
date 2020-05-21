@@ -9,7 +9,7 @@ import (
 	storage "github.com/Xuanwo/storage"
 	segment "github.com/Xuanwo/storage/pkg/segment"
 	types "github.com/Xuanwo/storage/types"
-	metadata "github.com/Xuanwo/storage/types/metadata"
+	info "github.com/Xuanwo/storage/types/info"
 	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
@@ -77,14 +77,14 @@ func (mr *MockStoragerMockRecorder) DeleteWithContext(arg0, arg1 interface{}, ar
 }
 
 // Metadata mocks base method
-func (m *MockStorager) Metadata(arg0 ...*types.Pair) (metadata.StorageMeta, error) {
+func (m *MockStorager) Metadata(arg0 ...*types.Pair) (info.StorageMeta, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Metadata", varargs...)
-	ret0, _ := ret[0].(metadata.StorageMeta)
+	ret0, _ := ret[0].(info.StorageMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -96,14 +96,14 @@ func (mr *MockStoragerMockRecorder) Metadata(arg0 ...interface{}) *gomock.Call {
 }
 
 // MetadataWithContext mocks base method
-func (m *MockStorager) MetadataWithContext(arg0 context.Context, arg1 ...*types.Pair) (metadata.StorageMeta, error) {
+func (m *MockStorager) MetadataWithContext(arg0 context.Context, arg1 ...*types.Pair) (info.StorageMeta, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "MetadataWithContext", varargs...)
-	ret0, _ := ret[0].(metadata.StorageMeta)
+	ret0, _ := ret[0].(info.StorageMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
