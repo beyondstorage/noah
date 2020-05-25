@@ -2911,6 +2911,80 @@ func NewStatFileTask(task navvy.Task) navvy.Task {
 	return NewStatFile(task)
 }
 
+// StatStorageTask will stat a remote storage by Statistical.
+type StatStorageTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Input value
+	types.Storage
+
+	// Output value
+	types.StorageInfo
+}
+
+// NewStatStorage will create a StatStorageTask struct and fetch inherited data from parent task.
+func NewStatStorage(task navvy.Task) *StatStorageTask {
+	t := &StatStorageTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *StatStorageTask) validateInput() {
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task StatStorage value Storage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *StatStorageTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+	types.LoadStorage(task, t)
+}
+
+// Run implement navvy.Task
+func (t *StatStorageTask) Run() {
+	t.validateInput()
+
+	log.Debugf("Started %s", t)
+	t.run()
+	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	log.Debugf("Finished %s", t)
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *StatStorageTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *StatStorageTask) String() string {
+	return fmt.Sprintf("StatStorageTask {Storage: %v}", t.GetStorage())
+}
+
+// NewStatStorageTask will create a StatStorageTask which meets navvy.Task.
+func NewStatStorageTask(task navvy.Task) navvy.Task {
+	return NewStatStorage(task)
+}
+
 // SyncTask will sync directory between two storage.
 type SyncTask struct {
 	// Predefined value

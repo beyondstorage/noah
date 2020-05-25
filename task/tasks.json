@@ -373,6 +373,15 @@
       "Object"
     ]
   },
+  "StatStorage": {
+    "description": "stat a remote storage by Statistical",
+    "input": [
+      "Storage"
+    ],
+    "output": [
+      "StorageInfo"
+    ]
+  },
   "Sync": {
     "description": "sync directory between two storage",
     "input": [
