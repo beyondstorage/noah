@@ -1,6 +1,8 @@
 package task
 
 import (
+	"github.com/Xuanwo/storage"
+
 	"github.com/qingstor/noah/pkg/types"
 )
 
@@ -12,4 +14,19 @@ func (t *StatFileTask) run() {
 		return
 	}
 	t.SetObject(om)
+}
+
+func (t *StatStorageTask) new() {}
+func (t *StatStorageTask) run() {
+	s, ok := t.GetStorage().(storage.Statistician)
+	if !ok {
+		t.TriggerFault(types.NewErrStorageInsufficientAbility(nil))
+		return
+	}
+	info, err := s.Statistical()
+	if err != nil {
+		t.TriggerFault(types.NewErrUnhandled(err))
+		return
+	}
+	t.SetStorageInfo(info)
 }

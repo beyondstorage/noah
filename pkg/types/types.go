@@ -9,6 +9,7 @@ import (
 	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/pkg/segment"
 	"github.com/Xuanwo/storage/types"
+	"github.com/Xuanwo/storage/types/info"
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"
@@ -3552,6 +3553,65 @@ func LoadStorage(t navvy.Task, v StorageSetter) {
 	}
 
 	v.SetStorage(x.GetStorage())
+}
+
+type StorageInfo struct {
+	valid bool
+	v     info.StorageStatistic
+
+	l sync.RWMutex
+}
+
+type StorageInfoGetter interface {
+	GetStorageInfo() info.StorageStatistic
+}
+
+func (o *StorageInfo) GetStorageInfo() info.StorageStatistic {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("StorageInfo value is not valid")
+	}
+	return o.v
+}
+
+type StorageInfoSetter interface {
+	SetStorageInfo(info.StorageStatistic)
+}
+
+func (o *StorageInfo) SetStorageInfo(v info.StorageStatistic) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type StorageInfoValidator interface {
+	ValidateStorageInfo() bool
+}
+
+func (o *StorageInfo) ValidateStorageInfo() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadStorageInfo(t navvy.Task, v StorageInfoSetter) {
+	x, ok := t.(interface {
+		StorageInfoGetter
+		StorageInfoValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateStorageInfo() {
+		return
+	}
+
+	v.SetStorageInfo(x.GetStorageInfo())
 }
 
 type StorageName struct {

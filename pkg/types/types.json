@@ -59,6 +59,7 @@
   "SourceStorage": "storage.Storager",
   "SourceType": "types.ObjectType",
   "Storage": "storage.Storager",
+  "StorageInfo": "info.StorageStatistic",
   "StorageName": "string",
   "StoragerFunc": "storage.StoragerFunc",
   "TotalSize": "int64",
