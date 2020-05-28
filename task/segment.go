@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/Xuanwo/storage/types/pairs"
@@ -28,7 +29,7 @@ func (t *SegmentFileCopyTask) run() {
 	}
 	defer r.Close()
 
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), "copy file part:", t.GetSize()))
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), fmt.Sprintf("copy file part: %d", t.GetIndex()), t.GetSize()))
 	// TODO: Add checksum support.
 	writeDone := 0
 	seg := t.GetSegment()
@@ -46,7 +47,7 @@ func (t *SegmentFileCopyTask) run() {
 
 func (t *SegmentStreamCopyTask) new() {}
 func (t *SegmentStreamCopyTask) run() {
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), "copy stream part:", t.GetSize()))
+	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), fmt.Sprintf("copy stream part: %d", t.GetIndex()), t.GetSize()))
 	// TODO: Add checksum support
 	writeDone := 0
 	err := t.GetDestinationIndexSegmenter().WriteIndexSegment(t.GetSegment(), ioutil.NopCloser(t.GetContent()),

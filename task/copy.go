@@ -283,7 +283,10 @@ func (t *CopySingleFileTask) run() {
 	}
 	defer r.Close()
 
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
+	// improve progress bar's performance, do not set state for small files less than 32M
+	if t.GetSize() > constants.DefaultPartSize/4 {
+		progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
+	}
 	// TODO: add checksum support
 	writeDone := 0
 	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
