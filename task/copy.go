@@ -124,15 +124,11 @@ func (t *CopyLargeFileTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegment(initTask.GetSegment())
 
-	offset, part, doneCount := int64(0), 0, int64(0)
+	offset, part := int64(0), 0
 	for {
 		t.SetOffset(offset)
 
 		x := NewCopyPartialFile(t)
-		x.SetCallbackFunc(func() {
-			doneCount++
-			progress.UpdateState(t.GetID(), doneCount)
-		})
 		x.SetIndex(part)
 		t.GetScheduler().Async(x)
 		// While GetDone is true, this must be the last part.
@@ -143,7 +139,6 @@ func (t *CopyLargeFileTask) run() {
 		offset += x.GetSize()
 		part++
 	}
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy part:", int64(part)))
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
@@ -206,14 +201,10 @@ func (t *CopyStreamTask) run() {
 	t.GetScheduler().Sync(initTask)
 	t.SetSegment(initTask.GetSegment())
 
-	offset, part, doneCount := int64(0), 0, int64(0)
+	offset, part := int64(0), 0
 	for {
 		x := NewCopyPartialStream(t)
 		x.SetOffset(offset)
-		x.SetCallbackFunc(func() {
-			doneCount++
-			progress.UpdateState(t.GetID(), doneCount)
-		})
 		x.SetIndex(part)
 		t.GetScheduler().Async(x)
 
@@ -224,7 +215,6 @@ func (t *CopyStreamTask) run() {
 		offset += x.GetSize()
 		part++
 	}
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy stream part:", int64(part)))
 
 	t.GetScheduler().Wait()
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
@@ -283,7 +273,10 @@ func (t *CopySingleFileTask) run() {
 	}
 	defer r.Close()
 
-	progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
+	// improve progress bar's performance, do not set state for small files less than 32M
+	if t.GetSize() > constants.DefaultPartSize/4 {
+		progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
+	}
 	// TODO: add checksum support
 	writeDone := 0
 	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
