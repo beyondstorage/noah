@@ -63,6 +63,8 @@ func TestDeleteDirTask_run(t *testing.T) {
 		switch v := task.(type) {
 		case *ListDirTask:
 			v.validateInput()
+		case *DeleteFileTask:
+			v.validateInput()
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}

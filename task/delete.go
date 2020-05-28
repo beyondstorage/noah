@@ -45,6 +45,13 @@ func (t *DeleteDirTask) run() {
 		t.GetScheduler().Sync(sf)
 	})
 	t.GetScheduler().Sync(x)
+
+	// after delete all files in this dir, delete dir itself as a file, see issue #43
+	dr := NewDeleteFile(t)
+	if t.ValidateHandleObjCallback() {
+		dr.SetHandleObjCallback(t.GetHandleObjCallback())
+	}
+	t.GetScheduler().Sync(dr)
 }
 
 func (t *DeletePrefixTask) new() {}
