@@ -81,13 +81,18 @@ func (t *CopyFileTask) run() {
 
 func (t *CopySmallFileTask) new() {}
 func (t *CopySmallFileTask) run() {
-	md5Task := NewMD5SumFile(t)
-	utils.ChooseSourceStorage(md5Task, t)
-	md5Task.SetOffset(0)
-	t.GetScheduler().Sync(md5Task)
-
 	fileCopyTask := NewCopySingleFile(t)
-	fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+
+	if t.GetCheckMD5() {
+		md5Task := NewMD5SumFile(t)
+		utils.ChooseSourceStorage(md5Task, t)
+		md5Task.SetOffset(0)
+		t.GetScheduler().Sync(md5Task)
+		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+	} else {
+		fileCopyTask.SetMD5Sum(nil)
+	}
+
 	t.GetScheduler().Sync(fileCopyTask)
 }
 
@@ -159,12 +164,17 @@ func (t *CopyPartialFileTask) new() {
 	}
 }
 func (t *CopyPartialFileTask) run() {
-	md5Task := NewMD5SumFile(t)
-	utils.ChooseSourceStorage(md5Task, t)
-	t.GetScheduler().Sync(md5Task)
-
 	fileCopyTask := NewSegmentFileCopy(t)
-	fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+
+	if t.GetCheckMD5() {
+		md5Task := NewMD5SumFile(t)
+		utils.ChooseSourceStorage(md5Task, t)
+		t.GetScheduler().Sync(md5Task)
+		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+	} else {
+		fileCopyTask.SetMD5Sum(nil)
+	}
+
 	err := utils.ChooseDestinationIndexSegmenter(fileCopyTask, t)
 	if err != nil {
 		t.TriggerFault(err)
@@ -185,7 +195,7 @@ func (t *CopyStreamTask) run() {
 	initTask := NewSegmentInit(t)
 	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
+		t.TriggerFault(err)
 		return
 	}
 
@@ -246,16 +256,21 @@ func (t *CopyPartialStreamTask) new() {
 	}
 }
 func (t *CopyPartialStreamTask) run() {
-	md5sumTask := NewMD5SumStream(t)
-	t.GetScheduler().Sync(md5sumTask)
-
 	copyTask := NewSegmentStreamCopy(t)
+	if t.GetCheckMD5() {
+		md5sumTask := NewMD5SumStream(t)
+		t.GetScheduler().Sync(md5sumTask)
+		copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
+	} else {
+		copyTask.SetMD5Sum(nil)
+	}
+
 	err := utils.ChooseDestinationIndexSegmenter(copyTask, t)
 	if err != nil {
 		t.TriggerFault(err)
 		return
 	}
-	copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
+
 	t.GetScheduler().Sync(copyTask)
 }
 

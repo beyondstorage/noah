@@ -15,6 +15,7 @@
   "CopyDir": {
     "description": "copy a directory recursively between two storager",
     "input": [
+      "CheckMD5",
       "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
@@ -28,6 +29,7 @@
   "CopyFile": {
     "description": "copy a file between two storager",
     "input": [
+      "CheckMD5",
       "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
@@ -41,6 +43,7 @@
   "CopyLargeFile": {
     "description": "copy a large file between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "SourcePath",
@@ -56,6 +59,7 @@
   "CopyPartialFile": {
     "description": "copy a partial file to between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "Index",
@@ -75,6 +79,7 @@
     "description": "copy a partial stream between two storager",
     "input": [
       "BytesPool",
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "Index",
@@ -104,6 +109,7 @@
   "CopySmallFile": {
     "description": "copy a small file between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "Size",
@@ -117,6 +123,7 @@
   "CopyStream": {
     "description": "copy a stream between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "SourcePath",
@@ -285,6 +292,7 @@
   "MoveDir": {
     "description": "move a directory recursively between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "SourcePath",
@@ -297,6 +305,7 @@
   "MoveFile": {
     "description": "move a file between two storager",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "SourcePath",
@@ -385,6 +394,7 @@
   "Sync": {
     "description": "sync directory between two storage",
     "input": [
+      "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
       "DryRun",

@@ -192,6 +192,65 @@ func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
 	v.SetCallbackFunc(x.GetCallbackFunc())
 }
 
+type CheckMD5 struct {
+	valid bool
+	v     bool
+
+	l sync.RWMutex
+}
+
+type CheckMD5Getter interface {
+	GetCheckMD5() bool
+}
+
+func (o *CheckMD5) GetCheckMD5() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("CheckMD5 value is not valid")
+	}
+	return o.v
+}
+
+type CheckMD5Setter interface {
+	SetCheckMD5(bool)
+}
+
+func (o *CheckMD5) SetCheckMD5(v bool) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type CheckMD5Validator interface {
+	ValidateCheckMD5() bool
+}
+
+func (o *CheckMD5) ValidateCheckMD5() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadCheckMD5(t navvy.Task, v CheckMD5Setter) {
+	x, ok := t.(interface {
+		CheckMD5Getter
+		CheckMD5Validator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateCheckMD5() {
+		return
+	}
+
+	v.SetCheckMD5(x.GetCheckMD5())
+}
+
 type CheckTasks struct {
 	valid bool
 	v     []func(t navvy.Task) navvy.Task

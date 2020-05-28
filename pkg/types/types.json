@@ -2,6 +2,7 @@
   "ByteSize": "string",
   "BytesPool": "*sync.Pool",
   "CallbackFunc": "func()",
+  "CheckMD5": "bool",
   "CheckTasks": "[]func(t navvy.Task) navvy.Task",
   "Content": "*bytes.Buffer",
   "Delete": "bool",

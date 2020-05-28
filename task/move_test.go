@@ -69,6 +69,7 @@ func TestMoveFileTask_run(t *testing.T) {
 		task.SetDestinationPath("destination")
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
+		task.SetCheckMD5(false)
 
 		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 			switch v := task.(type) {

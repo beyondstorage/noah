@@ -134,6 +134,7 @@ func TestCopySmallFileTask_run(t *testing.T) {
 	task.SetDestinationStorage(dstStore)
 	task.SetScheduler(sche)
 	task.SetSize(1024)
+	task.SetCheckMD5(true)
 
 	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 		switch v := task.(type) {
@@ -294,6 +295,7 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	task.SetOffset(512)
 	task.SetIndex(1)
 	task.SetSegment(seg)
+	task.SetCheckMD5(true)
 
 	srcStore.EXPECT().String().DoAndReturn(func() string { return "src" }).AnyTimes()
 	dstStore.EXPECT().String().DoAndReturn(func() string { return "dst" }).AnyTimes()
@@ -443,6 +445,7 @@ func TestCopyPartialStreamTask_run(t *testing.T) {
 	task.SetSegment(seg)
 	task.SetSize(0)
 	task.SetIndex(1)
+	task.SetCheckMD5(false)
 
 	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
 		switch v := task.(type) {
