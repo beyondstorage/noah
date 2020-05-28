@@ -49,6 +49,8 @@ github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27 h1:zSUdlUFOVurqOOXYre
 github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27/go.mod h1:FfMsXg0w9OrzdLvhDHGzdBx35cw1qTpKLcGNC8RtgQA=
 github.com/Xuanwo/storage v1.2.0 h1:8cQ2gJ26Fv5mhqKXwMUJkjshRRkt7vYn1Gh6P+nNJZY=
 github.com/Xuanwo/storage v1.2.0/go.mod h1:89pBLchZNGbs9uXrMn85oRSXFPO1fet1j9bmzFbBtUk=
+github.com/Xuanwo/storage v1.2.1-0.20200527102749-4370d2c8933b h1:uJtJc7gBpU8ujgaPHHmw6juC3I5Cu0jQPd9VB7mIlcM=
+github.com/Xuanwo/storage v1.2.1-0.20200527102749-4370d2c8933b/go.mod h1:CL8f6A7r6nOOqqzl/9uQIAO3fLYpKdLzzeaHQCWjs2I=
 github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible/go.mod h1:T/Aws4fEfogEE9v+HPhhw+CntffsBHJ8nXQCwKr0/g8=
 github.com/aws/aws-sdk-go v1.31.1/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f/go.mod h1:AuiFmCCPBSrqvVMvuqFuk0qogytodnVFVSN5CeJB8Gc=
