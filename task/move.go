@@ -43,6 +43,9 @@ func (t *MoveFileTask) run() {
 	ct := NewCopyFile(t)
 	ct.SetCheckTasks(nil)
 	t.GetScheduler().Sync(ct)
+	if t.GetFault().HasError() {
+		return
+	}
 
 	dt := NewDeleteFile(t)
 	utils.ChooseSourceStorage(dt, t)

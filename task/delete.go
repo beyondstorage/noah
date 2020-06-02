@@ -45,6 +45,9 @@ func (t *DeleteDirTask) run() {
 		t.GetScheduler().Sync(sf)
 	})
 	t.GetScheduler().Sync(x)
+	if t.GetFault().HasError() {
+		return
+	}
 
 	// after delete all files in this dir, delete dir itself as a file, see issue #43
 	dr := NewDeleteFile(t)
@@ -124,6 +127,9 @@ func (t *DeleteStorageTask) run() {
 		}
 
 		t.GetScheduler().Wait()
+		if t.GetFault().HasError() {
+			return
+		}
 	}
 
 	err := t.GetService().Delete(t.GetStorageName())

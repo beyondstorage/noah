@@ -60,6 +60,9 @@ func (t *CopyFileTask) run() {
 	for _, v := range t.GetCheckTasks() {
 		ct := v(check)
 		t.GetScheduler().Sync(ct)
+		if t.GetFault().HasError() {
+			return
+		}
 		// If either check not pass, do not copy this file.
 		if result := ct.(types.ResultGetter); !result.GetResult() {
 			return
@@ -88,6 +91,9 @@ func (t *CopySmallFileTask) run() {
 		utils.ChooseSourceStorage(md5Task, t)
 		md5Task.SetOffset(0)
 		t.GetScheduler().Sync(md5Task)
+		if t.GetFault().HasError() {
+			return
+		}
 		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
 	} else {
 		fileCopyTask.SetMD5Sum(nil)
@@ -122,6 +128,9 @@ func (t *CopyLargeFileTask) run() {
 	}
 
 	t.GetScheduler().Sync(initTask)
+	if t.GetFault().HasError() {
+		return
+	}
 	t.SetSegment(initTask.GetSegment())
 
 	offset, part := int64(0), 0
@@ -142,6 +151,9 @@ func (t *CopyLargeFileTask) run() {
 
 	// Make sure all segment upload finished.
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		return
+	}
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
 }
 
@@ -165,6 +177,9 @@ func (t *CopyPartialFileTask) run() {
 		md5Task := NewMD5SumFile(t)
 		utils.ChooseSourceStorage(md5Task, t)
 		t.GetScheduler().Sync(md5Task)
+		if t.GetFault().HasError() {
+			return
+		}
 		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
 	} else {
 		fileCopyTask.SetMD5Sum(nil)
@@ -199,6 +214,9 @@ func (t *CopyStreamTask) run() {
 	t.SetPartSize(partSize)
 
 	t.GetScheduler().Sync(initTask)
+	if t.GetFault().HasError() {
+		return
+	}
 	t.SetSegment(initTask.GetSegment())
 
 	offset, part := int64(0), 0
@@ -217,6 +235,9 @@ func (t *CopyStreamTask) run() {
 	}
 
 	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		return
+	}
 	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
 }
 
@@ -250,6 +271,9 @@ func (t *CopyPartialStreamTask) run() {
 	if t.GetCheckMD5() {
 		md5sumTask := NewMD5SumStream(t)
 		t.GetScheduler().Sync(md5sumTask)
+		if t.GetFault().HasError() {
+			return
+		}
 		copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
 	} else {
 		copyTask.SetMD5Sum(nil)
