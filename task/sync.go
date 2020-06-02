@@ -62,6 +62,9 @@ func (t *SyncTask) run() {
 		for _, v := range fn {
 			ct := v(check)
 			sf.GetScheduler().Sync(ct)
+			if sf.GetFault().HasError() {
+				return
+			}
 			// If any of checks not pass, do not copy this file.
 			if result := ct.(types.ResultGetter); !result.GetResult() {
 				return
