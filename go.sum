@@ -47,8 +47,6 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/QcloudApi/qcloud_sign_golang v0.0.0-20141224014652-e4130a326409/go.mod h1:1pk82RBxDY/JZnPQrtqHlUFfCctgdorsd9M06fMynOM=
 github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27 h1:zSUdlUFOVurqOOXYregowl3LDoHimf8pjWeimSkzokM=
 github.com/Xuanwo/navvy v0.0.0-20191010141320-12f3cfcb6a27/go.mod h1:FfMsXg0w9OrzdLvhDHGzdBx35cw1qTpKLcGNC8RtgQA=
-github.com/Xuanwo/storage v1.2.0 h1:8cQ2gJ26Fv5mhqKXwMUJkjshRRkt7vYn1Gh6P+nNJZY=
-github.com/Xuanwo/storage v1.2.0/go.mod h1:89pBLchZNGbs9uXrMn85oRSXFPO1fet1j9bmzFbBtUk=
 github.com/Xuanwo/storage v1.2.1-0.20200527102749-4370d2c8933b h1:uJtJc7gBpU8ujgaPHHmw6juC3I5Cu0jQPd9VB7mIlcM=
 github.com/Xuanwo/storage v1.2.1-0.20200527102749-4370d2c8933b/go.mod h1:CL8f6A7r6nOOqqzl/9uQIAO3fLYpKdLzzeaHQCWjs2I=
 github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible/go.mod h1:T/Aws4fEfogEE9v+HPhhw+CntffsBHJ8nXQCwKr0/g8=
@@ -134,7 +132,6 @@ github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149/go.mod h1:31jz6HNzdxOmlERGGEc4v/dMssOfmp2p5bT/okiKFFc=
 github.com/mattn/go-ieproxy v0.0.0-20190702010315-6dee0af9227d/go.mod h1:31jz6HNzdxOmlERGGEc4v/dMssOfmp2p5bT/okiKFFc=
 github.com/mozillazg/go-httpheader v0.2.1/go.mod h1:jJ8xECTlalr6ValeXYdOF8fFUISeBAdw6E61aqQma60=
-github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/pengsrc/go-shared v0.2.1-0.20190131101655-1999055a4a14 h1:XeOYlK9W1uCmhjJSsY78Mcuh7MVkNjTzmHx1yBzizSU=
 github.com/pengsrc/go-shared v0.2.1-0.20190131101655-1999055a4a14/go.mod h1:jVblp62SafmidSkvWrXyxAme3gaTfEtWwRPGz5cpvHg=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

@@ -1339,6 +1339,7 @@ type DeleteStorageTask struct {
 	types.Force
 	types.Service
 	types.StorageName
+	types.Zone
 
 	// Output value
 	types.HandleObjCallback
@@ -1368,6 +1369,9 @@ func (t *DeleteStorageTask) validateInput() {
 	if !t.ValidateStorageName() {
 		panic(fmt.Errorf("Task DeleteStorage value StorageName is invalid"))
 	}
+	if !t.ValidateZone() {
+		panic(fmt.Errorf("Task DeleteStorage value Zone is invalid"))
+	}
 }
 
 // loadInput will check and load all input before new task.
@@ -1377,6 +1381,7 @@ func (t *DeleteStorageTask) loadInput(task navvy.Task) {
 	types.LoadForce(task, t)
 	types.LoadService(task, t)
 	types.LoadStorageName(task, t)
+	types.LoadZone(task, t)
 }
 
 // Run implement navvy.Task
@@ -1403,7 +1408,7 @@ func (t *DeleteStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteStorageTask) String() string {
-	return fmt.Sprintf("DeleteStorageTask {Force: %v, Service: %v, StorageName: %v}", t.GetForce(), t.GetService(), t.GetStorageName())
+	return fmt.Sprintf("DeleteStorageTask {Force: %v, Service: %v, StorageName: %v, Zone: %v}", t.GetForce(), t.GetService(), t.GetStorageName(), t.GetZone())
 }
 
 // NewDeleteStorageTask will create a DeleteStorageTask which meets navvy.Task.
