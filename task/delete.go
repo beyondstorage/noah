@@ -4,6 +4,7 @@ import (
 	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/pkg/segment"
 	typ "github.com/Xuanwo/storage/types"
+	"github.com/Xuanwo/storage/types/pairs"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
@@ -90,8 +91,12 @@ func (t *DeleteSegmentTask) run() {
 
 func (t *DeleteStorageTask) new() {}
 func (t *DeleteStorageTask) run() {
+	var ps []*typ.Pair
+	if t.GetZone() != "" {
+		ps = append(ps, pairs.WithLocation(t.GetZone()))
+	}
 	if t.GetForce() {
-		store, err := t.GetService().Get(t.GetStorageName())
+		store, err := t.GetService().Get(t.GetStorageName(), ps...)
 		if err != nil {
 			t.TriggerFault(types.NewErrUnhandled(err))
 			return
@@ -132,7 +137,7 @@ func (t *DeleteStorageTask) run() {
 		}
 	}
 
-	err := t.GetService().Delete(t.GetStorageName())
+	err := t.GetService().Delete(t.GetStorageName(), ps...)
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return

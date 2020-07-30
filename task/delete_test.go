@@ -143,6 +143,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetService(srv)
 		task.SetStorageName(storageName)
 		task.SetForce(false)
+		task.SetZone("")
 
 		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
 			assert.Equal(t, storageName, name)
@@ -169,6 +170,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetForce(true)
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
+		task.SetZone("")
 
 		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
 			assert.Equal(t, storageName, name)
@@ -209,6 +211,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetForce(true)
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
+		task.SetZone("")
 
 		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
 			assert.Equal(t, storageName, name)
