@@ -247,7 +247,6 @@ var testPageTmpl = template.Must(template.New("testPage").Parse(`// Code generat
 package task
 
 import (
-	"context"
 	"errors"
 	"testing"
 
