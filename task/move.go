@@ -1,13 +1,15 @@
 package task
 
 import (
+	"context"
+
 	typ "github.com/Xuanwo/storage/types"
 
 	"github.com/qingstor/noah/utils"
 )
 
 func (t *MoveDirTask) new() {}
-func (t *MoveDirTask) run() {
+func (t *MoveDirTask) run(ctx context.Context) {
 	x := NewListDir(t)
 	err := utils.ChooseSourceStorageAsDirLister(x, t)
 	if err != nil {
@@ -24,7 +26,7 @@ func (t *MoveDirTask) run() {
 				t.GetHandleObjCallback()(o)
 			})
 		}
-		t.GetScheduler().Async(sf)
+		t.GetScheduler().Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewMoveDir(t)
@@ -33,21 +35,21 @@ func (t *MoveDirTask) run() {
 		if t.ValidateHandleObjCallback() {
 			sf.SetHandleObjCallback(t.GetHandleObjCallback())
 		}
-		t.GetScheduler().Sync(sf)
+		t.GetScheduler().Sync(ctx, sf)
 	})
-	t.GetScheduler().Sync(x)
+	t.GetScheduler().Sync(ctx, x)
 }
 
 func (t *MoveFileTask) new() {}
-func (t *MoveFileTask) run() {
+func (t *MoveFileTask) run(ctx context.Context) {
 	ct := NewCopyFile(t)
 	ct.SetCheckTasks(nil)
-	t.GetScheduler().Sync(ct)
+	t.GetScheduler().Sync(ctx, ct)
 	if t.GetFault().HasError() {
 		return
 	}
 
 	dt := NewDeleteFile(t)
 	utils.ChooseSourceStorage(dt, t)
-	t.GetScheduler().Sync(dt)
+	t.GetScheduler().Sync(ctx, dt)
 }

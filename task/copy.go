@@ -2,13 +2,12 @@ package task
 
 import (
 	"bytes"
-	"errors"
-	"io"
+	"context"
 	"sync"
 
+	"github.com/Xuanwo/storage"
 	typ "github.com/Xuanwo/storage/types"
 	"github.com/Xuanwo/storage/types/pairs"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/progress"
@@ -17,7 +16,7 @@ import (
 )
 
 func (t *CopyDirTask) new() {}
-func (t *CopyDirTask) run() {
+func (t *CopyDirTask) run(ctx context.Context) {
 	x := NewListDir(t)
 	err := utils.ChooseSourceStorageAsDirLister(x, t)
 	if err != nil {
@@ -34,7 +33,7 @@ func (t *CopyDirTask) run() {
 				t.GetHandleObjCallback()(o)
 			})
 		}
-		t.GetScheduler().Async(sf)
+		t.GetScheduler().Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewCopyDir(t)
@@ -43,15 +42,15 @@ func (t *CopyDirTask) run() {
 		if t.ValidateHandleObjCallback() {
 			sf.SetHandleObjCallback(t.GetHandleObjCallback())
 		}
-		t.GetScheduler().Sync(sf)
+		t.GetScheduler().Sync(ctx, sf)
 	})
-	t.GetScheduler().Sync(x)
+	t.GetScheduler().Sync(ctx, x)
 }
 
 func (t *CopyFileTask) new() {}
-func (t *CopyFileTask) run() {
+func (t *CopyFileTask) run(ctx context.Context) {
 	check := NewBetweenStorageCheck(t)
-	t.GetScheduler().Sync(check)
+	t.GetScheduler().Sync(ctx, check)
 	if t.GetFault().HasError() {
 		return
 	}
@@ -59,7 +58,7 @@ func (t *CopyFileTask) run() {
 	// Execute check tasks
 	for _, v := range t.GetCheckTasks() {
 		ct := v(check)
-		t.GetScheduler().Sync(ct)
+		t.GetScheduler().Sync(ctx, ct)
 		if t.GetFault().HasError() {
 			return
 		}
@@ -71,26 +70,28 @@ func (t *CopyFileTask) run() {
 	}
 
 	srcSize := check.GetSourceObject().Size
-	if srcSize >= constants.MaximumAutoMultipartSize {
+
+	// if destination not support segmenter, we do not call multipart api
+	if _, ok := t.GetDestinationStorage().(storage.IndexSegmenter); ok && srcSize >= constants.MaximumAutoMultipartSize {
 		x := NewCopyLargeFile(t)
 		x.SetTotalSize(srcSize)
-		t.GetScheduler().Sync(x)
+		t.GetScheduler().Sync(ctx, x)
 	} else {
 		x := NewCopySmallFile(t)
 		x.SetSize(srcSize)
-		t.GetScheduler().Sync(x)
+		t.GetScheduler().Sync(ctx, x)
 	}
 }
 
 func (t *CopySmallFileTask) new() {}
-func (t *CopySmallFileTask) run() {
+func (t *CopySmallFileTask) run(ctx context.Context) {
 	fileCopyTask := NewCopySingleFile(t)
 
 	if t.GetCheckMD5() {
 		md5Task := NewMD5SumFile(t)
 		utils.ChooseSourceStorage(md5Task, t)
 		md5Task.SetOffset(0)
-		t.GetScheduler().Sync(md5Task)
+		t.GetScheduler().Sync(ctx, md5Task)
 		if t.GetFault().HasError() {
 			return
 		}
@@ -99,11 +100,11 @@ func (t *CopySmallFileTask) run() {
 		fileCopyTask.SetMD5Sum(nil)
 	}
 
-	t.GetScheduler().Sync(fileCopyTask)
+	t.GetScheduler().Sync(ctx, fileCopyTask)
 }
 
 func (t *CopyLargeFileTask) new() {}
-func (t *CopyLargeFileTask) run() {
+func (t *CopyLargeFileTask) run(ctx context.Context) {
 	// Set segment part size.
 	partSize, err := utils.CalculatePartSize(t.GetTotalSize())
 	if err != nil {
@@ -115,19 +116,11 @@ func (t *CopyLargeFileTask) run() {
 	initTask := NewSegmentInit(t)
 	err = utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
-		tErr := &types.StorageInsufficientAbility{}
-		if errors.As(err, &tErr) {
-			log.Debugf("destination storage insufficient as index segmenter, transfer into copy small file")
-			st := NewCopySmallFile(t)
-			st.SetSize(t.GetTotalSize())
-			t.GetScheduler().Sync(st)
-			return
-		}
-		t.TriggerFault(types.NewErrUnhandled(err))
+		t.TriggerFault(err)
 		return
 	}
 
-	t.GetScheduler().Sync(initTask)
+	t.GetScheduler().Sync(ctx, initTask)
 	if t.GetFault().HasError() {
 		return
 	}
@@ -139,7 +132,7 @@ func (t *CopyLargeFileTask) run() {
 
 		x := NewCopyPartialFile(t)
 		x.SetIndex(part)
-		t.GetScheduler().Async(x)
+		t.GetScheduler().Async(ctx, x)
 		// While GetDone is true, this must be the last part.
 		if x.GetDone() {
 			break
@@ -154,7 +147,7 @@ func (t *CopyLargeFileTask) run() {
 	if t.GetFault().HasError() {
 		return
 	}
-	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
+	t.GetScheduler().Sync(ctx, NewSegmentCompleteTask(initTask))
 }
 
 func (t *CopyPartialFileTask) new() {
@@ -170,13 +163,13 @@ func (t *CopyPartialFileTask) new() {
 		t.SetDone(false)
 	}
 }
-func (t *CopyPartialFileTask) run() {
+func (t *CopyPartialFileTask) run(ctx context.Context) {
 	fileCopyTask := NewSegmentFileCopy(t)
 
 	if t.GetCheckMD5() {
 		md5Task := NewMD5SumFile(t)
 		utils.ChooseSourceStorage(md5Task, t)
-		t.GetScheduler().Sync(md5Task)
+		t.GetScheduler().Sync(ctx, md5Task)
 		if t.GetFault().HasError() {
 			return
 		}
@@ -190,7 +183,7 @@ func (t *CopyPartialFileTask) run() {
 		t.TriggerFault(err)
 		return
 	}
-	t.GetScheduler().Sync(fileCopyTask)
+	t.GetScheduler().Sync(ctx, fileCopyTask)
 }
 
 func (t *CopyStreamTask) new() {
@@ -201,7 +194,7 @@ func (t *CopyStreamTask) new() {
 	}
 	t.SetBytesPool(bytesPool)
 }
-func (t *CopyStreamTask) run() {
+func (t *CopyStreamTask) run(ctx context.Context) {
 	initTask := NewSegmentInit(t)
 	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
@@ -213,7 +206,7 @@ func (t *CopyStreamTask) run() {
 	partSize := int64(constants.DefaultPartSize)
 	t.SetPartSize(partSize)
 
-	t.GetScheduler().Sync(initTask)
+	t.GetScheduler().Sync(ctx, initTask)
 	if t.GetFault().HasError() {
 		return
 	}
@@ -221,16 +214,24 @@ func (t *CopyStreamTask) run() {
 
 	offset, part := int64(0), 0
 	for {
+		it := NewInitSegmentStream(t)
+		t.GetScheduler().Sync(ctx, it)
+		if t.GetFault().HasError() {
+			return
+		}
+
 		x := NewCopyPartialStream(t)
+		x.SetSize(it.GetSize())
+		x.SetContent(it.GetContent())
 		x.SetOffset(offset)
 		x.SetIndex(part)
-		t.GetScheduler().Async(x)
+		t.GetScheduler().Async(ctx, x)
 
-		if x.GetDone() {
+		if it.GetDone() {
 			break
 		}
 
-		offset += x.GetSize()
+		offset += it.GetSize()
 		part++
 	}
 
@@ -238,39 +239,15 @@ func (t *CopyStreamTask) run() {
 	if t.GetFault().HasError() {
 		return
 	}
-	t.GetScheduler().Sync(NewSegmentCompleteTask(initTask))
+	t.GetScheduler().Sync(ctx, NewSegmentCompleteTask(initTask))
 }
 
-func (t *CopyPartialStreamTask) new() {
-	// Set size and update offset.
-	partSize := t.GetPartSize()
-
-	r, err := t.GetSourceStorage().Read(t.GetSourcePath(), pairs.WithSize(partSize))
-	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
-	}
-
-	b := t.GetBytesPool().Get().(*bytes.Buffer)
-	n, err := io.Copy(b, r)
-	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
-	}
-
-	t.SetSize(n)
-	t.SetContent(b)
-	if n < partSize {
-		t.SetDone(true)
-	} else {
-		t.SetDone(false)
-	}
-}
-func (t *CopyPartialStreamTask) run() {
+func (t *CopyPartialStreamTask) new() {}
+func (t *CopyPartialStreamTask) run(ctx context.Context) {
 	copyTask := NewSegmentStreamCopy(t)
 	if t.GetCheckMD5() {
 		md5sumTask := NewMD5SumStream(t)
-		t.GetScheduler().Sync(md5sumTask)
+		t.GetScheduler().Sync(ctx, md5sumTask)
 		if t.GetFault().HasError() {
 			return
 		}
@@ -285,12 +262,12 @@ func (t *CopyPartialStreamTask) run() {
 		return
 	}
 
-	t.GetScheduler().Sync(copyTask)
+	t.GetScheduler().Sync(ctx, copyTask)
 }
 
 func (t *CopySingleFileTask) new() {}
-func (t *CopySingleFileTask) run() {
-	r, err := t.GetSourceStorage().Read(t.GetSourcePath())
+func (t *CopySingleFileTask) run(ctx context.Context) {
+	r, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath())
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -303,7 +280,7 @@ func (t *CopySingleFileTask) run() {
 	}
 	// TODO: add checksum support
 	writeDone := 0
-	err = t.GetDestinationStorage().Write(t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
+	err = t.GetDestinationStorage().WriteWithContext(ctx, t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
 		pairs.WithReadCallbackFunc(func(b []byte) {
 			writeDone += len(b)
 			progress.UpdateState(t.GetID(), int64(writeDone))

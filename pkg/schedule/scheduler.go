@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"context"
 	"sync"
 
 	"github.com/Xuanwo/navvy"
@@ -12,8 +13,8 @@ type TaskFunc func(navvy.Task) navvy.Task
 // Scheduler will schedule tasks.
 //go:generate mockgen -package mock -destination ../mock/scheduler.go github.com/qingstor/noah/pkg/schedule Scheduler
 type Scheduler interface {
-	Sync(task navvy.Task)
-	Async(task navvy.Task)
+	Sync(ctx context.Context, task navvy.Task)
+	Async(ctx context.Context, task navvy.Task)
 
 	Wait()
 }
@@ -29,23 +30,36 @@ type IOWorkloader interface {
 }
 
 type task struct {
+	ctx context.Context
+
 	s *RealScheduler
 	t navvy.Task
 }
 
-func newTask(s *RealScheduler, t navvy.Task) *task {
+func newTask(ctx context.Context, s *RealScheduler, t navvy.Task) *task {
 	return &task{
-		s: s,
-		t: t,
+		ctx: ctx,
+		s:   s,
+		t:   t,
 	}
 }
 
-func (t *task) Run() {
+func (t *task) Context() context.Context {
+	if t.ctx == nil {
+		return context.Background()
+	}
+	return t.ctx
+}
+
+// Run run
+func (t *task) Run(ctx context.Context) {
 	defer func() {
 		t.s.wg.Done()
 	}()
-
-	t.t.Run()
+	if ctx == nil {
+		ctx = t.t.Context()
+	}
+	t.t.Run(ctx)
 }
 
 // RealScheduler will hold the task's sub tasks.
@@ -63,20 +77,20 @@ func NewScheduler(pool *navvy.Pool) *RealScheduler {
 }
 
 // Sync will return after this task finished.
-func (s *RealScheduler) Sync(task navvy.Task) {
+func (s *RealScheduler) Sync(ctx context.Context, task navvy.Task) {
 	s.wg.Add(1)
 
 	defer func() {
 		s.wg.Done()
 	}()
-	task.Run()
+	task.Run(ctx)
 }
 
 // Async will create a new task immediately.
-func (s *RealScheduler) Async(task navvy.Task) {
+func (s *RealScheduler) Async(ctx context.Context, task navvy.Task) {
 	s.wg.Add(1)
 
-	t := newTask(s, task)
+	t := newTask(ctx, s, task)
 	s.pool.Submit(t)
 }
 

@@ -2,6 +2,7 @@ package task
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"testing"
 
@@ -18,6 +19,8 @@ func TestMD5SumFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	store := mock.NewMockStorager(ctrl)
 	srcReader := mock.NewMockReadCloser(ctrl)
 	srcPath := uuid.New().String()
@@ -31,15 +34,16 @@ func TestMD5SumFileTask_run(t *testing.T) {
 	task.SetOffset(0)
 
 	srcReader.EXPECT().Close().Do(func() {})
-	store.EXPECT().Read(gomock.Any(), gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
-		assert.Equal(t, srcPath, path)
-		return srcReader, nil
-	})
+	store.EXPECT().ReadWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
+			assert.Equal(t, srcPath, path)
+			return srcReader, nil
+		})
 	srcReader.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
 		return 768, io.EOF
 	})
 
-	task.run()
+	task.run(ctx)
 	assert.NotEmpty(t, task.GetMD5Sum())
 	assert.Empty(t, task.GetFault().Error())
 }
@@ -49,7 +53,7 @@ func TestMD5SuSteamTask_run(t *testing.T) {
 	task.SetFault(fault.New())
 	task.SetContent(&bytes.Buffer{})
 
-	task.run()
+	task.run(context.Background())
 	assert.NotEmpty(t, task.GetMD5Sum())
 	assert.Empty(t, task.GetFault().Error())
 }

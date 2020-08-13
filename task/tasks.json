@@ -78,7 +78,6 @@
   "CopyPartialStream": {
     "description": "copy a partial stream between two storager",
     "input": [
-      "BytesPool",
       "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
@@ -196,6 +195,20 @@
     "output": [
       "HandleObjCallback",
       "HandleSegmentCallback"
+    ]
+  },
+  "InitSegmentStream": {
+    "description": "init a partial stream between two storager",
+    "input": [
+      "BytesPool",
+      "PartSize",
+      "SourcePath",
+      "SourceStorage"
+    ],
+    "output": [
+      "Content",
+      "Done",
+      "Size"
     ]
   },
   "IsDestinationObjectExist": {

@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	navvy "github.com/Xuanwo/navvy"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -34,27 +35,27 @@ func (m *MockScheduler) EXPECT() *MockSchedulerMockRecorder {
 }
 
 // Async mocks base method
-func (m *MockScheduler) Async(arg0 navvy.Task) {
+func (m *MockScheduler) Async(arg0 context.Context, arg1 navvy.Task) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Async", arg0)
+	m.ctrl.Call(m, "Async", arg0, arg1)
 }
 
 // Async indicates an expected call of Async
-func (mr *MockSchedulerMockRecorder) Async(arg0 interface{}) *gomock.Call {
+func (mr *MockSchedulerMockRecorder) Async(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Async", reflect.TypeOf((*MockScheduler)(nil).Async), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Async", reflect.TypeOf((*MockScheduler)(nil).Async), arg0, arg1)
 }
 
 // Sync mocks base method
-func (m *MockScheduler) Sync(arg0 navvy.Task) {
+func (m *MockScheduler) Sync(arg0 context.Context, arg1 navvy.Task) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Sync", arg0)
+	m.ctrl.Call(m, "Sync", arg0, arg1)
 }
 
 // Sync indicates an expected call of Sync
-func (mr *MockSchedulerMockRecorder) Sync(arg0 interface{}) *gomock.Call {
+func (mr *MockSchedulerMockRecorder) Sync(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockScheduler)(nil).Sync), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockScheduler)(nil).Sync), arg0, arg1)
 }
 
 // Wait mocks base method

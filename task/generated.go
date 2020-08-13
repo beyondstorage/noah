@@ -2,6 +2,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Xuanwo/navvy"
@@ -75,11 +76,11 @@ func (t *BetweenStorageCheckTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *BetweenStorageCheckTask) Run() {
+func (t *BetweenStorageCheckTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -89,6 +90,11 @@ func (t *BetweenStorageCheckTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *BetweenStorageCheckTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -174,11 +180,11 @@ func (t *CopyDirTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyDirTask) Run() {
+func (t *CopyDirTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -188,6 +194,11 @@ func (t *CopyDirTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopyDirTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -273,11 +284,11 @@ func (t *CopyFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyFileTask) Run() {
+func (t *CopyFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -287,6 +298,11 @@ func (t *CopyFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopyFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -374,11 +390,11 @@ func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyLargeFileTask) Run() {
+func (t *CopyLargeFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -388,6 +404,11 @@ func (t *CopyLargeFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopyLargeFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -494,11 +515,11 @@ func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyPartialFileTask) Run() {
+func (t *CopyPartialFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -508,6 +529,11 @@ func (t *CopyPartialFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopyPartialFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -535,7 +561,6 @@ type CopyPartialStreamTask struct {
 	types.CallbackFunc
 
 	// Input value
-	types.BytesPool
 	types.CheckMD5
 	types.DestinationPath
 	types.DestinationStorage
@@ -566,9 +591,6 @@ func NewCopyPartialStream(task navvy.Task) *CopyPartialStreamTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyPartialStreamTask) validateInput() {
-	if !t.ValidateBytesPool() {
-		panic(fmt.Errorf("Task CopyPartialStream value BytesPool is invalid"))
-	}
 	if !t.ValidateCheckMD5() {
 		panic(fmt.Errorf("Task CopyPartialStream value CheckMD5 is invalid"))
 	}
@@ -599,7 +621,6 @@ func (t *CopyPartialStreamTask) validateInput() {
 func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadBytesPool(task, t)
 	types.LoadCheckMD5(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -611,11 +632,11 @@ func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyPartialStreamTask) Run() {
+func (t *CopyPartialStreamTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -627,6 +648,11 @@ func (t *CopyPartialStreamTask) Run() {
 	log.Debugf("Finished %s", t)
 }
 
+// Context implement navvy.Task
+func (t *CopyPartialStreamTask) Context() context.Context {
+	return context.TODO()
+}
+
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialStreamTask) TriggerFault(err error) {
 	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
@@ -634,7 +660,7 @@ func (t *CopyPartialStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialStreamTask) String() string {
-	return fmt.Sprintf("CopyPartialStreamTask {BytesPool: %v, CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, Index: %v, PartSize: %v, Segment: %v, SourcePath: %v, SourceStorage: %v}", t.GetBytesPool(), t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetIndex(), t.GetPartSize(), t.GetSegment(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopyPartialStreamTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, Index: %v, PartSize: %v, Segment: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetIndex(), t.GetPartSize(), t.GetSegment(), t.GetSourcePath(), t.GetSourceStorage())
 }
 
 // NewCopyPartialStreamTask will create a CopyPartialStreamTask which meets navvy.Task.
@@ -709,11 +735,11 @@ func (t *CopySingleFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopySingleFileTask) Run() {
+func (t *CopySingleFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -723,6 +749,11 @@ func (t *CopySingleFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopySingleFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -808,11 +839,11 @@ func (t *CopySmallFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopySmallFileTask) Run() {
+func (t *CopySmallFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -822,6 +853,11 @@ func (t *CopySmallFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopySmallFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -904,11 +940,11 @@ func (t *CopyStreamTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CopyStreamTask) Run() {
+func (t *CopyStreamTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -918,6 +954,11 @@ func (t *CopyStreamTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CopyStreamTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -979,11 +1020,11 @@ func (t *CreateStorageTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *CreateStorageTask) Run() {
+func (t *CreateStorageTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -993,6 +1034,11 @@ func (t *CreateStorageTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *CreateStorageTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1058,11 +1104,11 @@ func (t *DeleteDirTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *DeleteDirTask) Run() {
+func (t *DeleteDirTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1072,6 +1118,11 @@ func (t *DeleteDirTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *DeleteDirTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1137,11 +1188,11 @@ func (t *DeleteFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *DeleteFileTask) Run() {
+func (t *DeleteFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1151,6 +1202,11 @@ func (t *DeleteFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *DeleteFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1216,11 +1272,11 @@ func (t *DeletePrefixTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *DeletePrefixTask) Run() {
+func (t *DeletePrefixTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1230,6 +1286,11 @@ func (t *DeletePrefixTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *DeletePrefixTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1295,11 +1356,11 @@ func (t *DeleteSegmentTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *DeleteSegmentTask) Run() {
+func (t *DeleteSegmentTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1309,6 +1370,11 @@ func (t *DeleteSegmentTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *DeleteSegmentTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1385,11 +1451,11 @@ func (t *DeleteStorageTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *DeleteStorageTask) Run() {
+func (t *DeleteStorageTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1399,6 +1465,11 @@ func (t *DeleteStorageTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *DeleteStorageTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1414,6 +1485,102 @@ func (t *DeleteStorageTask) String() string {
 // NewDeleteStorageTask will create a DeleteStorageTask which meets navvy.Task.
 func NewDeleteStorageTask(task navvy.Task) navvy.Task {
 	return NewDeleteStorage(task)
+}
+
+// InitSegmentStreamTask will init a partial stream between two storager.
+type InitSegmentStreamTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Input value
+	types.BytesPool
+	types.PartSize
+	types.SourcePath
+	types.SourceStorage
+
+	// Output value
+	types.Content
+	types.Done
+	types.Size
+}
+
+// NewInitSegmentStream will create a InitSegmentStreamTask struct and fetch inherited data from parent task.
+func NewInitSegmentStream(task navvy.Task) *InitSegmentStreamTask {
+	t := &InitSegmentStreamTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *InitSegmentStreamTask) validateInput() {
+	if !t.ValidateBytesPool() {
+		panic(fmt.Errorf("Task InitSegmentStream value BytesPool is invalid"))
+	}
+	if !t.ValidatePartSize() {
+		panic(fmt.Errorf("Task InitSegmentStream value PartSize is invalid"))
+	}
+	if !t.ValidateSourcePath() {
+		panic(fmt.Errorf("Task InitSegmentStream value SourcePath is invalid"))
+	}
+	if !t.ValidateSourceStorage() {
+		panic(fmt.Errorf("Task InitSegmentStream value SourceStorage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *InitSegmentStreamTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+	types.LoadBytesPool(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadSourcePath(task, t)
+	types.LoadSourceStorage(task, t)
+}
+
+// Run implement navvy.Task
+func (t *InitSegmentStreamTask) Run(ctx context.Context) {
+	t.validateInput()
+
+	log.Debugf("Started %s", t)
+	t.run(ctx)
+	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		return
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *InitSegmentStreamTask) Context() context.Context {
+	return context.TODO()
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *InitSegmentStreamTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *InitSegmentStreamTask) String() string {
+	return fmt.Sprintf("InitSegmentStreamTask {BytesPool: %v, PartSize: %v, SourcePath: %v, SourceStorage: %v}", t.GetBytesPool(), t.GetPartSize(), t.GetSourcePath(), t.GetSourceStorage())
+}
+
+// NewInitSegmentStreamTask will create a InitSegmentStreamTask which meets navvy.Task.
+func NewInitSegmentStreamTask(task navvy.Task) navvy.Task {
+	return NewInitSegmentStream(task)
 }
 
 // IsDestinationObjectExistTask will .
@@ -1459,11 +1626,11 @@ func (t *IsDestinationObjectExistTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *IsDestinationObjectExistTask) Run() {
+func (t *IsDestinationObjectExistTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1473,6 +1640,11 @@ func (t *IsDestinationObjectExistTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *IsDestinationObjectExistTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1533,11 +1705,11 @@ func (t *IsDestinationObjectNotExistTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *IsDestinationObjectNotExistTask) Run() {
+func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1547,6 +1719,11 @@ func (t *IsDestinationObjectNotExistTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *IsDestinationObjectNotExistTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1612,11 +1789,11 @@ func (t *IsSizeEqualTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *IsSizeEqualTask) Run() {
+func (t *IsSizeEqualTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1626,6 +1803,11 @@ func (t *IsSizeEqualTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *IsSizeEqualTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1691,11 +1873,11 @@ func (t *IsUpdateAtGreaterTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *IsUpdateAtGreaterTask) Run() {
+func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1705,6 +1887,11 @@ func (t *IsUpdateAtGreaterTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *IsUpdateAtGreaterTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1779,11 +1966,11 @@ func (t *ListDirTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *ListDirTask) Run() {
+func (t *ListDirTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1793,6 +1980,11 @@ func (t *ListDirTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *ListDirTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1862,11 +2054,11 @@ func (t *ListPrefixTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *ListPrefixTask) Run() {
+func (t *ListPrefixTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1876,6 +2068,11 @@ func (t *ListPrefixTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *ListPrefixTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -1945,11 +2142,11 @@ func (t *ListSegmentTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *ListSegmentTask) Run() {
+func (t *ListSegmentTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -1959,6 +2156,11 @@ func (t *ListSegmentTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *ListSegmentTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2028,11 +2230,11 @@ func (t *ListStorageTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *ListStorageTask) Run() {
+func (t *ListStorageTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2042,6 +2244,11 @@ func (t *ListStorageTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *ListStorageTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2117,11 +2324,11 @@ func (t *MD5SumFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *MD5SumFileTask) Run() {
+func (t *MD5SumFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2131,6 +2338,11 @@ func (t *MD5SumFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *MD5SumFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2191,11 +2403,11 @@ func (t *MD5SumStreamTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *MD5SumStreamTask) Run() {
+func (t *MD5SumStreamTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2205,6 +2417,11 @@ func (t *MD5SumStreamTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *MD5SumStreamTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2285,11 +2502,11 @@ func (t *MoveDirTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *MoveDirTask) Run() {
+func (t *MoveDirTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2299,6 +2516,11 @@ func (t *MoveDirTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *MoveDirTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2379,11 +2601,11 @@ func (t *MoveFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *MoveFileTask) Run() {
+func (t *MoveFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2393,6 +2615,11 @@ func (t *MoveFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *MoveFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2463,11 +2690,11 @@ func (t *ReachFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *ReachFileTask) Run() {
+func (t *ReachFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2477,6 +2704,11 @@ func (t *ReachFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *ReachFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2546,11 +2778,11 @@ func (t *SegmentCompleteTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *SegmentCompleteTask) Run() {
+func (t *SegmentCompleteTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2560,6 +2792,11 @@ func (t *SegmentCompleteTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *SegmentCompleteTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2659,11 +2896,11 @@ func (t *SegmentFileCopyTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *SegmentFileCopyTask) Run() {
+func (t *SegmentFileCopyTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2673,6 +2910,11 @@ func (t *SegmentFileCopyTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *SegmentFileCopyTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2743,11 +2985,11 @@ func (t *SegmentInitTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *SegmentInitTask) Run() {
+func (t *SegmentInitTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2757,6 +2999,11 @@ func (t *SegmentInitTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *SegmentInitTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2851,11 +3098,11 @@ func (t *SegmentStreamCopyTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *SegmentStreamCopyTask) Run() {
+func (t *SegmentStreamCopyTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2865,6 +3112,11 @@ func (t *SegmentStreamCopyTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *SegmentStreamCopyTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -2930,11 +3182,11 @@ func (t *StatFileTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *StatFileTask) Run() {
+func (t *StatFileTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -2944,6 +3196,11 @@ func (t *StatFileTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *StatFileTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -3004,11 +3261,11 @@ func (t *StatStorageTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *StatStorageTask) Run() {
+func (t *StatStorageTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -3018,6 +3275,11 @@ func (t *StatStorageTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *StatStorageTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -3128,11 +3390,11 @@ func (t *SyncTask) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *SyncTask) Run() {
+func (t *SyncTask) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -3142,6 +3404,11 @@ func (t *SyncTask) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *SyncTask) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.

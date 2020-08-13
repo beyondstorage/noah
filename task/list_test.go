@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Xuanwo/storage/pkg/segment"
@@ -17,6 +18,8 @@ func TestListDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	store := mock.NewMockDirLister(ctrl)
 	testPath := uuid.New().String()
 
@@ -28,18 +31,21 @@ func TestListDirTask_run(t *testing.T) {
 	task.SetDirFunc(func(*typ.Object) {})
 	task.SetFileFunc(func(*typ.Object) {})
 
-	store.EXPECT().ListDir(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
-		assert.Equal(t, testPath, path)
-		return nil
-	})
+	store.EXPECT().ListDirWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
+			assert.Equal(t, testPath, path)
+			return nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestListPrefixTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	store := mock.NewMockPrefixLister(ctrl)
 	testPath := uuid.New().String()
@@ -51,18 +57,21 @@ func TestListPrefixTask_run(t *testing.T) {
 	task.SetPath(testPath)
 	task.SetObjectFunc(func(*typ.Object) {})
 
-	store.EXPECT().ListPrefix(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
-		assert.Equal(t, testPath, path)
-		return nil
-	})
+	store.EXPECT().ListPrefixWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
+			assert.Equal(t, testPath, path)
+			return nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestListSegmentTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
 	testPath := uuid.New().String()
@@ -73,18 +82,21 @@ func TestListSegmentTask_run(t *testing.T) {
 	task.SetPath(testPath)
 	task.SetSegmentFunc(func(segment segment.Segment) {})
 
-	segmenter.EXPECT().ListPrefixSegments(gomock.Any(), gomock.Any()).Do(func(path string, opts ...*typ.Pair) error {
-		assert.Equal(t, testPath, path)
-		return nil
-	})
+	segmenter.EXPECT().ListPrefixSegmentsWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
+			assert.Equal(t, testPath, path)
+			return nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestListStorageTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	srv := mock.NewMockServicer(ctrl)
 	zone := uuid.New().String()
@@ -94,11 +106,12 @@ func TestListStorageTask_run(t *testing.T) {
 	task.SetService(srv)
 	task.SetZone(zone)
 
-	srv.EXPECT().List(gomock.Any()).Do(func(pairs ...*typ.Pair) error {
-		assert.Equal(t, zone, pairs[0].Value.(string))
-		return nil
-	})
+	srv.EXPECT().ListWithContext(gomock.Eq(ctx), gomock.Any()).
+		Do(func(ctx context.Context, pairs ...*typ.Pair) error {
+			assert.Equal(t, zone, pairs[0].Value.(string))
+			return nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }

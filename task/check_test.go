@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -18,6 +19,8 @@ import (
 func TestBetweenStorageCheckTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	cases := []struct {
 		name         string
@@ -55,22 +58,24 @@ func TestBetweenStorageCheckTask_run(t *testing.T) {
 			task.SetDestinationPath(dstPath)
 			task.SetFault(fault.New())
 
-			srcStore.EXPECT().Stat(gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (o *typ.Object, err error) {
-				assert.Equal(t, srcPath, path)
-				return &typ.Object{Name: srcPath}, nil
-			})
+			srcStore.EXPECT().StatWithContext(gomock.Eq(ctx), gomock.Any()).
+				DoAndReturn(func(ctx context.Context, path string, pairs ...*typ.Pair) (o *typ.Object, err error) {
+					assert.Equal(t, srcPath, path)
+					return &typ.Object{Name: srcPath}, nil
+				})
 			srcStore.EXPECT().String().DoAndReturn(func() string {
 				return "src"
 			}).AnyTimes()
-			dstStore.EXPECT().Stat(gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (o *typ.Object, err error) {
-				assert.Equal(t, dstPath, path)
-				return tt.expectObject, tt.expectErr
-			})
+			dstStore.EXPECT().StatWithContext(gomock.Eq(ctx), gomock.Any()).
+				DoAndReturn(func(ctx context.Context, path string, pairs ...*typ.Pair) (o *typ.Object, err error) {
+					assert.Equal(t, dstPath, path)
+					return tt.expectObject, tt.expectErr
+				})
 			dstStore.EXPECT().String().DoAndReturn(func() string {
 				return "dst"
 			}).AnyTimes()
 
-			task.run()
+			task.run(ctx)
 
 			assert.NotNil(t, task.GetSourceObject())
 			if tt.expectObject != nil {
@@ -89,11 +94,13 @@ func TestBetweenStorageCheckTask_run(t *testing.T) {
 }
 
 func TestIsDestinationObjectExistTask_run(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("destination object not exist", func(t *testing.T) {
 		task := IsDestinationObjectExistTask{}
 		task.SetDestinationObject(nil)
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, false, task.GetResult())
 	})
@@ -102,19 +109,21 @@ func TestIsDestinationObjectExistTask_run(t *testing.T) {
 		task := IsDestinationObjectExistTask{}
 		task.SetDestinationObject(&typ.Object{})
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, true, task.GetResult())
 	})
 }
 
 func TestIsSizeEqualTask_run(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("size equal", func(t *testing.T) {
 		task := IsSizeEqualTask{}
 		task.SetSourceObject(&typ.Object{Size: 111})
 		task.SetDestinationObject(&typ.Object{Size: 111})
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, true, task.GetResult())
 	})
@@ -124,19 +133,21 @@ func TestIsSizeEqualTask_run(t *testing.T) {
 		task.SetSourceObject(&typ.Object{Size: 222})
 		task.SetDestinationObject(&typ.Object{Size: 111})
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, false, task.GetResult())
 	})
 }
 
 func TestIsUpdateAtGreaterTask_run(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("updated at greater", func(t *testing.T) {
 		task := IsUpdateAtGreaterTask{}
 		task.SetSourceObject(&typ.Object{UpdatedAt: time.Now().Add(time.Hour)})
 		task.SetDestinationObject(&typ.Object{UpdatedAt: time.Now()})
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, true, task.GetResult())
 	})
@@ -146,7 +157,7 @@ func TestIsUpdateAtGreaterTask_run(t *testing.T) {
 		task.SetSourceObject(&typ.Object{UpdatedAt: time.Now()})
 		task.SetDestinationObject(&typ.Object{UpdatedAt: time.Now().Add(time.Hour)})
 
-		task.run()
+		task.run(ctx)
 
 		assert.Equal(t, false, task.GetResult())
 	})
