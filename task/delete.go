@@ -3,10 +3,10 @@ package task
 import (
 	"context"
 
-	"github.com/Xuanwo/storage"
-	"github.com/Xuanwo/storage/pkg/segment"
-	typ "github.com/Xuanwo/storage/types"
-	"github.com/Xuanwo/storage/types/pairs"
+	"github.com/aos-dev/go-storage/v2"
+	"github.com/aos-dev/go-storage/v2/pkg/segment"
+	typ "github.com/aos-dev/go-storage/v2/types"
+	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"

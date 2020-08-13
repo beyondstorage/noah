@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/Xuanwo/navvy"
-	"github.com/Xuanwo/storage"
-	"github.com/Xuanwo/storage/pkg/segment"
-	"github.com/Xuanwo/storage/types"
-	"github.com/Xuanwo/storage/types/info"
+	"github.com/aos-dev/go-storage/v2"
+	"github.com/aos-dev/go-storage/v2/pkg/segment"
+	"github.com/aos-dev/go-storage/v2/types"
+	"github.com/aos-dev/go-storage/v2/types/info"
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"

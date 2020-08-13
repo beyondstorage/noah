@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Xuanwo/storage/types"
+	"github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

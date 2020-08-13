@@ -5,9 +5,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Xuanwo/storage"
-	typ "github.com/Xuanwo/storage/types"
-	"github.com/Xuanwo/storage/types/pairs"
+	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
+	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/progress"

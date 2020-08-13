@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/Xuanwo/storage/types/pairs"
+	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"

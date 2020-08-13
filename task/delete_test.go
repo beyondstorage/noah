@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/Xuanwo/navvy"
-	"github.com/Xuanwo/storage"
-	"github.com/Xuanwo/storage/pkg/segment"
-	"github.com/Xuanwo/storage/types"
+	"github.com/aos-dev/go-storage/v2"
+	"github.com/aos-dev/go-storage/v2/pkg/segment"
+	"github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
