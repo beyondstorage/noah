@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"errors"
 
 	"github.com/Xuanwo/storage/services"
@@ -9,9 +10,9 @@ import (
 )
 
 func (t *BetweenStorageCheckTask) new() {}
-func (t *BetweenStorageCheckTask) run() {
+func (t *BetweenStorageCheckTask) run(ctx context.Context) {
 	// Source Object must be exist.
-	src, err := t.GetSourceStorage().Stat(t.GetSourcePath())
+	src, err := t.GetSourceStorage().StatWithContext(ctx, t.GetSourcePath())
 	if err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -20,7 +21,7 @@ func (t *BetweenStorageCheckTask) run() {
 
 	// If Destination Object not exist, we will set DestinationObject to nil.
 	// So we can check its existences later.
-	dst, err := t.GetDestinationStorage().Stat(t.GetDestinationPath())
+	dst, err := t.GetDestinationStorage().StatWithContext(ctx, t.GetDestinationPath())
 	if err != nil && !errors.Is(err, services.ErrObjectNotExist) {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
@@ -29,22 +30,22 @@ func (t *BetweenStorageCheckTask) run() {
 }
 
 func (t *IsDestinationObjectExistTask) new() {}
-func (t *IsDestinationObjectExistTask) run() {
+func (t *IsDestinationObjectExistTask) run(_ context.Context) {
 	t.SetResult(t.GetDestinationObject() != nil)
 }
 
 func (t *IsDestinationObjectNotExistTask) new() {}
-func (t *IsDestinationObjectNotExistTask) run() {
+func (t *IsDestinationObjectNotExistTask) run(_ context.Context) {
 	t.SetResult(t.GetDestinationObject() == nil)
 }
 
 func (t *IsSizeEqualTask) new() {}
-func (t *IsSizeEqualTask) run() {
+func (t *IsSizeEqualTask) run(_ context.Context) {
 	t.SetResult(t.GetSourceObject().Size == t.GetDestinationObject().Size)
 }
 
 func (t *IsUpdateAtGreaterTask) new() {}
-func (t *IsUpdateAtGreaterTask) run() {
+func (t *IsUpdateAtGreaterTask) run(_ context.Context) {
 	// if destination object not exist, always consider src is newer
 	if t.GetDestinationObject() == nil {
 		t.SetResult(true)

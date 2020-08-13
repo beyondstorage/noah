@@ -1,6 +1,8 @@
 package task
 
 import (
+	"context"
+
 	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/pkg/segment"
 	typ "github.com/Xuanwo/storage/types"
@@ -11,15 +13,15 @@ import (
 )
 
 func (t *DeleteFileTask) new() {}
-func (t *DeleteFileTask) run() {
-	if err := t.GetStorage().Delete(t.GetPath()); err != nil {
+func (t *DeleteFileTask) run(ctx context.Context) {
+	if err := t.GetStorage().DeleteWithContext(ctx, t.GetPath()); err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 }
 
 func (t *DeleteDirTask) new() {}
-func (t *DeleteDirTask) run() {
+func (t *DeleteDirTask) run(ctx context.Context) {
 	x := NewListDir(t)
 	err := utils.ChooseStorageAsDirLister(x, t)
 	if err != nil {
@@ -35,7 +37,7 @@ func (t *DeleteDirTask) run() {
 				t.GetHandleObjCallback()(o)
 			})
 		}
-		t.GetScheduler().Async(sf)
+		t.GetScheduler().Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewDeleteDir(t)
@@ -43,9 +45,9 @@ func (t *DeleteDirTask) run() {
 		if t.ValidateHandleObjCallback() {
 			sf.SetHandleObjCallback(t.GetHandleObjCallback())
 		}
-		t.GetScheduler().Sync(sf)
+		t.GetScheduler().Sync(ctx, sf)
 	})
-	t.GetScheduler().Sync(x)
+	t.GetScheduler().Sync(ctx, x)
 	if t.GetFault().HasError() {
 		return
 	}
@@ -55,11 +57,11 @@ func (t *DeleteDirTask) run() {
 	if t.ValidateHandleObjCallback() {
 		dr.SetHandleObjCallback(t.GetHandleObjCallback())
 	}
-	t.GetScheduler().Sync(dr)
+	t.GetScheduler().Sync(ctx, dr)
 }
 
 func (t *DeletePrefixTask) new() {}
-func (t *DeletePrefixTask) run() {
+func (t *DeletePrefixTask) run(ctx context.Context) {
 	x := NewListPrefix(t)
 	err := utils.ChooseStorageAsPrefixLister(x, t)
 	if err != nil {
@@ -75,28 +77,28 @@ func (t *DeletePrefixTask) run() {
 				t.GetHandleObjCallback()(o)
 			})
 		}
-		t.GetScheduler().Async(sf)
+		t.GetScheduler().Async(ctx, sf)
 	})
 
-	t.GetScheduler().Sync(x)
+	t.GetScheduler().Sync(ctx, x)
 }
 
 func (t *DeleteSegmentTask) new() {}
-func (t *DeleteSegmentTask) run() {
-	if err := t.GetPrefixSegmentsLister().AbortSegment(t.GetSegment()); err != nil {
+func (t *DeleteSegmentTask) run(ctx context.Context) {
+	if err := t.GetPrefixSegmentsLister().AbortSegmentWithContext(ctx, t.GetSegment()); err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 }
 
 func (t *DeleteStorageTask) new() {}
-func (t *DeleteStorageTask) run() {
+func (t *DeleteStorageTask) run(ctx context.Context) {
 	var ps []*typ.Pair
 	if t.GetZone() != "" {
 		ps = append(ps, pairs.WithLocation(t.GetZone()))
 	}
 	if t.GetForce() {
-		store, err := t.GetService().Get(t.GetStorageName(), ps...)
+		store, err := t.GetService().GetWithContext(ctx, t.GetStorageName(), ps...)
 		if err != nil {
 			t.TriggerFault(types.NewErrUnhandled(err))
 			return
@@ -109,7 +111,7 @@ func (t *DeleteStorageTask) run() {
 			deletePrefix.SetHandleObjCallback(t.GetHandleObjCallback())
 		}
 
-		t.GetScheduler().Async(deletePrefix)
+		t.GetScheduler().Async(ctx, deletePrefix)
 
 		segmenter, ok := store.(storage.PrefixSegmentsLister)
 		if ok {
@@ -125,10 +127,10 @@ func (t *DeleteStorageTask) run() {
 						t.GetHandleSegmentCallback()(s)
 					})
 				}
-				t.GetScheduler().Async(sf)
+				t.GetScheduler().Async(ctx, sf)
 			})
 
-			t.GetScheduler().Async(listSegments)
+			t.GetScheduler().Async(ctx, listSegments)
 		}
 
 		t.GetScheduler().Wait()
@@ -137,8 +139,7 @@ func (t *DeleteStorageTask) run() {
 		}
 	}
 
-	err := t.GetService().Delete(t.GetStorageName(), ps...)
-	if err != nil {
+	if err := t.GetService().DeleteWithContext(ctx, t.GetStorageName(), ps...); err != nil {
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}

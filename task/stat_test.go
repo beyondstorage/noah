@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -20,6 +21,8 @@ func TestStatFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	store := mock.NewMockStorager(ctrl)
 	expectedPath := uuid.New().String()
 
@@ -28,12 +31,13 @@ func TestStatFileTask_run(t *testing.T) {
 	task.SetStorage(store)
 	task.SetPath(expectedPath)
 
-	store.EXPECT().Stat(gomock.Any()).DoAndReturn(func(path string) (o *typ.Object, err error) {
-		assert.Equal(t, expectedPath, path)
-		return &typ.Object{}, nil
-	})
+	store.EXPECT().StatWithContext(gomock.Eq(ctx), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, path string) (o *typ.Object, err error) {
+			assert.Equal(t, expectedPath, path)
+			return &typ.Object{}, nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 	assert.NotNil(t, task.GetObject())
 }
@@ -42,39 +46,44 @@ func TestStatStorageTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	store := mock.NewMockStorager(ctrl)
 	store.EXPECT().String().DoAndReturn(func() string {
 		return ""
+	}).AnyTimes()
+
+	t.Run("insufficient ability error return", func(t *testing.T) {
+		task := StatStorageTask{}
+		task.SetFault(fault.New())
+		task.SetStorage(store)
+
+		task.run(ctx)
+		assert.NotEmpty(t, task.GetFault().Error())
+		tarErr := &types.StorageInsufficientAbility{}
+		assert.True(t, errors.As(task.GetFault(), &tarErr))
 	})
 
-	// test insufficient ability error return
-	task := StatStorageTask{}
-	task.SetFault(fault.New())
-	task.SetStorage(store)
+	t.Run("normal return", func(t *testing.T) {
+		statistician := mock.NewMockStatistician(ctrl)
+		storeComb := struct {
+			storage.Storager
+			storage.Statistician
+		}{
+			store,
+			statistician,
+		}
+		statistician.EXPECT().StatisticalWithContext(ctx).
+			DoAndReturn(func(ctx context.Context) (info.StorageStatistic, error) {
+				return info.NewStorageStatistic(), nil
+			})
 
-	task.run()
-	assert.NotEmpty(t, task.GetFault().Error())
-	tarErr := &types.StorageInsufficientAbility{}
-	assert.True(t, errors.As(task.GetFault(), &tarErr))
+		task := StatStorageTask{}
+		task.SetFault(fault.New())
+		task.SetStorage(storeComb)
 
-	// test with normal return
-	statistician := mock.NewMockStatistician(ctrl)
-	storeComb := struct {
-		storage.Storager
-		storage.Statistician
-	}{
-		store,
-		statistician,
-	}
-	statistician.EXPECT().Statistical().DoAndReturn(func() (info.StorageStatistic, error) {
-		return info.NewStorageStatistic(), nil
+		task.run(ctx)
+		assert.Empty(t, task.GetFault().Error())
+		assert.NotNil(t, task.GetStorageInfo())
 	})
-
-	task = StatStorageTask{}
-	task.SetFault(fault.New())
-	task.SetStorage(storeComb)
-
-	task.run()
-	assert.Empty(t, task.GetFault().Error())
-	assert.NotNil(t, task.GetStorageInfo())
 }

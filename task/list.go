@@ -1,58 +1,48 @@
 package task
 
 import (
+	"context"
+
 	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/types/pairs"
 
-	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
 )
 
-func (t *ListDirTask) new() {
-	t.SetCallbackFunc(func() {
-		progress.FinishState(t.GetID())
-	})
-}
-func (t *ListDirTask) run() {
-	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
-	err := t.GetDirLister().ListDir(
-		t.GetPath(), pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
+func (t *ListDirTask) new() {}
+func (t *ListDirTask) run(ctx context.Context) {
+	err := t.GetDirLister().ListDirWithContext(
+		ctx, t.GetPath(), pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
 	if err != nil {
-		t.TriggerFault(err)
+		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 }
 
-func (t *ListPrefixTask) new() {
-	t.SetCallbackFunc(func() {
-		progress.FinishState(t.GetID())
-	})
-}
-
-func (t *ListPrefixTask) run() {
-	progress.SetState(t.GetID(), progress.InitListState(t.GetPath(), "listing:"))
-	err := t.GetPrefixLister().ListPrefix(
-		t.GetPath(), pairs.WithObjectFunc(t.GetObjectFunc()))
+func (t *ListPrefixTask) new() {}
+func (t *ListPrefixTask) run(ctx context.Context) {
+	err := t.GetPrefixLister().ListPrefixWithContext(
+		ctx, t.GetPath(), pairs.WithObjectFunc(t.GetObjectFunc()))
 	if err != nil {
-		t.TriggerFault(err)
+		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 }
 
 func (t *ListSegmentTask) new() {}
-func (t *ListSegmentTask) run() {
-	err := t.GetPrefixSegmentsLister().ListPrefixSegments(t.GetPath(),
-		pairs.WithSegmentFunc(t.GetSegmentFunc()))
+func (t *ListSegmentTask) run(ctx context.Context) {
+	err := t.GetPrefixSegmentsLister().ListPrefixSegmentsWithContext(
+		ctx, t.GetPath(), pairs.WithSegmentFunc(t.GetSegmentFunc()))
 	if err != nil {
-		t.TriggerFault(err)
+		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
 }
 
 func (t *ListStorageTask) new() {}
-func (t *ListStorageTask) run() {
-	err := t.GetService().List(pairs.WithLocation(t.GetZone()),
-		pairs.WithStoragerFunc(func(storager storage.Storager) {
+func (t *ListStorageTask) run(ctx context.Context) {
+	err := t.GetService().ListWithContext(
+		ctx, pairs.WithLocation(t.GetZone()), pairs.WithStoragerFunc(func(storager storage.Storager) {
 			t.GetStoragerFunc()(storager)
 		}))
 	if err != nil {

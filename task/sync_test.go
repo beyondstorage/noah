@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -16,12 +17,32 @@ import (
 )
 
 func TestSyncTask_run(t *testing.T) {
-	t.Run("without flag", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-		sche := mock.NewMockScheduler(ctrl)
-		srcStore := mock.NewMockStorager(ctrl)
+	ctx := context.Background()
+
+	sche := mock.NewMockScheduler(ctrl)
+	srcStore := mock.NewMockStorager(ctrl)
+	dstStore := mock.NewMockStorager(ctrl)
+	sourcePath := uuid.New().String()
+	dstPath := uuid.New().String()
+	obj := &types.Object{Name: "obj-name"}
+
+	srcStore.EXPECT().String().Do(func() {}).AnyTimes()
+	dstStore.EXPECT().String().Do(func() {}).AnyTimes()
+
+	dstStore.EXPECT().StatWithContext(gomock.Eq(ctx), gomock.Any()).
+		Do(func(ctx context.Context, path string) {
+			return
+		}).AnyTimes()
+
+	srcStore.EXPECT().StatWithContext(gomock.Eq(ctx), gomock.Any()).
+		Do(func(ctx context.Context, path string) {
+			return
+		}).AnyTimes()
+
+	t.Run("without flag", func(t *testing.T) {
 		srcLister := mock.NewMockDirLister(ctrl)
 		src := struct {
 			storage.Storager
@@ -29,9 +50,6 @@ func TestSyncTask_run(t *testing.T) {
 		}{
 			srcStore, srcLister,
 		}
-		dstStore := mock.NewMockStorager(ctrl)
-		sourcePath := uuid.New().String()
-		dstPath := uuid.New().String()
 
 		task := SyncTask{}
 		task.SetPool(navvy.NewPool(10))
@@ -47,30 +65,35 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetIgnoreExisting(false)
 		task.SetRecursive(false)
 		task.SetUpdate(false)
+		task.SetCheckMD5(false)
 
-		srcStore.EXPECT().String().Do(func() {}).AnyTimes()
-		dstStore.EXPECT().String().Do(func() {}).AnyTimes()
-		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
 				v.SetDirFunc(nil)
-				v.SetFileFunc(nil)
 				v.validateInput()
+				v.GetFileFunc()(obj)
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
 			}
 		}).AnyTimes()
 
-		task.run()
+		sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
+			switch v := task.(type) {
+			case *CopyFileTask:
+				v.validateInput()
+				assert.Equal(t, obj.Name, v.GetSourcePath())
+				assert.Equal(t, obj.Name, v.GetDestinationPath())
+			default:
+				panic(fmt.Errorf("unexpected task %v", v))
+			}
+		}).AnyTimes()
+
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 
 	t.Run("with all flags", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		sche := mock.NewMockScheduler(ctrl)
-		srcStore := mock.NewMockStorager(ctrl)
 		srcLister := mock.NewMockDirLister(ctrl)
 		src := struct {
 			storage.Storager
@@ -78,9 +101,6 @@ func TestSyncTask_run(t *testing.T) {
 		}{
 			srcStore, srcLister,
 		}
-		dstStore := mock.NewMockStorager(ctrl)
-		sourcePath := uuid.New().String()
-		dstPath := uuid.New().String()
 
 		task := SyncTask{}
 		task.SetPool(navvy.NewPool(10))
@@ -96,28 +116,24 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetIgnoreExisting(true)
 		task.SetRecursive(false)
 		task.SetUpdate(true)
+		task.SetCheckMD5(false)
 
-		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
-				v.SetFileFunc(nil)
 				v.SetDirFunc(nil)
 				v.validateInput()
+				v.GetFileFunc()(obj)
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
 			}
 		}).AnyTimes()
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 
 	t.Run("with dry-run", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		sche := mock.NewMockScheduler(ctrl)
-		srcStore := mock.NewMockStorager(ctrl)
 		srcLister := mock.NewMockDirLister(ctrl)
 		src := struct {
 			storage.Storager
@@ -125,9 +141,6 @@ func TestSyncTask_run(t *testing.T) {
 		}{
 			srcStore, srcLister,
 		}
-		dstStore := mock.NewMockStorager(ctrl)
-		sourcePath := uuid.New().String()
-		dstPath := uuid.New().String()
 
 		task := SyncTask{}
 		task.SetPool(navvy.NewPool(10))
@@ -145,28 +158,24 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetIgnoreExisting(false)
 		task.SetRecursive(false)
 		task.SetUpdate(false)
+		task.SetCheckMD5(false)
 
-		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
 				v.SetDirFunc(nil)
-				v.SetFileFunc(nil)
 				v.validateInput()
+				v.GetFileFunc()(obj)
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
 			}
 		}).AnyTimes()
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 
 	t.Run("with recursive", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		sche := mock.NewMockScheduler(ctrl)
-		srcStore := mock.NewMockStorager(ctrl)
 		srcLister := mock.NewMockDirLister(ctrl)
 		src := struct {
 			storage.Storager
@@ -174,9 +183,6 @@ func TestSyncTask_run(t *testing.T) {
 		}{
 			srcStore, srcLister,
 		}
-		dstStore := mock.NewMockStorager(ctrl)
-		sourcePath := uuid.New().String()
-		dstPath := uuid.New().String()
 
 		task := SyncTask{}
 		task.SetPool(navvy.NewPool(10))
@@ -194,8 +200,9 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetIgnoreExisting(false)
 		task.SetRecursive(true)
 		task.SetUpdate(false)
+		task.SetCheckMD5(false)
 
-		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *ListDirTask:
 				v.SetDirFunc(nil)
@@ -206,7 +213,7 @@ func TestSyncTask_run(t *testing.T) {
 			}
 		}).AnyTimes()
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 }

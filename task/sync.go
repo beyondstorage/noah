@@ -1,6 +1,8 @@
 package task
 
 import (
+	"context"
+
 	"github.com/Xuanwo/navvy"
 	typ "github.com/Xuanwo/storage/types"
 
@@ -9,7 +11,7 @@ import (
 )
 
 func (t *SyncTask) new() {}
-func (t *SyncTask) run() {
+func (t *SyncTask) run(ctx context.Context) {
 	x := NewListDir(t)
 	err := utils.ChooseSourceStorageAsDirLister(x, t)
 	if err != nil {
@@ -25,7 +27,7 @@ func (t *SyncTask) run() {
 			if t.ValidateHandleObjCallback() {
 				sf.SetHandleObjCallback(t.GetHandleObjCallback())
 			}
-			t.GetScheduler().Sync(sf)
+			t.GetScheduler().Sync(ctx, sf)
 		})
 	} else {
 		// if not recursive, do nothing with dir
@@ -54,14 +56,15 @@ func (t *SyncTask) run() {
 		sf.SetDestinationPath(o.Name)
 		sf.SetCheckTasks(nil)
 
+		// put check tasks outside of copy, to make sure flags' priority is higher than dry-run
 		check := NewBetweenStorageCheck(sf)
-		sf.GetScheduler().Sync(check)
+		sf.GetScheduler().Sync(ctx, check)
 		if sf.GetFault().HasError() {
 			return
 		}
 		for _, v := range fn {
 			ct := v(check)
-			sf.GetScheduler().Sync(ct)
+			sf.GetScheduler().Sync(ctx, ct)
 			if sf.GetFault().HasError() {
 				return
 			}
@@ -83,7 +86,7 @@ func (t *SyncTask) run() {
 				t.GetHandleObjCallback()(o)
 			})
 		}
-		t.GetScheduler().Async(sf)
+		t.GetScheduler().Async(ctx, sf)
 	})
-	t.GetScheduler().Sync(x)
+	t.GetScheduler().Sync(ctx, x)
 }

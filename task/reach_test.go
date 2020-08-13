@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Xuanwo/storage/types"
@@ -16,6 +17,8 @@ func TestReachFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	reacher := mock.NewMockReacher(ctrl)
 	reachPath := uuid.New().String()
 	reachExpire := 1024
@@ -27,13 +30,14 @@ func TestReachFileTask_run(t *testing.T) {
 	task.SetPath(reachPath)
 	task.SetExpire(reachExpire)
 
-	reacher.EXPECT().Reach(gomock.Any(), gomock.Any()).DoAndReturn(func(path string, pairs ...*types.Pair) (url string, err error) {
-		assert.Equal(t, reachPath, path)
-		assert.Equal(t, reachExpire, pairs[0].Value.(int))
-		return reachedURL, nil
-	})
+	reacher.EXPECT().ReachWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, path string, pairs ...*types.Pair) (url string, err error) {
+			assert.Equal(t, reachPath, path)
+			assert.Equal(t, reachExpire, pairs[0].Value.(int))
+			return reachedURL, nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 	assert.Equal(t, reachedURL, task.GetURL())
 }

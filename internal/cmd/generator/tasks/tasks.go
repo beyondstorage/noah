@@ -120,6 +120,7 @@ var taskPageTmpl = template.Must(template.New("taskPage").Parse(`// Code generat
 package task
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Xuanwo/navvy"
@@ -188,11 +189,11 @@ func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
 }
 
 // Run implement navvy.Task
-func (t *{{ .Name }}Task) Run() {
+func (t *{{ .Name }}Task) Run(ctx context.Context) {
 	t.validateInput()
 
 	log.Debugf("Started %s", t)
-	t.run()
+	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
 		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
@@ -202,6 +203,11 @@ func (t *{{ .Name }}Task) Run() {
 		t.GetCallbackFunc()()
 	}
 	log.Debugf("Finished %s", t)
+}
+
+// Context implement navvy.Task
+func (t *{{ .Name }}Task) Context() context.Context {
+	return context.TODO()
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -241,6 +247,7 @@ var testPageTmpl = template.Must(template.New("testPage").Parse(`// Code generat
 package task
 
 import (
+	"context"
 	"errors"
 	"testing"
 

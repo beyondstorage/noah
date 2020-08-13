@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -20,6 +21,8 @@ func TestDeleteFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	store := mock.NewMockStorager(ctrl)
 	testPath := uuid.New().String()
 
@@ -28,18 +31,20 @@ func TestDeleteFileTask_run(t *testing.T) {
 	task.SetStorage(store)
 	task.SetPath(testPath)
 
-	store.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
+	store.EXPECT().DeleteWithContext(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, name string) error {
 		assert.Equal(t, testPath, name)
 		return nil
 	})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestDeleteDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	mixer := struct {
 		storage.Storager
@@ -59,10 +64,12 @@ func TestDeleteDirTask_run(t *testing.T) {
 	task.SetPath(path)
 	task.SetStorage(mixer)
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	obj := &types.Object{Name: "obj-name"}
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *ListDirTask:
 			v.validateInput()
+			v.GetFileFunc()(obj)
 		case *DeleteFileTask:
 			v.validateInput()
 		default:
@@ -70,13 +77,22 @@ func TestDeleteDirTask_run(t *testing.T) {
 		}
 	}).AnyTimes()
 
-	task.run()
+	sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
+		switch v := task.(type) {
+		case *DeleteFileTask:
+			v.validateInput()
+			assert.Equal(t, obj.Name, v.GetPath())
+		}
+	})
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestDeletePrefixTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	mixer := struct {
 		storage.Storager
@@ -96,7 +112,7 @@ func TestDeletePrefixTask_run(t *testing.T) {
 	task.SetPath(path)
 	task.SetStorage(mixer)
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *ListPrefixTask:
 			v.validateInput()
@@ -105,13 +121,15 @@ func TestDeletePrefixTask_run(t *testing.T) {
 		}
 	}).AnyTimes()
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestDeleteSegmentTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
 	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
@@ -121,12 +139,13 @@ func TestDeleteSegmentTask_run(t *testing.T) {
 	task.SetPrefixSegmentsLister(segmenter)
 	task.SetSegment(seg)
 
-	segmenter.EXPECT().AbortSegment(gomock.Any()).Do(func(inputSeg segment.Segment) error {
-		assert.Equal(t, seg, inputSeg)
-		return nil
-	})
+	segmenter.EXPECT().AbortSegmentWithContext(gomock.Eq(ctx), gomock.Any()).
+		Do(func(ctx context.Context, inputSeg segment.Segment) error {
+			assert.Equal(t, seg, inputSeg)
+			return nil
+		})
 
-	task.run()
+	task.run(context.Background())
 	assert.Empty(t, task.GetFault().Error())
 }
 
@@ -134,6 +153,8 @@ func TestNewDeleteStorageTask(t *testing.T) {
 	t.Run("delete without force", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
+
+		ctx := context.Background()
 
 		srv := mock.NewMockServicer(ctrl)
 		storageName := uuid.New().String()
@@ -145,12 +166,13 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetForce(false)
 		task.SetZone("")
 
-		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
-			assert.Equal(t, storageName, name)
-			return nil
-		})
+		srv.EXPECT().DeleteWithContext(gomock.Eq(ctx), gomock.Any()).
+			Do(func(ctx context.Context, name string) error {
+				assert.Equal(t, storageName, name)
+				return nil
+			})
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 
@@ -158,6 +180,8 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
+		ctx := context.Background()
+
 		sche := mock.NewMockScheduler(ctrl)
 		srv := mock.NewMockServicer(ctrl)
 		store := mock.NewMockStorager(ctrl)
@@ -172,15 +196,17 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetZone("")
 
-		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
-			assert.Equal(t, storageName, name)
-			return nil
-		})
-		srv.EXPECT().Get(gomock.Any()).DoAndReturn(func(name string, pairs ...*types.Pair) (storage.Storager, error) {
-			assert.Equal(t, storageName, name)
-			return store, nil
-		})
-		sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
+		srv.EXPECT().DeleteWithContext(gomock.Eq(ctx), gomock.Any()).
+			Do(func(ctx context.Context, name string) error {
+				assert.Equal(t, storageName, name)
+				return nil
+			})
+		srv.EXPECT().GetWithContext(gomock.Eq(ctx), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, name string, pairs ...*types.Pair) (storage.Storager, error) {
+				assert.Equal(t, storageName, name)
+				return store, nil
+			})
+		sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *DeletePrefixTask:
 				v.validateInput()
@@ -190,7 +216,7 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		}).AnyTimes()
 		sche.EXPECT().Wait()
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 
@@ -198,10 +224,14 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
+		ctx := context.Background()
+
+		path, id := uuid.New().String(), uuid.New().String()
 		sche := mock.NewMockScheduler(ctrl)
 		srv := mock.NewMockServicer(ctrl)
 		store := mock.NewMockStorager(ctrl)
 		segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
+		seg := segment.NewIndexBasedSegment(path, id)
 		storageName := uuid.New().String()
 
 		task := DeleteStorageTask{}
@@ -213,33 +243,47 @@ func TestNewDeleteStorageTask(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetZone("")
 
-		srv.EXPECT().Delete(gomock.Any()).Do(func(name string) error {
-			assert.Equal(t, storageName, name)
-			return nil
-		})
-		srv.EXPECT().Get(gomock.Any()).DoAndReturn(func(name string, pairs ...*types.Pair) (storage.Storager, error) {
-			assert.Equal(t, storageName, name)
-			return struct {
-				storage.Storager
-				storage.PrefixSegmentsLister
-			}{
-				store,
-				segmenter,
-			}, nil
-		})
-		sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
-			switch v := task.(type) {
-			case *DeletePrefixTask:
-				v.validateInput()
-			case *ListSegmentTask:
-				v.validateInput()
-			default:
-				panic(fmt.Errorf("unexpected task %v", v))
-			}
-		}).AnyTimes()
+		srv.EXPECT().DeleteWithContext(gomock.Eq(ctx), gomock.Any()).
+			Do(func(ctx context.Context, name string) error {
+				assert.Equal(t, storageName, name)
+				return nil
+			})
+		srv.EXPECT().GetWithContext(gomock.Eq(ctx), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, name string, pairs ...*types.Pair) (storage.Storager, error) {
+				assert.Equal(t, storageName, name)
+				return struct {
+					storage.Storager
+					storage.PrefixSegmentsLister
+				}{
+					store,
+					segmenter,
+				}, nil
+			})
+		sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).
+			Do(func(ctx context.Context, task navvy.Task) {
+				switch v := task.(type) {
+				case *DeletePrefixTask:
+					v.validateInput()
+				case *ListSegmentTask:
+					v.validateInput()
+					v.GetSegmentFunc()(seg)
+				case *DeleteSegmentTask:
+					v.validateInput()
+					assert.Equal(t, seg, v.GetSegment())
+					assert.Equal(t, struct {
+						storage.Storager
+						storage.PrefixSegmentsLister
+					}{
+						store,
+						segmenter,
+					}, v.GetPrefixSegmentsLister())
+				default:
+					panic(fmt.Errorf("unexpected task %v", v))
+				}
+			}).AnyTimes()
 		sche.EXPECT().Wait()
 
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 }

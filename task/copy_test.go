@@ -2,12 +2,11 @@ package task
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"sync"
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/Xuanwo/navvy"
 	"github.com/Xuanwo/storage"
 	"github.com/Xuanwo/storage/pkg/segment"
@@ -24,6 +23,8 @@ import (
 func TestCopyDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	t.Run("normal", func(t *testing.T) {
 		sche := mock.NewMockScheduler(ctrl)
@@ -47,11 +48,11 @@ func TestCopyDirTask_run(t *testing.T) {
 		task.SetScheduler(sche)
 		task.SetCheckTasks(nil)
 
-		sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			_, ok := task.(*ListDirTask)
 			assert.True(t, ok)
 		})
-		task.run()
+		task.run(ctx)
 		assert.Empty(t, task.GetFault().Error())
 	})
 }
@@ -60,6 +61,8 @@ func TestCopyFileTask_run(t *testing.T) {
 	t.Run("normal case", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
+
+		ctx := context.Background()
 
 		cases := []struct {
 			name string
@@ -83,20 +86,34 @@ func TestCopyFileTask_run(t *testing.T) {
 				sche := mock.NewMockScheduler(ctrl)
 				srcStore := mock.NewMockStorager(ctrl)
 				srcPath := uuid.New().String()
-				dstStore := mock.NewMockStorager(ctrl)
+				// if dstStore not implement IndexSegmenter,
+				// CopySmallFileTask will always be called
+				dstStore := struct {
+					storage.Storager
+					storage.IndexSegmenter
+				}{
+					mock.NewMockStorager(ctrl),
+					mock.NewMockIndexSegmenter(ctrl),
+				}
 				dstPath := uuid.New().String()
 
 				task := &CopyFileTask{}
 				task.SetFault(fault.New())
 				task.SetPool(navvy.NewPool(10))
 				task.SetScheduler(sche)
-				task.SetCheckTasks(nil)
+				task.SetCheckTasks([]func(t navvy.Task) navvy.Task{
+					func(t navvy.Task) navvy.Task {
+						res := &IsDestinationObjectExistTask{}
+						res.SetResult(true)
+						return res
+					},
+				})
 				task.SetSourcePath(srcPath)
 				task.SetSourceStorage(srcStore)
 				task.SetDestinationPath(dstPath)
 				task.SetDestinationStorage(dstStore)
 
-				sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+				sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 					switch v := task.(type) {
 					case *BetweenStorageCheckTask:
 						v.SetSourceObject(&typ.Object{Name: srcPath, Size: tt.size})
@@ -108,7 +125,7 @@ func TestCopyFileTask_run(t *testing.T) {
 					}
 				}).AnyTimes()
 
-				task.run()
+				task.run(ctx)
 				assert.Empty(t, task.GetFault().Error())
 			})
 		}
@@ -118,6 +135,8 @@ func TestCopyFileTask_run(t *testing.T) {
 func TestCopySmallFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	sche := mock.NewMockScheduler(ctrl)
 	srcStore := mock.NewMockStorager(ctrl)
@@ -136,7 +155,7 @@ func TestCopySmallFileTask_run(t *testing.T) {
 	task.SetSize(1024)
 	task.SetCheckMD5(true)
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *MD5SumFileTask:
 			assert.Equal(t, srcPath, v.GetPath())
@@ -149,13 +168,15 @@ func TestCopySmallFileTask_run(t *testing.T) {
 		}
 	}).AnyTimes()
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestCopyLargeFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	sche := mock.NewMockScheduler(ctrl)
 	srcStore := mock.NewMockStorager(ctrl)
@@ -165,25 +186,25 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 	dstPath := uuid.New().String()
 	seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
-	task := &CopyLargeFileTask{}
-	task.SetID(uuid.New().String())
-	task.SetPool(navvy.NewPool(10))
-	task.SetSourcePath(srcPath)
-	task.SetSourceStorage(srcStore)
-	task.SetDestinationPath(dstPath)
-	task.SetDestinationStorage(struct {
+	cpTask := &CopyLargeFileTask{}
+	cpTask.SetID(uuid.New().String())
+	cpTask.SetPool(navvy.NewPool(10))
+	cpTask.SetSourcePath(srcPath)
+	cpTask.SetSourceStorage(srcStore)
+	cpTask.SetDestinationPath(dstPath)
+	cpTask.SetDestinationStorage(struct {
 		storage.Storager
 		storage.IndexSegmenter
 	}{
 		dstStore,
 		dstSegmenter,
 	})
-	task.SetScheduler(sche)
-	task.SetFault(fault.New())
+	cpTask.SetScheduler(sche)
+	cpTask.SetFault(fault.New())
 	// 50G
-	task.SetTotalSize(10 * constants.MaximumPartSize)
+	cpTask.SetTotalSize(10 * constants.MaximumPartSize)
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *SegmentInitTask:
 			assert.Equal(t, dstPath, v.GetPath())
@@ -195,21 +216,33 @@ func TestCopyLargeFileTask_run(t *testing.T) {
 			panic(fmt.Errorf("invalid task %v", v))
 		}
 	}).AnyTimes()
-	sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
+
+	copyPartialFileTaskCallTime := 0
+	sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *CopyPartialFileTask:
+			part := copyPartialFileTaskCallTime
 			assert.Equal(t, srcPath, v.GetSourcePath())
 			assert.Equal(t, dstPath, v.GetDestinationPath())
 			assert.Equal(t, seg, v.GetSegment())
-			v.SetDone(true)
+			assert.Equal(t, part, v.GetIndex())
+			assert.Equal(t, cpTask.GetPartSize(), v.GetSize())
+			assert.Equal(t, int64(part)*cpTask.GetPartSize(), v.GetOffset())
+			v.SetDone(func() bool {
+				if copyPartialFileTaskCallTime == 0 {
+					return false
+				}
+				return true
+			}())
+			copyPartialFileTaskCallTime++
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
 	}).AnyTimes()
 	sche.EXPECT().Wait().Do(func() {})
 
-	task.run()
-	assert.Empty(t, task.GetFault().Error())
+	cpTask.run(ctx)
+	assert.Empty(t, cpTask.GetFault().Error())
 }
 
 func TestCopyPartialFileTask_new(t *testing.T) {
@@ -269,6 +302,8 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	ctx := context.Background()
+
 	sche := mock.NewMockScheduler(ctrl)
 	srcStore := mock.NewMockStorager(ctrl)
 	srcPath := uuid.New().String()
@@ -300,7 +335,7 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 	srcStore.EXPECT().String().DoAndReturn(func() string { return "src" }).AnyTimes()
 	dstStore.EXPECT().String().DoAndReturn(func() string { return "dst" }).AnyTimes()
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		t.Logf("Got task %v", task)
 
 		switch v := task.(type) {
@@ -315,21 +350,21 @@ func TestCopyPartialFileTask_run(t *testing.T) {
 		}
 	}).AnyTimes()
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
+}
+
+func TestCopyStreamTask_new(t *testing.T) {
+	task := &CopyStreamTask{}
+	task.new()
+	assert.True(t, task.ValidateBytesPool())
 }
 
 func TestCopyStreamTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	monkey.Patch(NewCopyPartialStream, func(task navvy.Task) *CopyPartialStreamTask {
-		t := &CopyPartialStreamTask{}
-		t.loadInput(task)
-		t.SetDone(true)
-		return t
-	})
-	defer monkey.Unpatch(NewCopyPartialStream)
+	ctx := context.Background()
 
 	sche := mock.NewMockScheduler(ctrl)
 	srcStore := mock.NewMockStorager(ctrl)
@@ -356,7 +391,8 @@ func TestCopyStreamTask_run(t *testing.T) {
 	task.SetScheduler(sche)
 	task.SetFault(fault.New())
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	initSegmentStreamTaskCallTime := 0
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *SegmentInitTask:
 			assert.Equal(t, dstPath, v.GetPath())
@@ -364,63 +400,46 @@ func TestCopyStreamTask_run(t *testing.T) {
 		case *SegmentCompleteTask:
 			assert.Equal(t, dstPath, v.GetPath())
 			assert.Equal(t, seg, v.GetSegment())
+		case *InitSegmentStreamTask:
+			v.SetSize(1024)
+			v.SetContent(bytes.NewBuffer(nil))
+			v.SetDone(func() bool {
+				if initSegmentStreamTaskCallTime == 0 {
+					return false
+				}
+				return true
+			}())
+			initSegmentStreamTaskCallTime++
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
 	}).AnyTimes()
-	sche.EXPECT().Async(gomock.Any()).Do(func(task navvy.Task) {
+
+	copyPartialStreamTaskCallTime := 0
+	sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *CopyPartialStreamTask:
+			index := copyPartialStreamTaskCallTime
 			assert.Equal(t, dstPath, v.GetDestinationPath())
 			assert.Equal(t, seg, v.GetSegment())
-			v.SetDone(true)
+			assert.Equal(t, int64(index*1024), v.GetOffset())
+			assert.Equal(t, index, v.GetIndex())
+			copyPartialStreamTaskCallTime++
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
 	}).AnyTimes()
 	sche.EXPECT().Wait().Do(func() {})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
-}
-
-func TestCopyPartialStreamTask_new(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	srcPath := uuid.New().String()
-	srcStore := mock.NewMockStorager(ctrl)
-	srcReader := mock.NewMockReadCloser(ctrl)
-
-	task := CopyPartialStreamTask{}
-	task.SetPartSize(1024)
-	task.SetSourceStorage(srcStore)
-	task.SetSourcePath(srcPath)
-	task.SetBytesPool(&sync.Pool{
-		New: func() interface{} {
-			return bytes.NewBuffer(make([]byte, 0, 1024))
-		},
-	})
-
-	srcStore.EXPECT().Read(gomock.Any(), gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
-		assert.Equal(t, srcPath, path)
-		assert.Equal(t, int64(1024), pairs[0].Value.(int64))
-		return srcReader, nil
-	})
-	srcReader.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
-		return 768, io.EOF
-	})
-
-	task.new()
-
-	assert.True(t, task.ValidateContent())
-	assert.Equal(t, int64(768), task.GetSize())
-	assert.Equal(t, true, task.GetDone())
 }
 
 func TestCopyPartialStreamTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	sche := mock.NewMockScheduler(ctrl)
 	dstPath := uuid.New().String()
@@ -445,27 +464,30 @@ func TestCopyPartialStreamTask_run(t *testing.T) {
 	task.SetSegment(seg)
 	task.SetSize(0)
 	task.SetIndex(1)
-	task.SetCheckMD5(false)
+	task.SetCheckMD5(true)
 
-	sche.EXPECT().Sync(gomock.Any()).Do(func(task navvy.Task) {
+	sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 		switch v := task.(type) {
 		case *MD5SumStreamTask:
 			v.validateInput()
-			v.SetMD5Sum(nil)
+			v.SetMD5Sum([]byte("string"))
 		case *SegmentStreamCopyTask:
 			v.validateInput()
+			assert.Equal(t, []byte("string"), v.GetMD5Sum())
 		default:
 			panic(fmt.Errorf("unexpected task %v", v))
 		}
 	}).AnyTimes()
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }
 
 func TestCopySingleFileTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	ctx := context.Background()
 
 	srcReader := mock.NewMockReadCloser(ctrl)
 
@@ -484,16 +506,18 @@ func TestCopySingleFileTask_run(t *testing.T) {
 	task.SetSize(1024)
 
 	srcReader.EXPECT().Close().Do(func() {})
-	srcStore.EXPECT().Read(gomock.Any()).DoAndReturn(func(path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
-		assert.Equal(t, srcPath, path)
-		return srcReader, nil
-	})
-	dstStore.EXPECT().Write(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(path string, r io.Reader, pairs ...*typ.Pair) (err error) {
-		assert.Equal(t, dstPath, path)
-		assert.Equal(t, int64(1024), pairs[0].Value.(int64))
-		return nil
-	})
+	srcStore.EXPECT().ReadWithContext(gomock.Eq(ctx), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, path string, pairs ...*typ.Pair) (r io.ReadCloser, err error) {
+			assert.Equal(t, srcPath, path)
+			return srcReader, nil
+		})
+	dstStore.EXPECT().WriteWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, path string, r io.Reader, pairs ...*typ.Pair) (err error) {
+			assert.Equal(t, dstPath, path)
+			assert.Equal(t, int64(1024), pairs[0].Value.(int64))
+			return nil
+		})
 
-	task.run()
+	task.run(ctx)
 	assert.Empty(t, task.GetFault().Error())
 }

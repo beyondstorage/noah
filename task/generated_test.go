@@ -135,6 +135,14 @@ func TestDeleteStorageTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestInitSegmentStreamTask_TriggerFault(t *testing.T) {
+	task := &InitSegmentStreamTask{}
+	task.SetFault(fault.New())
+	err := errors.New("test error")
+	task.TriggerFault(err)
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestIsDestinationObjectExistTask_TriggerFault(t *testing.T) {
 	task := &IsDestinationObjectExistTask{}
 	task.SetFault(fault.New())
