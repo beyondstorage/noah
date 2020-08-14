@@ -7,7 +7,7 @@ import (
 
 	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/qingstor/log"
 
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/types"
@@ -77,19 +77,27 @@ func (t *BetweenStorageCheckTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *BetweenStorageCheckTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -181,19 +189,27 @@ func (t *CopyDirTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyDirTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -285,19 +301,27 @@ func (t *CopyFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -391,19 +415,27 @@ func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyLargeFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -516,19 +548,27 @@ func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyPartialFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -633,19 +673,27 @@ func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyPartialStreamTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -736,19 +784,27 @@ func (t *CopySingleFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopySingleFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -840,19 +896,27 @@ func (t *CopySmallFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopySmallFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -941,19 +1005,27 @@ func (t *CopyStreamTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CopyStreamTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1021,19 +1093,27 @@ func (t *CreateStorageTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *CreateStorageTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1105,19 +1185,27 @@ func (t *DeleteDirTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *DeleteDirTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1189,19 +1277,27 @@ func (t *DeleteFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *DeleteFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1273,19 +1369,27 @@ func (t *DeletePrefixTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *DeletePrefixTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1357,19 +1461,27 @@ func (t *DeleteSegmentTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *DeleteSegmentTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1452,19 +1564,27 @@ func (t *DeleteStorageTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *DeleteStorageTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1548,19 +1668,27 @@ func (t *InitSegmentStreamTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *InitSegmentStreamTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1627,19 +1755,27 @@ func (t *IsDestinationObjectExistTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *IsDestinationObjectExistTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1706,19 +1842,27 @@ func (t *IsDestinationObjectNotExistTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1790,19 +1934,27 @@ func (t *IsSizeEqualTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *IsSizeEqualTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1874,19 +2026,27 @@ func (t *IsUpdateAtGreaterTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -1967,19 +2127,27 @@ func (t *ListDirTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *ListDirTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2055,19 +2223,27 @@ func (t *ListPrefixTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *ListPrefixTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2143,19 +2319,27 @@ func (t *ListSegmentTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *ListSegmentTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2231,19 +2415,27 @@ func (t *ListStorageTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *ListStorageTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2325,19 +2517,27 @@ func (t *MD5SumFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *MD5SumFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2404,19 +2604,27 @@ func (t *MD5SumStreamTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *MD5SumStreamTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2503,19 +2711,27 @@ func (t *MoveDirTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *MoveDirTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2602,19 +2818,27 @@ func (t *MoveFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *MoveFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2691,19 +2915,27 @@ func (t *ReachFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *ReachFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2779,19 +3011,27 @@ func (t *SegmentCompleteTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *SegmentCompleteTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2897,19 +3137,27 @@ func (t *SegmentFileCopyTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *SegmentFileCopyTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -2986,19 +3234,27 @@ func (t *SegmentInitTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *SegmentInitTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -3099,19 +3355,27 @@ func (t *SegmentStreamCopyTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *SegmentStreamCopyTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -3183,19 +3447,27 @@ func (t *StatFileTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *StatFileTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -3262,19 +3534,27 @@ func (t *StatStorageTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *StatStorageTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
@@ -3391,19 +3671,27 @@ func (t *SyncTask) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *SyncTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
