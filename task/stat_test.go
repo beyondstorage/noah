@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Xuanwo/storage"
-	typ "github.com/Xuanwo/storage/types"
-	"github.com/Xuanwo/storage/types/info"
+	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
+	"github.com/aos-dev/go-storage/v2/types/info"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

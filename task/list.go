@@ -3,8 +3,8 @@ package task
 import (
 	"context"
 
-	"github.com/Xuanwo/storage"
-	"github.com/Xuanwo/storage/types/pairs"
+	"github.com/aos-dev/go-storage/v2"
+	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/pkg/types"
 )

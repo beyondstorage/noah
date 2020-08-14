@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	typ "github.com/Xuanwo/storage/types"
+	typ "github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

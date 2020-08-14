@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/Xuanwo/navvy"
-	"github.com/Xuanwo/storage"
-	typ "github.com/Xuanwo/storage/types"
+	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 

@@ -3,7 +3,8 @@ package utils
 import (
 	"fmt"
 
-	"github.com/Xuanwo/storage"
+	"github.com/aos-dev/go-storage/v2"
+
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/types"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Xuanwo/navvy"
-	typ "github.com/Xuanwo/storage/types"
+	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
