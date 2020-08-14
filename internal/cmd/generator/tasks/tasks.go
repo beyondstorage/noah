@@ -125,7 +125,7 @@ import (
 
 	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/qingstor/log"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/pkg/schedule"
@@ -190,19 +190,27 @@ func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
 
 // Run implement navvy.Task
 func (t *{{ .Name }}Task) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
 	t.validateInput()
 
-	log.Debugf("Started %s", t)
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
 	t.run(ctx)
 	t.GetScheduler().Wait()
 	if t.GetFault().HasError() {
-		log.Debugf("Finished %s with error [%s]", t, t.GetFault().Error())
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
 		return
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
 	}
-	log.Debugf("Finished %s", t)
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
 }
 
 // Context implement navvy.Task
