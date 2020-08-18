@@ -397,3 +397,11 @@ func TestGetStateByID(t *testing.T) {
 		})
 	}
 }
+
+func TestClearStates(t *testing.T) {
+	center.data = make(map[taskID]State)
+	SetState(uuid.New().String(), InitIncState("test", "copy", 100))
+	assert.Equal(t, 1, len(center.data))
+	ClearStates()
+	assert.Equal(t, 0, len(center.data))
+}

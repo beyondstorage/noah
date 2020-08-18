@@ -167,3 +167,10 @@ func GetStates() map[taskID]State {
 	}
 	return res
 }
+
+// ClearStates clear all data in center
+func ClearStates() {
+	center.Lock()
+	defer center.Unlock()
+	center.data = make(map[taskID]State)
+}
