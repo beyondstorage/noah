@@ -226,7 +226,7 @@ func (t *CopyStreamTask) run(ctx context.Context) {
 	}
 
 	// TODO: we will use expect size to calculate part size later.
-	// if part size was set, use it directly
+	// if part size not set, use default value, otherwise load part size automatically
 	if !t.ValidatePartSize() {
 		t.SetPartSize(constants.DefaultPartSize)
 	}
