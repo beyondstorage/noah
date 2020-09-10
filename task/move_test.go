@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
 )
@@ -42,6 +43,8 @@ func TestMoveDirTask_run(t *testing.T) {
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
+		task.SetPartSize(constants.DefaultPartSize)
 
 		obj := &typ.Object{Name: "obj-name"}
 
@@ -59,6 +62,7 @@ func TestMoveDirTask_run(t *testing.T) {
 			switch v := task.(type) {
 			case *MoveFileTask:
 				v.validateInput()
+				assert.Equal(t, int64(constants.DefaultPartSize), v.GetPartSize())
 				assert.Equal(t, obj.Name, v.GetSourcePath())
 				assert.Equal(t, obj.Name, v.GetDestinationPath())
 			default:
@@ -91,11 +95,14 @@ func TestMoveFileTask_run(t *testing.T) {
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
+		task.SetPartSize(constants.DefaultPartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
 			case *CopyFileTask:
 				v.validateInput()
+				assert.Equal(t, int64(constants.DefaultPartSize), v.GetPartSize())
 			case *DeleteFileTask:
 				v.validateInput()
 			default:

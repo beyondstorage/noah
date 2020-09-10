@@ -33,6 +33,9 @@ func (t *CopyDirTask) run(ctx context.Context) {
 				t.GetHandleObjCallback()(o)
 			})
 		}
+		if t.ValidatePartSize() {
+			sf.SetPartSize(t.GetPartSize())
+		}
 		t.GetScheduler().Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
@@ -41,6 +44,9 @@ func (t *CopyDirTask) run(ctx context.Context) {
 		sf.SetDestinationPath(o.Name)
 		if t.ValidateHandleObjCallback() {
 			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		}
+		if t.ValidatePartSize() {
+			sf.SetPartSize(t.GetPartSize())
 		}
 		t.GetScheduler().Sync(ctx, sf)
 	})
@@ -72,13 +78,24 @@ func (t *CopyFileTask) run(ctx context.Context) {
 	srcSize := check.GetSourceObject().Size
 
 	// if destination not support segmenter, we do not call multipart api
-	if _, ok := t.GetDestinationStorage().(storage.IndexSegmenter); ok && srcSize >= constants.MaximumAutoMultipartSize {
-		x := NewCopyLargeFile(t)
-		x.SetTotalSize(srcSize)
-		t.GetScheduler().Sync(ctx, x)
-	} else {
+	_, ok := t.GetDestinationStorage().(storage.IndexSegmenter)
+	if !ok {
 		x := NewCopySmallFile(t)
 		x.SetSize(srcSize)
+		t.GetScheduler().Sync(ctx, x)
+		return
+	}
+
+	if srcSize <= t.GetPartThreshold() {
+		x := NewCopySmallFile(t)
+		x.SetSize(srcSize)
+		t.GetScheduler().Sync(ctx, x)
+	} else {
+		x := NewCopyLargeFile(t)
+		x.SetTotalSize(srcSize)
+		if t.ValidatePartSize() {
+			x.SetPartSize(t.GetPartSize())
+		}
 		t.GetScheduler().Sync(ctx, x)
 	}
 }
@@ -105,16 +122,22 @@ func (t *CopySmallFileTask) run(ctx context.Context) {
 
 func (t *CopyLargeFileTask) new() {}
 func (t *CopyLargeFileTask) run(ctx context.Context) {
-	// Set segment part size.
-	partSize, err := utils.CalculatePartSize(t.GetTotalSize())
-	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+	// if part size set, use it directly
+	// TODO: we need to check validation of part size
+	if t.ValidatePartSize() {
+		t.SetPartSize(t.GetPartSize())
+	} else {
+		// otherwise, calculate part size.
+		partSize, err := utils.CalculatePartSize(t.GetTotalSize())
+		if err != nil {
+			t.TriggerFault(types.NewErrUnhandled(err))
+			return
+		}
+		t.SetPartSize(partSize)
 	}
-	t.SetPartSize(partSize)
 
 	initTask := NewSegmentInit(t)
-	err = utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
+	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
 	if err != nil {
 		t.TriggerFault(err)
 		return
@@ -203,8 +226,10 @@ func (t *CopyStreamTask) run(ctx context.Context) {
 	}
 
 	// TODO: we will use expect size to calculate part size later.
-	partSize := int64(constants.DefaultPartSize)
-	t.SetPartSize(partSize)
+	// if part size was set, use it directly
+	if !t.ValidatePartSize() {
+		t.SetPartSize(constants.DefaultPartSize)
+	}
 
 	t.GetScheduler().Sync(ctx, initTask)
 	if t.GetFault().HasError() {
