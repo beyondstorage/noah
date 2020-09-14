@@ -26,6 +26,9 @@ func (t *MoveDirTask) run(ctx context.Context) {
 				t.GetHandleObjCallback()(o)
 			})
 		}
+		if t.ValidatePartSize() {
+			sf.SetPartSize(t.GetPartSize())
+		}
 		t.GetScheduler().Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
@@ -34,6 +37,9 @@ func (t *MoveDirTask) run(ctx context.Context) {
 		sf.SetDestinationPath(o.Name)
 		if t.ValidateHandleObjCallback() {
 			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		}
+		if t.ValidatePartSize() {
+			sf.SetPartSize(t.GetPartSize())
 		}
 		t.GetScheduler().Sync(ctx, sf)
 	})
@@ -44,6 +50,9 @@ func (t *MoveFileTask) new() {}
 func (t *MoveFileTask) run(ctx context.Context) {
 	ct := NewCopyFile(t)
 	ct.SetCheckTasks(nil)
+	if t.ValidatePartSize() {
+		ct.SetPartSize(t.GetPartSize())
+	}
 	t.GetScheduler().Sync(ctx, ct)
 	if t.GetFault().HasError() {
 		return

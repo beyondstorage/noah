@@ -19,11 +19,13 @@
       "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
+      "PartThreshold",
       "SourcePath",
       "SourceStorage"
     ],
     "output": [
-      "HandleObjCallback"
+      "HandleObjCallback",
+      "PartSize"
     ]
   },
   "CopyFile": {
@@ -33,11 +35,13 @@
       "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
+      "PartThreshold",
       "SourcePath",
       "SourceStorage"
     ],
     "output": [
-      "HandleObjCallback"
+      "HandleObjCallback",
+      "PartSize"
     ]
   },
   "CopyLargeFile": {
@@ -309,11 +313,13 @@
       "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
+      "PartThreshold",
       "SourcePath",
       "SourceStorage"
     ],
     "output": [
-      "HandleObjCallback"
+      "HandleObjCallback",
+      "PartSize"
     ]
   },
   "MoveFile": {
@@ -322,11 +328,13 @@
       "CheckMD5",
       "DestinationPath",
       "DestinationStorage",
+      "PartThreshold",
       "SourcePath",
       "SourceStorage"
     ],
     "output": [
-      "HandleObjCallback"
+      "HandleObjCallback",
+      "PartSize"
     ]
   },
   "ReachFile": {
@@ -415,13 +423,15 @@
       "DryRunFunc",
       "Existing",
       "IgnoreExisting",
+      "PartThreshold",
       "Recursive",
       "SourcePath",
       "SourceStorage",
       "Update"
     ],
     "output": [
-      "HandleObjCallback"
+      "HandleObjCallback",
+      "PartSize"
     ]
   }
 }

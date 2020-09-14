@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
 )
@@ -66,6 +67,8 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetRecursive(false)
 		task.SetUpdate(false)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
+		task.SetPartSize(constants.DefaultPartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
@@ -84,6 +87,7 @@ func TestSyncTask_run(t *testing.T) {
 				v.validateInput()
 				assert.Equal(t, obj.Name, v.GetSourcePath())
 				assert.Equal(t, obj.Name, v.GetDestinationPath())
+				assert.Equal(t, int64(constants.DefaultPartSize), v.GetPartSize())
 			default:
 				panic(fmt.Errorf("unexpected task %v", v))
 			}
@@ -117,6 +121,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetRecursive(false)
 		task.SetUpdate(true)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
@@ -159,6 +164,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetRecursive(false)
 		task.SetUpdate(false)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
@@ -201,6 +207,7 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetRecursive(true)
 		task.SetUpdate(false)
 		task.SetCheckMD5(false)
+		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {

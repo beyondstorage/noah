@@ -27,6 +27,9 @@ func (t *SyncTask) run(ctx context.Context) {
 			if t.ValidateHandleObjCallback() {
 				sf.SetHandleObjCallback(t.GetHandleObjCallback())
 			}
+			if t.ValidatePartSize() {
+				sf.SetPartSize(t.GetPartSize())
+			}
 			t.GetScheduler().Sync(ctx, sf)
 		})
 	} else {
@@ -85,6 +88,9 @@ func (t *SyncTask) run(ctx context.Context) {
 			sf.SetCallbackFunc(func() {
 				t.GetHandleObjCallback()(o)
 			})
+		}
+		if t.ValidatePartSize() {
+			sf.SetPartSize(t.GetPartSize())
 		}
 		t.GetScheduler().Async(ctx, sf)
 	})

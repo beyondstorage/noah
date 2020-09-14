@@ -39,6 +39,7 @@
   "Offset": "int64",
   "PartNumber": "int",
   "PartSize": "int64",
+  "PartThreshold": "int64",
   "Passed": "bool",
   "Path": "string",
   "Pool": "*navvy.Pool",

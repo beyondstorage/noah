@@ -2375,6 +2375,65 @@ func LoadPartSize(t navvy.Task, v PartSizeSetter) {
 	v.SetPartSize(x.GetPartSize())
 }
 
+type PartThreshold struct {
+	valid bool
+	v     int64
+
+	l sync.RWMutex
+}
+
+type PartThresholdGetter interface {
+	GetPartThreshold() int64
+}
+
+func (o *PartThreshold) GetPartThreshold() int64 {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("PartThreshold value is not valid")
+	}
+	return o.v
+}
+
+type PartThresholdSetter interface {
+	SetPartThreshold(int64)
+}
+
+func (o *PartThreshold) SetPartThreshold(v int64) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type PartThresholdValidator interface {
+	ValidatePartThreshold() bool
+}
+
+func (o *PartThreshold) ValidatePartThreshold() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadPartThreshold(t navvy.Task, v PartThresholdSetter) {
+	x, ok := t.(interface {
+		PartThresholdGetter
+		PartThresholdValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidatePartThreshold() {
+		return
+	}
+
+	v.SetPartThreshold(x.GetPartThreshold())
+}
+
 type Passed struct {
 	valid bool
 	v     bool
