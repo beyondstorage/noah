@@ -49,7 +49,6 @@ func (t *MoveDirTask) run(ctx context.Context) {
 func (t *MoveFileTask) new() {}
 func (t *MoveFileTask) run(ctx context.Context) {
 	ct := NewCopyFile(t)
-	ct.SetCheckTasks(nil)
 	if t.ValidatePartSize() {
 		ct.SetPartSize(t.GetPartSize())
 	}

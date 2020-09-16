@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 
-	"github.com/Xuanwo/navvy"
 	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/pkg/types"
@@ -37,26 +36,11 @@ func (t *SyncTask) run(ctx context.Context) {
 		x.SetDirFunc(func(_ *typ.Object) {})
 	}
 
-	var fn []func(task navvy.Task) navvy.Task
-	if t.GetIgnoreExisting() {
-		fn = append(fn,
-			NewIsDestinationObjectNotExistTask,
-		)
-	}
-	if t.GetExisting() {
-		fn = append(fn,
-			NewIsDestinationObjectExistTask,
-		)
-	}
-	if t.GetUpdate() {
-		fn = append(fn,
-			NewIsUpdateAtGreaterTask,
-		)
-	}
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewCopyFile(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
+		// set check task to nil, to skip check in copy file, because we check here, below
 		sf.SetCheckTasks(nil)
 
 		// put check tasks outside of copy, to make sure flags' priority is higher than dry-run
@@ -65,7 +49,7 @@ func (t *SyncTask) run(ctx context.Context) {
 		if sf.GetFault().HasError() {
 			return
 		}
-		for _, v := range fn {
+		for _, v := range t.GetCheckTasks() {
 			ct := v(check)
 			sf.GetScheduler().Sync(ctx, ct)
 			if sf.GetFault().HasError() {
@@ -79,7 +63,7 @@ func (t *SyncTask) run(ctx context.Context) {
 		}
 
 		// if dry-run, only check, and call dry-run func if check passed
-		if t.GetDryRun() {
+		if t.GetDryRunFunc() != nil {
 			t.GetDryRunFunc()(o)
 			return
 		}

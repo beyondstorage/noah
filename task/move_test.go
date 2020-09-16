@@ -43,6 +43,7 @@ func TestMoveDirTask_run(t *testing.T) {
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
 		task.SetCheckMD5(false)
+		task.SetCheckTasks(nil)
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 		task.SetPartSize(constants.DefaultPartSize)
 
@@ -95,6 +96,7 @@ func TestMoveFileTask_run(t *testing.T) {
 		task.SetDestinationStorage(dstStore)
 		task.SetScheduler(sche)
 		task.SetCheckMD5(false)
+		task.SetCheckTasks(nil)
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 		task.SetPartSize(constants.DefaultPartSize)
 

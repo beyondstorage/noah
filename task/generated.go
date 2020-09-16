@@ -2767,6 +2767,7 @@ type MoveDirTask struct {
 
 	// Input value
 	types.CheckMD5
+	types.CheckTasks
 	types.DestinationPath
 	types.DestinationStorage
 	types.PartThreshold
@@ -2795,6 +2796,9 @@ func (t *MoveDirTask) validateInput() {
 	if !t.ValidateCheckMD5() {
 		panic(fmt.Errorf("Task MoveDir value CheckMD5 is invalid"))
 	}
+	if !t.ValidateCheckTasks() {
+		panic(fmt.Errorf("Task MoveDir value CheckTasks is invalid"))
+	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task MoveDir value DestinationPath is invalid"))
 	}
@@ -2817,6 +2821,7 @@ func (t *MoveDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
 	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadPartThreshold(task, t)
@@ -2861,7 +2866,7 @@ func (t *MoveDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveDirTask) String() string {
-	return fmt.Sprintf("MoveDirTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("MoveDirTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
 }
 
 // NewMoveDirTask will create a MoveDirTask which meets navvy.Task.
@@ -2880,6 +2885,7 @@ type MoveFileTask struct {
 
 	// Input value
 	types.CheckMD5
+	types.CheckTasks
 	types.DestinationPath
 	types.DestinationStorage
 	types.PartThreshold
@@ -2908,6 +2914,9 @@ func (t *MoveFileTask) validateInput() {
 	if !t.ValidateCheckMD5() {
 		panic(fmt.Errorf("Task MoveFile value CheckMD5 is invalid"))
 	}
+	if !t.ValidateCheckTasks() {
+		panic(fmt.Errorf("Task MoveFile value CheckTasks is invalid"))
+	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task MoveFile value DestinationPath is invalid"))
 	}
@@ -2930,6 +2939,7 @@ func (t *MoveFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
 	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadPartThreshold(task, t)
@@ -2974,7 +2984,7 @@ func (t *MoveFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveFileTask) String() string {
-	return fmt.Sprintf("MoveFileTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("MoveFileTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
 }
 
 // NewMoveFileTask will create a MoveFileTask which meets navvy.Task.
@@ -3709,17 +3719,14 @@ type SyncTask struct {
 
 	// Input value
 	types.CheckMD5
+	types.CheckTasks
 	types.DestinationPath
 	types.DestinationStorage
-	types.DryRun
 	types.DryRunFunc
-	types.Existing
-	types.IgnoreExisting
 	types.PartThreshold
 	types.Recursive
 	types.SourcePath
 	types.SourceStorage
-	types.Update
 
 	// Output value
 	types.HandleObjCallback
@@ -3743,23 +3750,17 @@ func (t *SyncTask) validateInput() {
 	if !t.ValidateCheckMD5() {
 		panic(fmt.Errorf("Task Sync value CheckMD5 is invalid"))
 	}
+	if !t.ValidateCheckTasks() {
+		panic(fmt.Errorf("Task Sync value CheckTasks is invalid"))
+	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task Sync value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task Sync value DestinationStorage is invalid"))
 	}
-	if !t.ValidateDryRun() {
-		panic(fmt.Errorf("Task Sync value DryRun is invalid"))
-	}
 	if !t.ValidateDryRunFunc() {
 		panic(fmt.Errorf("Task Sync value DryRunFunc is invalid"))
-	}
-	if !t.ValidateExisting() {
-		panic(fmt.Errorf("Task Sync value Existing is invalid"))
-	}
-	if !t.ValidateIgnoreExisting() {
-		panic(fmt.Errorf("Task Sync value IgnoreExisting is invalid"))
 	}
 	if !t.ValidatePartThreshold() {
 		panic(fmt.Errorf("Task Sync value PartThreshold is invalid"))
@@ -3773,9 +3774,6 @@ func (t *SyncTask) validateInput() {
 	if !t.ValidateSourceStorage() {
 		panic(fmt.Errorf("Task Sync value SourceStorage is invalid"))
 	}
-	if !t.ValidateUpdate() {
-		panic(fmt.Errorf("Task Sync value Update is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
@@ -3783,17 +3781,14 @@ func (t *SyncTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
 	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadDryRun(task, t)
 	types.LoadDryRunFunc(task, t)
-	types.LoadExisting(task, t)
-	types.LoadIgnoreExisting(task, t)
 	types.LoadPartThreshold(task, t)
 	types.LoadRecursive(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
-	types.LoadUpdate(task, t)
 }
 
 // Run implement navvy.Task
@@ -3833,7 +3828,7 @@ func (t *SyncTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SyncTask) String() string {
-	return fmt.Sprintf("SyncTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, DryRun: %v, Existing: %v, IgnoreExisting: %v, PartThreshold: %v, Recursive: %v, SourcePath: %v, SourceStorage: %v, Update: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetDryRun(), t.GetExisting(), t.GetIgnoreExisting(), t.GetPartThreshold(), t.GetRecursive(), t.GetSourcePath(), t.GetSourceStorage(), t.GetUpdate())
+	return fmt.Sprintf("SyncTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, Recursive: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetRecursive(), t.GetSourcePath(), t.GetSourceStorage())
 }
 
 // NewSyncTask will create a SyncTask which meets navvy.Task.

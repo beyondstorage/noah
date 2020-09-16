@@ -60,15 +60,12 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
-		task.SetDryRun(false)
 		task.SetDryRunFunc(nil)
-		task.SetExisting(false)
-		task.SetIgnoreExisting(false)
 		task.SetRecursive(false)
-		task.SetUpdate(false)
 		task.SetCheckMD5(false)
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 		task.SetPartSize(constants.DefaultPartSize)
+		task.SetCheckTasks(nil)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
@@ -114,13 +111,15 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
-		task.SetDryRun(false)
 		task.SetDryRunFunc(nil)
-		task.SetExisting(true)
-		task.SetIgnoreExisting(true)
 		task.SetRecursive(false)
-		task.SetUpdate(true)
 		task.SetCheckMD5(false)
+		task.SetCheckTasks(
+			[]func(navvy.Task) navvy.Task{
+				NewIsUpdateAtGreaterTask,
+				NewIsDestinationObjectNotExistTask,
+				NewIsDestinationObjectExistTask,
+			})
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
@@ -155,16 +154,13 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
-		task.SetDryRun(true)
 		task.SetDryRunFunc(func(o *types.Object) {
 			t.Log(o.Name)
 		})
-		task.SetExisting(false)
-		task.SetIgnoreExisting(false)
 		task.SetRecursive(false)
-		task.SetUpdate(false)
 		task.SetCheckMD5(false)
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
+		task.SetCheckTasks(nil)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
@@ -198,16 +194,13 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetSourceStorage(src)
 		task.SetDestinationStorage(dstStore)
 		task.SetDestinationPath(dstPath)
-		task.SetDryRun(true)
 		task.SetDryRunFunc(func(o *types.Object) {
 			t.Log(o.Name)
 		})
-		task.SetExisting(false)
-		task.SetIgnoreExisting(false)
 		task.SetRecursive(true)
-		task.SetUpdate(false)
 		task.SetCheckMD5(false)
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
+		task.SetCheckTasks(nil)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
