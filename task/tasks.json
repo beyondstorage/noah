@@ -243,6 +243,17 @@
       "Result"
     ]
   },
+  "IsSourcePathExcludeInclude": {
+    "description": "check whether source path is excluded or included",
+    "input": [
+      "ExcludeRegexp",
+      "IncludeRegexp",
+      "SourcePath"
+    ],
+    "output": [
+      "Result"
+    ]
+  },
   "IsUpdateAtGreater": {
     "description": "",
     "input": [
@@ -311,6 +322,7 @@
     "description": "move a directory recursively between two storager",
     "input": [
       "CheckMD5",
+      "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
       "PartThreshold",
@@ -326,6 +338,7 @@
     "description": "move a file between two storager",
     "input": [
       "CheckMD5",
+      "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
       "PartThreshold",
@@ -417,17 +430,14 @@
     "description": "sync directory between two storage",
     "input": [
       "CheckMD5",
+      "CheckTasks",
       "DestinationPath",
       "DestinationStorage",
-      "DryRun",
       "DryRunFunc",
-      "Existing",
-      "IgnoreExisting",
       "PartThreshold",
       "Recursive",
       "SourcePath",
-      "SourceStorage",
-      "Update"
+      "SourceStorage"
     ],
     "output": [
       "HandleObjCallback",

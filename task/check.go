@@ -53,3 +53,32 @@ func (t *IsUpdateAtGreaterTask) run(_ context.Context) {
 		t.SetResult(t.GetSourceObject().UpdatedAt.After(t.GetDestinationObject().UpdatedAt))
 	}
 }
+
+func (t *IsSourcePathExcludeIncludeTask) new() {}
+func (t *IsSourcePathExcludeIncludeTask) run(_ context.Context) {
+	// source path is rel path based on work-dir, we check exclude and include here:
+	// 0. if exclude not set, copy
+	// 1. if exclude set but not match, copy
+	// 2. if exclude match and include not set, do not copy
+	// 3. if exclude match and include set but not match, do not copy
+	// 4. if exclude match and include set and match, copy
+	// TODO: move exclude and include check into list (in go-storage)
+	if t.GetExcludeRegexp() == nil {
+		t.SetResult(true)
+		return
+	}
+
+	exMatch := t.GetExcludeRegexp().MatchString(t.GetSourcePath())
+	if !exMatch {
+		t.SetResult(true)
+		return
+	}
+
+	if t.GetIncludeRegexp() == nil {
+		t.SetResult(false)
+		return
+	}
+
+	inMatch := t.GetIncludeRegexp().MatchString(t.GetSourcePath())
+	t.SetResult(inMatch)
+}
