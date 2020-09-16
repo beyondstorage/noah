@@ -1999,8 +1999,8 @@ type IsSourcePathExcludeIncludeTask struct {
 	types.CallbackFunc
 
 	// Input value
-	types.ExcludeRegx
-	types.IncludeRegx
+	types.ExcludeRegexp
+	types.IncludeRegexp
 	types.SourcePath
 
 	// Output value
@@ -2021,11 +2021,11 @@ func NewIsSourcePathExcludeInclude(task navvy.Task) *IsSourcePathExcludeIncludeT
 
 // validateInput will validate all input before run task.
 func (t *IsSourcePathExcludeIncludeTask) validateInput() {
-	if !t.ValidateExcludeRegx() {
-		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value ExcludeRegx is invalid"))
+	if !t.ValidateExcludeRegexp() {
+		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value ExcludeRegexp is invalid"))
 	}
-	if !t.ValidateIncludeRegx() {
-		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value IncludeRegx is invalid"))
+	if !t.ValidateIncludeRegexp() {
+		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value IncludeRegexp is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value SourcePath is invalid"))
@@ -2036,8 +2036,8 @@ func (t *IsSourcePathExcludeIncludeTask) validateInput() {
 func (t *IsSourcePathExcludeIncludeTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadExcludeRegx(task, t)
-	types.LoadIncludeRegx(task, t)
+	types.LoadExcludeRegexp(task, t)
+	types.LoadIncludeRegexp(task, t)
 	types.LoadSourcePath(task, t)
 }
 
@@ -2078,7 +2078,7 @@ func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsSourcePathExcludeIncludeTask) String() string {
-	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {ExcludeRegx: %v, IncludeRegx: %v, SourcePath: %v}", t.GetExcludeRegx(), t.GetIncludeRegx(), t.GetSourcePath())
+	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {ExcludeRegexp: %v, IncludeRegexp: %v, SourcePath: %v}", t.GetExcludeRegexp(), t.GetIncludeRegexp(), t.GetSourcePath())
 }
 
 // NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets navvy.Task.

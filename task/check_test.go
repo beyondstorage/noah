@@ -218,8 +218,8 @@ func TestIsSourcePathExcludeIncludeTask_run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			task := IsSourcePathExcludeIncludeTask{}
 			task.SetSourcePath(tt.sourcePath)
-			task.SetExcludeRegx(tt.excludeReg)
-			task.SetIncludeRegx(tt.includeReg)
+			task.SetExcludeRegexp(tt.excludeReg)
+			task.SetIncludeRegexp(tt.includeReg)
 			task.run(ctx)
 
 			assert.Equal(t, tt.wantRes, task.GetResult())

@@ -63,22 +63,22 @@ func (t *IsSourcePathExcludeIncludeTask) run(_ context.Context) {
 	// 3. if exclude match and include set but not match, do not copy
 	// 4. if exclude match and include set and match, copy
 	// TODO: move exclude and include check into list (in go-storage)
-	if t.GetExcludeRegx() == nil {
+	if t.GetExcludeRegexp() == nil {
 		t.SetResult(true)
 		return
 	}
 
-	exMatch := t.GetExcludeRegx().MatchString(t.GetSourcePath())
+	exMatch := t.GetExcludeRegexp().MatchString(t.GetSourcePath())
 	if !exMatch {
 		t.SetResult(true)
 		return
 	}
 
-	if t.GetIncludeRegx() == nil {
+	if t.GetIncludeRegexp() == nil {
 		t.SetResult(false)
 		return
 	}
 
-	inMatch := t.GetIncludeRegx().MatchString(t.GetSourcePath())
+	inMatch := t.GetIncludeRegexp().MatchString(t.GetSourcePath())
 	t.SetResult(inMatch)
 }

@@ -1137,32 +1137,32 @@ func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
 }
 
-type ExcludeRegx struct {
+type ExcludeRegexp struct {
 	valid bool
 	v     *regexp.Regexp
 
 	l sync.RWMutex
 }
 
-type ExcludeRegxGetter interface {
-	GetExcludeRegx() *regexp.Regexp
+type ExcludeRegexpGetter interface {
+	GetExcludeRegexp() *regexp.Regexp
 }
 
-func (o *ExcludeRegx) GetExcludeRegx() *regexp.Regexp {
+func (o *ExcludeRegexp) GetExcludeRegexp() *regexp.Regexp {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("ExcludeRegx value is not valid")
+		panic("ExcludeRegexp value is not valid")
 	}
 	return o.v
 }
 
-type ExcludeRegxSetter interface {
-	SetExcludeRegx(*regexp.Regexp)
+type ExcludeRegexpSetter interface {
+	SetExcludeRegexp(*regexp.Regexp)
 }
 
-func (o *ExcludeRegx) SetExcludeRegx(v *regexp.Regexp) {
+func (o *ExcludeRegexp) SetExcludeRegexp(v *regexp.Regexp) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1170,30 +1170,30 @@ func (o *ExcludeRegx) SetExcludeRegx(v *regexp.Regexp) {
 	o.valid = true
 }
 
-type ExcludeRegxValidator interface {
-	ValidateExcludeRegx() bool
+type ExcludeRegexpValidator interface {
+	ValidateExcludeRegexp() bool
 }
 
-func (o *ExcludeRegx) ValidateExcludeRegx() bool {
+func (o *ExcludeRegexp) ValidateExcludeRegexp() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadExcludeRegx(t navvy.Task, v ExcludeRegxSetter) {
+func LoadExcludeRegexp(t navvy.Task, v ExcludeRegexpSetter) {
 	x, ok := t.(interface {
-		ExcludeRegxGetter
-		ExcludeRegxValidator
+		ExcludeRegexpGetter
+		ExcludeRegexpValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateExcludeRegx() {
+	if !x.ValidateExcludeRegexp() {
 		return
 	}
 
-	v.SetExcludeRegx(x.GetExcludeRegx())
+	v.SetExcludeRegexp(x.GetExcludeRegexp())
 }
 
 type Existing struct {
@@ -1845,32 +1845,32 @@ func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
 }
 
-type IncludeRegx struct {
+type IncludeRegexp struct {
 	valid bool
 	v     *regexp.Regexp
 
 	l sync.RWMutex
 }
 
-type IncludeRegxGetter interface {
-	GetIncludeRegx() *regexp.Regexp
+type IncludeRegexpGetter interface {
+	GetIncludeRegexp() *regexp.Regexp
 }
 
-func (o *IncludeRegx) GetIncludeRegx() *regexp.Regexp {
+func (o *IncludeRegexp) GetIncludeRegexp() *regexp.Regexp {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("IncludeRegx value is not valid")
+		panic("IncludeRegexp value is not valid")
 	}
 	return o.v
 }
 
-type IncludeRegxSetter interface {
-	SetIncludeRegx(*regexp.Regexp)
+type IncludeRegexpSetter interface {
+	SetIncludeRegexp(*regexp.Regexp)
 }
 
-func (o *IncludeRegx) SetIncludeRegx(v *regexp.Regexp) {
+func (o *IncludeRegexp) SetIncludeRegexp(v *regexp.Regexp) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1878,30 +1878,30 @@ func (o *IncludeRegx) SetIncludeRegx(v *regexp.Regexp) {
 	o.valid = true
 }
 
-type IncludeRegxValidator interface {
-	ValidateIncludeRegx() bool
+type IncludeRegexpValidator interface {
+	ValidateIncludeRegexp() bool
 }
 
-func (o *IncludeRegx) ValidateIncludeRegx() bool {
+func (o *IncludeRegexp) ValidateIncludeRegexp() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadIncludeRegx(t navvy.Task, v IncludeRegxSetter) {
+func LoadIncludeRegexp(t navvy.Task, v IncludeRegexpSetter) {
 	x, ok := t.(interface {
-		IncludeRegxGetter
-		IncludeRegxValidator
+		IncludeRegexpGetter
+		IncludeRegexpValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateIncludeRegx() {
+	if !x.ValidateIncludeRegexp() {
 		return
 	}
 
-	v.SetIncludeRegx(x.GetIncludeRegx())
+	v.SetIncludeRegexp(x.GetIncludeRegexp())
 }
 
 type Index struct {

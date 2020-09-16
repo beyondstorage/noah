@@ -246,8 +246,8 @@
   "IsSourcePathExcludeInclude": {
     "description": "check whether source path is excluded or included",
     "input": [
-      "ExcludeRegx",
-      "IncludeRegx",
+      "ExcludeRegexp",
+      "IncludeRegexp",
       "SourcePath"
     ],
     "output": [
