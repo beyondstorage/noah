@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"errors"
+	"regexp"
 	"testing"
 	"time"
 
@@ -161,4 +162,67 @@ func TestIsUpdateAtGreaterTask_run(t *testing.T) {
 
 		assert.Equal(t, false, task.GetResult())
 	})
+}
+
+func TestIsSourcePathExcludeIncludeTask_run(t *testing.T) {
+	ctx := context.Background()
+	reg := regexp.MustCompile("-")
+	nonMatchReg := regexp.MustCompile("^$")
+	path := uuid.New().String()
+
+	tests := []struct {
+		name       string
+		sourcePath string
+		excludeReg *regexp.Regexp
+		includeReg *regexp.Regexp
+		wantRes    bool
+	}{
+		{
+			name:       "exclude not set",
+			sourcePath: path,
+			excludeReg: nil,
+			includeReg: nil,
+			wantRes:    true,
+		},
+		{
+			name:       "exclude set non-match",
+			sourcePath: path,
+			excludeReg: nonMatchReg,
+			includeReg: nil,
+			wantRes:    true,
+		},
+		{
+			name:       "exclude set match, include not set",
+			sourcePath: path,
+			excludeReg: reg,
+			includeReg: nil,
+			wantRes:    false,
+		},
+		{
+			name:       "exclude set match, include set non-match",
+			sourcePath: path,
+			excludeReg: reg,
+			includeReg: nonMatchReg,
+			wantRes:    false,
+		},
+		{
+			name:       "exclude set match, include set match",
+			sourcePath: path,
+			excludeReg: reg,
+			includeReg: reg,
+			wantRes:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			task := IsSourcePathExcludeIncludeTask{}
+			task.SetSourcePath(tt.sourcePath)
+			task.SetExcludeRegx(tt.excludeReg)
+			task.SetIncludeRegx(tt.includeReg)
+			task.run(ctx)
+
+			assert.Equal(t, tt.wantRes, task.GetResult())
+		})
+	}
 }

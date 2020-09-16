@@ -243,6 +243,17 @@
       "Result"
     ]
   },
+  "IsSourcePathExcludeInclude": {
+    "description": "check whether source path is excluded or included",
+    "input": [
+      "ExcludeRegx",
+      "IncludeRegx",
+      "SourcePath"
+    ],
+    "output": [
+      "Result"
+    ]
+  },
   "IsUpdateAtGreater": {
     "description": "",
     "input": [

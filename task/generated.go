@@ -1989,6 +1989,103 @@ func NewIsSizeEqualTask(task navvy.Task) navvy.Task {
 	return NewIsSizeEqual(task)
 }
 
+// IsSourcePathExcludeIncludeTask will check whether source path is excluded or included.
+type IsSourcePathExcludeIncludeTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Input value
+	types.ExcludeRegx
+	types.IncludeRegx
+	types.SourcePath
+
+	// Output value
+	types.Result
+}
+
+// NewIsSourcePathExcludeInclude will create a IsSourcePathExcludeIncludeTask struct and fetch inherited data from parent task.
+func NewIsSourcePathExcludeInclude(task navvy.Task) *IsSourcePathExcludeIncludeTask {
+	t := &IsSourcePathExcludeIncludeTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *IsSourcePathExcludeIncludeTask) validateInput() {
+	if !t.ValidateExcludeRegx() {
+		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value ExcludeRegx is invalid"))
+	}
+	if !t.ValidateIncludeRegx() {
+		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value IncludeRegx is invalid"))
+	}
+	if !t.ValidateSourcePath() {
+		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value SourcePath is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *IsSourcePathExcludeIncludeTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+	types.LoadExcludeRegx(task, t)
+	types.LoadIncludeRegx(task, t)
+	types.LoadSourcePath(task, t)
+}
+
+// Run implement navvy.Task
+func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	t.run(ctx)
+	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
+		return
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+}
+
+// Context implement navvy.Task
+func (t *IsSourcePathExcludeIncludeTask) Context() context.Context {
+	return context.TODO()
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *IsSourcePathExcludeIncludeTask) String() string {
+	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {ExcludeRegx: %v, IncludeRegx: %v, SourcePath: %v}", t.GetExcludeRegx(), t.GetIncludeRegx(), t.GetSourcePath())
+}
+
+// NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets navvy.Task.
+func NewIsSourcePathExcludeIncludeTask(task navvy.Task) navvy.Task {
+	return NewIsSourcePathExcludeInclude(task)
+}
+
 // IsUpdateAtGreaterTask will .
 type IsUpdateAtGreaterTask struct {
 	// Predefined value

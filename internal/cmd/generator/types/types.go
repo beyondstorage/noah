@@ -55,6 +55,7 @@ package types
 
 import (
 	"bytes"
+	"regexp"
 	"sync"
 
 	"github.com/Xuanwo/navvy"

@@ -3,6 +3,7 @@ package types
 
 import (
 	"bytes"
+	"regexp"
 	"sync"
 
 	"github.com/Xuanwo/navvy"
@@ -1136,6 +1137,65 @@ func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
 }
 
+type ExcludeRegx struct {
+	valid bool
+	v     *regexp.Regexp
+
+	l sync.RWMutex
+}
+
+type ExcludeRegxGetter interface {
+	GetExcludeRegx() *regexp.Regexp
+}
+
+func (o *ExcludeRegx) GetExcludeRegx() *regexp.Regexp {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ExcludeRegx value is not valid")
+	}
+	return o.v
+}
+
+type ExcludeRegxSetter interface {
+	SetExcludeRegx(*regexp.Regexp)
+}
+
+func (o *ExcludeRegx) SetExcludeRegx(v *regexp.Regexp) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ExcludeRegxValidator interface {
+	ValidateExcludeRegx() bool
+}
+
+func (o *ExcludeRegx) ValidateExcludeRegx() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadExcludeRegx(t navvy.Task, v ExcludeRegxSetter) {
+	x, ok := t.(interface {
+		ExcludeRegxGetter
+		ExcludeRegxValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateExcludeRegx() {
+		return
+	}
+
+	v.SetExcludeRegx(x.GetExcludeRegx())
+}
+
 type Existing struct {
 	valid bool
 	v     bool
@@ -1783,6 +1843,65 @@ func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
 	}
 
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
+}
+
+type IncludeRegx struct {
+	valid bool
+	v     *regexp.Regexp
+
+	l sync.RWMutex
+}
+
+type IncludeRegxGetter interface {
+	GetIncludeRegx() *regexp.Regexp
+}
+
+func (o *IncludeRegx) GetIncludeRegx() *regexp.Regexp {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("IncludeRegx value is not valid")
+	}
+	return o.v
+}
+
+type IncludeRegxSetter interface {
+	SetIncludeRegx(*regexp.Regexp)
+}
+
+func (o *IncludeRegx) SetIncludeRegx(v *regexp.Regexp) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type IncludeRegxValidator interface {
+	ValidateIncludeRegx() bool
+}
+
+func (o *IncludeRegx) ValidateIncludeRegx() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadIncludeRegx(t navvy.Task, v IncludeRegxSetter) {
+	x, ok := t.(interface {
+		IncludeRegxGetter
+		IncludeRegxValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateIncludeRegx() {
+		return
+	}
+
+	v.SetIncludeRegx(x.GetIncludeRegx())
 }
 
 type Index struct {

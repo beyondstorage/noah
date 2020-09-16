@@ -167,6 +167,14 @@ func TestIsSizeEqualTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestIsSourcePathExcludeIncludeTask_TriggerFault(t *testing.T) {
+	task := &IsSourcePathExcludeIncludeTask{}
+	task.SetFault(fault.New())
+	err := errors.New("test error")
+	task.TriggerFault(err)
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestIsUpdateAtGreaterTask_TriggerFault(t *testing.T) {
 	task := &IsUpdateAtGreaterTask{}
 	task.SetFault(fault.New())
