@@ -9,55 +9,41 @@ import (
 )
 
 func (t *MoveDirTask) new() {}
-func (t *MoveDirTask) run(ctx context.Context) {
+func (t *MoveDirTask) run(ctx context.Context) error {
 	x := NewListDir(t)
 	err := utils.ChooseSourceStorageAsDirLister(x, t)
 	if err != nil {
-		t.TriggerFault(err)
-		return
+		return err
 	}
 
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewMoveFile(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.GetScheduler().Async(ctx, sf)
+		t.Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewMoveDir(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallback() {
-			sf.SetHandleObjCallback(t.GetHandleObjCallback())
-		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.GetScheduler().Sync(ctx, sf)
+		t.Sync(ctx, sf)
 	})
-	t.GetScheduler().Sync(ctx, x)
+	return t.Sync(ctx, x)
 }
 
 func (t *MoveFileTask) new() {}
-func (t *MoveFileTask) run(ctx context.Context) {
+func (t *MoveFileTask) run(ctx context.Context) error {
 	ct := NewCopyFile(t)
-	if t.ValidatePartSize() {
-		ct.SetPartSize(t.GetPartSize())
-	}
-	t.GetScheduler().Sync(ctx, ct)
-	if t.GetFault().HasError() {
-		return
+	if err := t.Sync(ctx, ct); err != nil {
+		return err
 	}
 
 	dt := NewDeleteFile(t)
 	utils.ChooseSourceStorage(dt, t)
-	t.GetScheduler().Sync(ctx, dt)
+	return t.Sync(ctx, dt)
 }

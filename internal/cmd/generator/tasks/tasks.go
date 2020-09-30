@@ -17,8 +17,13 @@ import (
 type task struct {
 	Name        string   `json:"-"`
 	Description string   `json:"description"`
-	Input       []string `json:"input,omitempty"`
+	Input       Input    `json:"input,omitempty"`
 	Output      []string `json:"output,omitempty"`
+}
+
+type Input struct {
+	Required []string `json:"required,omitempty"`
+	Optional []string `json:"optional,omitempty"`
 }
 
 var funcs = template.FuncMap{
@@ -74,7 +79,8 @@ func main() {
 	// Do sort to all tasks via name.
 	taskNames := make([]string, 0)
 	for k := range tasks {
-		sort.Strings(tasks[k].Input)
+		sort.Strings(tasks[k].Input.Required)
+		sort.Strings(tasks[k].Input.Optional)
 		sort.Strings(tasks[k].Output)
 
 		taskNames = append(taskNames, k)
@@ -122,32 +128,37 @@ package task
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
+	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/task"
 	"github.com/qingstor/noah/pkg/types"
-	"github.com/qingstor/noah/pkg/schedule"
 )
 
-var _ navvy.Pool
-var _ types.Pool
 var _ = uuid.New()
 `))
 
 var taskTmpl = template.Must(template.New("task").Funcs(funcs).Parse(`
 // {{ .Name }}Task will {{ .Description }}.
 type {{ .Name }}Task struct {
+	wg *sync.WaitGroup
+
 	// Predefined value
 	types.Fault
 	types.ID
-	types.Pool
-	types.Scheduler
 	types.CallbackFunc
+	types.FaultSyncer
 
-	// Input value
-{{- range $k, $v := .Input }}
+	// Required Input value
+{{- range $k, $v := .Input.Required }}
+	types.{{$v}}
+{{- end }}
+
+	// Optional Input value
+{{- range $k, $v := .Input.Optional }}
 	types.{{$v}}
 {{- end }}
 
@@ -158,12 +169,20 @@ type {{ .Name }}Task struct {
 }
 
 // New{{ .Name }} will create a {{ .Name }}Task struct and fetch inherited data from parent task.
-func New{{ .Name }}(task navvy.Task) *{{ .Name }}Task {
+func New{{ .Name }}(task task.Task) *{{ .Name }}Task {
 	t := &{{ .Name }}Task{}
+	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFaultSyncer(fault.NewSyncer())
+
+	go func() {
+		for err := range t.GetFaultSyncer().GetErrChan() {
+			t.GetFault().Append(err)
+		}
+		t.GetFaultSyncer().Finish()
+	}()
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -171,7 +190,7 @@ func New{{ .Name }}(task navvy.Task) *{{ .Name }}Task {
 
 // validateInput will validate all input before run task.
 func (t *{{ .Name }}Task) validateInput() {
-{{- range $k, $v := .Input }}
+{{- range $k, $v := .Input.Required }}
 	if !t.Validate{{$v}}() {
 		panic(fmt.Errorf("Task {{ $.Name }} value {{$v}} is invalid"))
 	}
@@ -179,31 +198,59 @@ func (t *{{ .Name }}Task) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
-{{- range $k, $v := .Input }}
+func (t *{{ .Name }}Task) loadInput(task task.Task) {
+	// load required fields
+{{- range $k, $v := .Input.Required }}
+	types.Load{{$v}}(task, t)
+{{- end }}
+	// load optional fields
+{{- range $k, $v := .Input.Optional }}
 	types.Load{{$v}}(task, t)
 {{- end }}
 }
 
-// Run implement navvy.Task
-func (t *{{ .Name }}Task) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *{{ .Name }}Task) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *{{ .Name }}Task) Async(ctx context.Context, st task.Task) {
+	t.wg.Add(1)
+	go func() {
+        defer t.wg.Done()
+        if err := st.Run(ctx); err != nil {
+            t.GetFaultSyncer().GetErrChan() <- err
+        }
+    }()
+}
+
+// Await wait sub task done
+func (t *{{ .Name }}Task) Await() {
+	t.wg.Wait()
+}
+
+// Run implement task.Task
+func (t *{{ .Name }}Task) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
+	err := t.run(ctx)
+	if err != nil {
+		t.GetFaultSyncer().GetErrChan() <- err
+	}
+
+	t.Await()
+	t.GetFaultSyncer().Finish()
 	if t.GetFault().HasError() {
 		logger.Debug(
 			log.String("task_failed", t.String()),
 			log.String("err", t.GetFault().Error()),
 		)
-		return
+		return t.GetFault()
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -211,11 +258,7 @@ func (t *{{ .Name }}Task) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *{{ .Name }}Task) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
@@ -227,26 +270,28 @@ func (t *{{ .Name }}Task) TriggerFault(err error) {
 func (t *{{ .Name }}Task) String() string {
 	return fmt.Sprintf("{{ .Name }}Task {
 {{- $called := false -}}
-{{- range $k, $v := .Input -}}
-{{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}{{$v}}: %v
+{{- range $k, $v := .Input.Required -}}
+	{{ if $called }}, {{end}}{{$v}}: %s
 	{{- $called = true -}}
 {{- end -}}
+{{- range $k, $v := .Input.Optional -}}
+	{{ if $called }}, {{end}}{{$v}}: %s
+	{{- $called = true -}}
 {{- end -}}
 }",
 {{- $called := false -}}
-{{- range $k, $v := .Input -}}
-{{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}t.Get{{$v}}()
+{{- range $k, $v := .Input.Required -}}
+	{{ if $called }}, {{end}}t.{{$v}}
 	{{- $called = true -}}
 {{- end -}}
+{{- range $k, $v := .Input.Optional -}}
+	{{ if $called }}, {{end}}t.{{$v}}
+	{{- $called = true -}}
 {{- end -}})
 }
 
-
-
-// New{{ .Name }}Task will create a {{ .Name }}Task which meets navvy.Task.
-func New{{ .Name }}Task(task navvy.Task) navvy.Task {
+// New{{ .Name }}Task will create a {{ .Name }}Task which meets task.Task.
+func New{{ .Name }}Task(task task.Task) task.Task {
 	return New{{ .Name }}(task)
 }
 `))
@@ -258,14 +303,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/pkg/fault"
 )
 
-var _ navvy.Pool
 var _ types.Pool
 `))
 
@@ -273,8 +316,6 @@ var testTmpl = template.Must(template.New("test").Funcs(funcs).Parse(`
 func Test{{ .Name }}Task_TriggerFault(t *testing.T) {
 	task := &{{ .Name }}Task{}
 	task.SetFault(fault.New())
-	err := errors.New("test error")
-	task.TriggerFault(err)
 	assert.True(t, task.GetFault().HasError())
 }
 `))

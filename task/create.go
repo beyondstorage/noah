@@ -9,10 +9,10 @@ import (
 )
 
 func (t *CreateStorageTask) new() {}
-func (t *CreateStorageTask) run(ctx context.Context) {
+func (t *CreateStorageTask) run(ctx context.Context) error {
 	_, err := t.GetService().CreateWithContext(ctx, t.GetStorageName(), pairs.WithLocation(t.GetZone()))
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
+	return nil
 }

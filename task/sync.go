@@ -10,26 +10,19 @@ import (
 )
 
 func (t *SyncTask) new() {}
-func (t *SyncTask) run(ctx context.Context) {
+func (t *SyncTask) run(ctx context.Context) error {
 	x := NewListDir(t)
 	err := utils.ChooseSourceStorageAsDirLister(x, t)
 	if err != nil {
-		t.TriggerFault(err)
-		return
+		return err
 	}
 
-	if t.GetRecursive() {
+	if t.ValidateRecursive() && t.GetRecursive() {
 		x.SetDirFunc(func(o *typ.Object) {
 			sf := NewSync(t)
 			sf.SetSourcePath(o.Name)
 			sf.SetDestinationPath(o.Name)
-			if t.ValidateHandleObjCallback() {
-				sf.SetHandleObjCallback(t.GetHandleObjCallback())
-			}
-			if t.ValidatePartSize() {
-				sf.SetPartSize(t.GetPartSize())
-			}
-			t.GetScheduler().Sync(ctx, sf)
+			t.Sync(ctx, sf)
 		})
 	} else {
 		// if not recursive, do nothing with dir
@@ -45,14 +38,12 @@ func (t *SyncTask) run(ctx context.Context) {
 
 		// put check tasks outside of copy, to make sure flags' priority is higher than dry-run
 		check := NewBetweenStorageCheck(sf)
-		sf.GetScheduler().Sync(ctx, check)
-		if sf.GetFault().HasError() {
+		if err := sf.Sync(ctx, check); err != nil {
 			return
 		}
 		for _, v := range t.GetCheckTasks() {
 			ct := v(check)
-			sf.GetScheduler().Sync(ctx, ct)
-			if sf.GetFault().HasError() {
+			if err := sf.Sync(ctx, ct); err != nil {
 				return
 			}
 			// If any of checks not pass, do not copy this file.
@@ -63,20 +54,17 @@ func (t *SyncTask) run(ctx context.Context) {
 		}
 
 		// if dry-run, only check, and call dry-run func if check passed
-		if t.GetDryRunFunc() != nil {
+		if t.ValidateDryRunFunc() {
 			t.GetDryRunFunc()(o)
 			return
 		}
 
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.GetScheduler().Async(ctx, sf)
+		t.Async(ctx, sf)
 	})
-	t.GetScheduler().Sync(ctx, x)
+	return t.Sync(ctx, x)
 }

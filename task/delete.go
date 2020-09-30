@@ -13,86 +13,77 @@ import (
 )
 
 func (t *DeleteFileTask) new() {}
-func (t *DeleteFileTask) run(ctx context.Context) {
+func (t *DeleteFileTask) run(ctx context.Context) error {
 	if err := t.GetStorage().DeleteWithContext(ctx, t.GetPath()); err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
+	return nil
 }
 
 func (t *DeleteDirTask) new() {}
-func (t *DeleteDirTask) run(ctx context.Context) {
+func (t *DeleteDirTask) run(ctx context.Context) error {
 	x := NewListDir(t)
 	err := utils.ChooseStorageAsDirLister(x, t)
 	if err != nil {
-		t.TriggerFault(err)
-		return
+		return err
 	}
 
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
-		t.GetScheduler().Async(ctx, sf)
+		t.Async(ctx, sf)
 	})
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewDeleteDir(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
-			sf.SetHandleObjCallback(t.GetHandleObjCallback())
-		}
-		t.GetScheduler().Sync(ctx, sf)
+		t.Sync(ctx, sf)
 	})
-	t.GetScheduler().Sync(ctx, x)
-	if t.GetFault().HasError() {
-		return
+	if err := t.Sync(ctx, x); err != nil {
+		return err
 	}
 
 	// after delete all files in this dir, delete dir itself as a file, see issue #43
 	dr := NewDeleteFile(t)
-	if t.ValidateHandleObjCallback() {
-		dr.SetHandleObjCallback(t.GetHandleObjCallback())
-	}
-	t.GetScheduler().Sync(ctx, dr)
+	return t.Sync(ctx, dr)
 }
 
 func (t *DeletePrefixTask) new() {}
-func (t *DeletePrefixTask) run(ctx context.Context) {
+func (t *DeletePrefixTask) run(ctx context.Context) error {
 	x := NewListPrefix(t)
 	err := utils.ChooseStorageAsPrefixLister(x, t)
 	if err != nil {
-		t.TriggerFault(err)
-		return
+		return err
 	}
 
 	x.SetObjectFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
-		t.GetScheduler().Async(ctx, sf)
+		t.Async(ctx, sf)
 	})
 
-	t.GetScheduler().Sync(ctx, x)
+	return t.Sync(ctx, x)
 }
 
 func (t *DeleteSegmentTask) new() {}
-func (t *DeleteSegmentTask) run(ctx context.Context) {
+func (t *DeleteSegmentTask) run(ctx context.Context) error {
 	if err := t.GetPrefixSegmentsLister().AbortSegmentWithContext(ctx, t.GetSegment()); err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
+	return nil
 }
 
 func (t *DeleteStorageTask) new() {}
-func (t *DeleteStorageTask) run(ctx context.Context) {
+func (t *DeleteStorageTask) run(ctx context.Context) error {
 	var ps []*typ.Pair
 	if t.GetZone() != "" {
 		ps = append(ps, pairs.WithLocation(t.GetZone()))
@@ -100,18 +91,14 @@ func (t *DeleteStorageTask) run(ctx context.Context) {
 	if t.GetForce() {
 		store, err := t.GetService().GetWithContext(ctx, t.GetStorageName(), ps...)
 		if err != nil {
-			t.TriggerFault(types.NewErrUnhandled(err))
-			return
+			return types.NewErrUnhandled(err)
 		}
 
 		deletePrefix := NewDeletePrefix(t)
 		deletePrefix.SetPath("")
 		deletePrefix.SetStorage(store)
-		if t.ValidateHandleObjCallback() {
-			deletePrefix.SetHandleObjCallback(t.GetHandleObjCallback())
-		}
 
-		t.GetScheduler().Async(ctx, deletePrefix)
+		t.Async(ctx, deletePrefix)
 
 		segmenter, ok := store.(storage.PrefixSegmentsLister)
 		if ok {
@@ -122,25 +109,26 @@ func (t *DeleteStorageTask) run(ctx context.Context) {
 				sf := NewDeleteSegment(t)
 				sf.SetPrefixSegmentsLister(segmenter)
 				sf.SetSegment(s)
-				if t.ValidateHandleSegmentCallback() {
+				if t.ValidateHandleSegmentCallbackFunc() {
 					sf.SetCallbackFunc(func() {
-						t.GetHandleSegmentCallback()(s)
+						t.GetHandleSegmentCallbackFunc()(s)
 					})
 				}
-				t.GetScheduler().Async(ctx, sf)
+				t.Async(ctx, sf)
 			})
 
-			t.GetScheduler().Async(ctx, listSegments)
+			t.Async(ctx, listSegments)
 		}
 
-		t.GetScheduler().Wait()
+		t.Await()
 		if t.GetFault().HasError() {
-			return
+			return t.GetFault()
 		}
+		return nil
 	}
 
 	if err := t.GetService().DeleteWithContext(ctx, t.GetStorageName(), ps...); err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
+	return nil
 }
