@@ -3,10 +3,11 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
+	"strconv"
 	"sync"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/aos-dev/go-storage/v2"
 	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	"github.com/aos-dev/go-storage/v2/types"
@@ -14,7 +15,10 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"
+	"github.com/qingstor/noah/pkg/task"
 )
+
+var _ fmt.Stringer
 
 type ByteSize struct {
 	valid bool
@@ -60,7 +64,7 @@ func (o *ByteSize) ValidateByteSize() bool {
 	return o.valid
 }
 
-func LoadByteSize(t navvy.Task, v ByteSizeSetter) {
+func LoadByteSize(t task.Task, v ByteSizeSetter) {
 	x, ok := t.(interface {
 		ByteSizeGetter
 		ByteSizeValidator
@@ -73,6 +77,13 @@ func LoadByteSize(t navvy.Task, v ByteSizeSetter) {
 	}
 
 	v.SetByteSize(x.GetByteSize())
+}
+
+func (o ByteSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type BytesPool struct {
@@ -119,7 +130,7 @@ func (o *BytesPool) ValidateBytesPool() bool {
 	return o.valid
 }
 
-func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
+func LoadBytesPool(t task.Task, v BytesPoolSetter) {
 	x, ok := t.(interface {
 		BytesPoolGetter
 		BytesPoolValidator
@@ -132,6 +143,13 @@ func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
 	}
 
 	v.SetBytesPool(x.GetBytesPool())
+}
+
+func (o BytesPool) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type CallbackFunc struct {
@@ -178,7 +196,7 @@ func (o *CallbackFunc) ValidateCallbackFunc() bool {
 	return o.valid
 }
 
-func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
+func LoadCallbackFunc(t task.Task, v CallbackFuncSetter) {
 	x, ok := t.(interface {
 		CallbackFuncGetter
 		CallbackFuncValidator
@@ -191,6 +209,13 @@ func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
 	}
 
 	v.SetCallbackFunc(x.GetCallbackFunc())
+}
+
+func (o CallbackFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type CheckMD5 struct {
@@ -237,7 +262,7 @@ func (o *CheckMD5) ValidateCheckMD5() bool {
 	return o.valid
 }
 
-func LoadCheckMD5(t navvy.Task, v CheckMD5Setter) {
+func LoadCheckMD5(t task.Task, v CheckMD5Setter) {
 	x, ok := t.(interface {
 		CheckMD5Getter
 		CheckMD5Validator
@@ -252,18 +277,25 @@ func LoadCheckMD5(t navvy.Task, v CheckMD5Setter) {
 	v.SetCheckMD5(x.GetCheckMD5())
 }
 
+func (o CheckMD5) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type CheckTasks struct {
 	valid bool
-	v     []func(t navvy.Task) navvy.Task
+	v     []func(t task.Task) task.Task
 
 	l sync.RWMutex
 }
 
 type CheckTasksGetter interface {
-	GetCheckTasks() []func(t navvy.Task) navvy.Task
+	GetCheckTasks() []func(t task.Task) task.Task
 }
 
-func (o *CheckTasks) GetCheckTasks() []func(t navvy.Task) navvy.Task {
+func (o *CheckTasks) GetCheckTasks() []func(t task.Task) task.Task {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -274,10 +306,10 @@ func (o *CheckTasks) GetCheckTasks() []func(t navvy.Task) navvy.Task {
 }
 
 type CheckTasksSetter interface {
-	SetCheckTasks([]func(t navvy.Task) navvy.Task)
+	SetCheckTasks([]func(t task.Task) task.Task)
 }
 
-func (o *CheckTasks) SetCheckTasks(v []func(t navvy.Task) navvy.Task) {
+func (o *CheckTasks) SetCheckTasks(v []func(t task.Task) task.Task) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -296,7 +328,7 @@ func (o *CheckTasks) ValidateCheckTasks() bool {
 	return o.valid
 }
 
-func LoadCheckTasks(t navvy.Task, v CheckTasksSetter) {
+func LoadCheckTasks(t task.Task, v CheckTasksSetter) {
 	x, ok := t.(interface {
 		CheckTasksGetter
 		CheckTasksValidator
@@ -309,6 +341,13 @@ func LoadCheckTasks(t navvy.Task, v CheckTasksSetter) {
 	}
 
 	v.SetCheckTasks(x.GetCheckTasks())
+}
+
+func (o CheckTasks) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Content struct {
@@ -355,7 +394,7 @@ func (o *Content) ValidateContent() bool {
 	return o.valid
 }
 
-func LoadContent(t navvy.Task, v ContentSetter) {
+func LoadContent(t task.Task, v ContentSetter) {
 	x, ok := t.(interface {
 		ContentGetter
 		ContentValidator
@@ -368,6 +407,13 @@ func LoadContent(t navvy.Task, v ContentSetter) {
 	}
 
 	v.SetContent(x.GetContent())
+}
+
+func (o Content) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Delete struct {
@@ -414,7 +460,7 @@ func (o *Delete) ValidateDelete() bool {
 	return o.valid
 }
 
-func LoadDelete(t navvy.Task, v DeleteSetter) {
+func LoadDelete(t task.Task, v DeleteSetter) {
 	x, ok := t.(interface {
 		DeleteGetter
 		DeleteValidator
@@ -427,6 +473,13 @@ func LoadDelete(t navvy.Task, v DeleteSetter) {
 	}
 
 	v.SetDelete(x.GetDelete())
+}
+
+func (o Delete) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type DestinationIndexSegmenter struct {
@@ -473,7 +526,7 @@ func (o *DestinationIndexSegmenter) ValidateDestinationIndexSegmenter() bool {
 	return o.valid
 }
 
-func LoadDestinationIndexSegmenter(t navvy.Task, v DestinationIndexSegmenterSetter) {
+func LoadDestinationIndexSegmenter(t task.Task, v DestinationIndexSegmenterSetter) {
 	x, ok := t.(interface {
 		DestinationIndexSegmenterGetter
 		DestinationIndexSegmenterValidator
@@ -486,6 +539,13 @@ func LoadDestinationIndexSegmenter(t navvy.Task, v DestinationIndexSegmenterSett
 	}
 
 	v.SetDestinationIndexSegmenter(x.GetDestinationIndexSegmenter())
+}
+
+func (o DestinationIndexSegmenter) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
 }
 
 type DestinationObject struct {
@@ -532,7 +592,7 @@ func (o *DestinationObject) ValidateDestinationObject() bool {
 	return o.valid
 }
 
-func LoadDestinationObject(t navvy.Task, v DestinationObjectSetter) {
+func LoadDestinationObject(t task.Task, v DestinationObjectSetter) {
 	x, ok := t.(interface {
 		DestinationObjectGetter
 		DestinationObjectValidator
@@ -545,6 +605,16 @@ func LoadDestinationObject(t navvy.Task, v DestinationObjectSetter) {
 	}
 
 	v.SetDestinationObject(x.GetDestinationObject())
+}
+
+func (o DestinationObject) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
 }
 
 type DestinationPath struct {
@@ -591,7 +661,7 @@ func (o *DestinationPath) ValidateDestinationPath() bool {
 	return o.valid
 }
 
-func LoadDestinationPath(t navvy.Task, v DestinationPathSetter) {
+func LoadDestinationPath(t task.Task, v DestinationPathSetter) {
 	x, ok := t.(interface {
 		DestinationPathGetter
 		DestinationPathValidator
@@ -604,6 +674,13 @@ func LoadDestinationPath(t navvy.Task, v DestinationPathSetter) {
 	}
 
 	v.SetDestinationPath(x.GetDestinationPath())
+}
+
+func (o DestinationPath) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type DestinationService struct {
@@ -650,7 +727,7 @@ func (o *DestinationService) ValidateDestinationService() bool {
 	return o.valid
 }
 
-func LoadDestinationService(t navvy.Task, v DestinationServiceSetter) {
+func LoadDestinationService(t task.Task, v DestinationServiceSetter) {
 	x, ok := t.(interface {
 		DestinationServiceGetter
 		DestinationServiceValidator
@@ -663,6 +740,13 @@ func LoadDestinationService(t navvy.Task, v DestinationServiceSetter) {
 	}
 
 	v.SetDestinationService(x.GetDestinationService())
+}
+
+func (o DestinationService) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type DestinationStorage struct {
@@ -709,7 +793,7 @@ func (o *DestinationStorage) ValidateDestinationStorage() bool {
 	return o.valid
 }
 
-func LoadDestinationStorage(t navvy.Task, v DestinationStorageSetter) {
+func LoadDestinationStorage(t task.Task, v DestinationStorageSetter) {
 	x, ok := t.(interface {
 		DestinationStorageGetter
 		DestinationStorageValidator
@@ -722,6 +806,13 @@ func LoadDestinationStorage(t navvy.Task, v DestinationStorageSetter) {
 	}
 
 	v.SetDestinationStorage(x.GetDestinationStorage())
+}
+
+func (o DestinationStorage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type DestinationType struct {
@@ -768,7 +859,7 @@ func (o *DestinationType) ValidateDestinationType() bool {
 	return o.valid
 }
 
-func LoadDestinationType(t navvy.Task, v DestinationTypeSetter) {
+func LoadDestinationType(t task.Task, v DestinationTypeSetter) {
 	x, ok := t.(interface {
 		DestinationTypeGetter
 		DestinationTypeValidator
@@ -781,6 +872,13 @@ func LoadDestinationType(t navvy.Task, v DestinationTypeSetter) {
 	}
 
 	v.SetDestinationType(x.GetDestinationType())
+}
+
+func (o DestinationType) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type DirFunc struct {
@@ -827,7 +925,7 @@ func (o *DirFunc) ValidateDirFunc() bool {
 	return o.valid
 }
 
-func LoadDirFunc(t navvy.Task, v DirFuncSetter) {
+func LoadDirFunc(t task.Task, v DirFuncSetter) {
 	x, ok := t.(interface {
 		DirFuncGetter
 		DirFuncValidator
@@ -840,6 +938,13 @@ func LoadDirFunc(t navvy.Task, v DirFuncSetter) {
 	}
 
 	v.SetDirFunc(x.GetDirFunc())
+}
+
+func (o DirFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type DirLister struct {
@@ -886,7 +991,7 @@ func (o *DirLister) ValidateDirLister() bool {
 	return o.valid
 }
 
-func LoadDirLister(t navvy.Task, v DirListerSetter) {
+func LoadDirLister(t task.Task, v DirListerSetter) {
 	x, ok := t.(interface {
 		DirListerGetter
 		DirListerValidator
@@ -899,6 +1004,13 @@ func LoadDirLister(t navvy.Task, v DirListerSetter) {
 	}
 
 	v.SetDirLister(x.GetDirLister())
+}
+
+func (o DirLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
 }
 
 type Done struct {
@@ -945,7 +1057,7 @@ func (o *Done) ValidateDone() bool {
 	return o.valid
 }
 
-func LoadDone(t navvy.Task, v DoneSetter) {
+func LoadDone(t task.Task, v DoneSetter) {
 	x, ok := t.(interface {
 		DoneGetter
 		DoneValidator
@@ -958,6 +1070,13 @@ func LoadDone(t navvy.Task, v DoneSetter) {
 	}
 
 	v.SetDone(x.GetDone())
+}
+
+func (o Done) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type DryRun struct {
@@ -1004,7 +1123,7 @@ func (o *DryRun) ValidateDryRun() bool {
 	return o.valid
 }
 
-func LoadDryRun(t navvy.Task, v DryRunSetter) {
+func LoadDryRun(t task.Task, v DryRunSetter) {
 	x, ok := t.(interface {
 		DryRunGetter
 		DryRunValidator
@@ -1017,6 +1136,13 @@ func LoadDryRun(t navvy.Task, v DryRunSetter) {
 	}
 
 	v.SetDryRun(x.GetDryRun())
+}
+
+func (o DryRun) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type DryRunFunc struct {
@@ -1063,7 +1189,7 @@ func (o *DryRunFunc) ValidateDryRunFunc() bool {
 	return o.valid
 }
 
-func LoadDryRunFunc(t navvy.Task, v DryRunFuncSetter) {
+func LoadDryRunFunc(t task.Task, v DryRunFuncSetter) {
 	x, ok := t.(interface {
 		DryRunFuncGetter
 		DryRunFuncValidator
@@ -1076,6 +1202,13 @@ func LoadDryRunFunc(t navvy.Task, v DryRunFuncSetter) {
 	}
 
 	v.SetDryRunFunc(x.GetDryRunFunc())
+}
+
+func (o DryRunFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type EnableBenchmark struct {
@@ -1122,7 +1255,7 @@ func (o *EnableBenchmark) ValidateEnableBenchmark() bool {
 	return o.valid
 }
 
-func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
+func LoadEnableBenchmark(t task.Task, v EnableBenchmarkSetter) {
 	x, ok := t.(interface {
 		EnableBenchmarkGetter
 		EnableBenchmarkValidator
@@ -1135,6 +1268,13 @@ func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
 	}
 
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
+}
+
+func (o EnableBenchmark) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ExcludeRegexp struct {
@@ -1181,7 +1321,7 @@ func (o *ExcludeRegexp) ValidateExcludeRegexp() bool {
 	return o.valid
 }
 
-func LoadExcludeRegexp(t navvy.Task, v ExcludeRegexpSetter) {
+func LoadExcludeRegexp(t task.Task, v ExcludeRegexpSetter) {
 	x, ok := t.(interface {
 		ExcludeRegexpGetter
 		ExcludeRegexpValidator
@@ -1194,6 +1334,16 @@ func LoadExcludeRegexp(t navvy.Task, v ExcludeRegexpSetter) {
 	}
 
 	v.SetExcludeRegexp(x.GetExcludeRegexp())
+}
+
+func (o ExcludeRegexp) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return o.v.String()
 }
 
 type Existing struct {
@@ -1240,7 +1390,7 @@ func (o *Existing) ValidateExisting() bool {
 	return o.valid
 }
 
-func LoadExisting(t navvy.Task, v ExistingSetter) {
+func LoadExisting(t task.Task, v ExistingSetter) {
 	x, ok := t.(interface {
 		ExistingGetter
 		ExistingValidator
@@ -1253,6 +1403,13 @@ func LoadExisting(t navvy.Task, v ExistingSetter) {
 	}
 
 	v.SetExisting(x.GetExisting())
+}
+
+func (o Existing) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ExpectSize struct {
@@ -1299,7 +1456,7 @@ func (o *ExpectSize) ValidateExpectSize() bool {
 	return o.valid
 }
 
-func LoadExpectSize(t navvy.Task, v ExpectSizeSetter) {
+func LoadExpectSize(t task.Task, v ExpectSizeSetter) {
 	x, ok := t.(interface {
 		ExpectSizeGetter
 		ExpectSizeValidator
@@ -1312,6 +1469,13 @@ func LoadExpectSize(t navvy.Task, v ExpectSizeSetter) {
 	}
 
 	v.SetExpectSize(x.GetExpectSize())
+}
+
+func (o ExpectSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type Expire struct {
@@ -1358,7 +1522,7 @@ func (o *Expire) ValidateExpire() bool {
 	return o.valid
 }
 
-func LoadExpire(t navvy.Task, v ExpireSetter) {
+func LoadExpire(t task.Task, v ExpireSetter) {
 	x, ok := t.(interface {
 		ExpireGetter
 		ExpireValidator
@@ -1371,6 +1535,13 @@ func LoadExpire(t navvy.Task, v ExpireSetter) {
 	}
 
 	v.SetExpire(x.GetExpire())
+}
+
+func (o Expire) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type Fault struct {
@@ -1417,7 +1588,7 @@ func (o *Fault) ValidateFault() bool {
 	return o.valid
 }
 
-func LoadFault(t navvy.Task, v FaultSetter) {
+func LoadFault(t task.Task, v FaultSetter) {
 	x, ok := t.(interface {
 		FaultGetter
 		FaultValidator
@@ -1430,6 +1601,79 @@ func LoadFault(t navvy.Task, v FaultSetter) {
 	}
 
 	v.SetFault(x.GetFault())
+}
+
+func (o Fault) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type FaultSyncer struct {
+	valid bool
+	v     *fault.Syncer
+
+	l sync.RWMutex
+}
+
+type FaultSyncerGetter interface {
+	GetFaultSyncer() *fault.Syncer
+}
+
+func (o *FaultSyncer) GetFaultSyncer() *fault.Syncer {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("FaultSyncer value is not valid")
+	}
+	return o.v
+}
+
+type FaultSyncerSetter interface {
+	SetFaultSyncer(*fault.Syncer)
+}
+
+func (o *FaultSyncer) SetFaultSyncer(v *fault.Syncer) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type FaultSyncerValidator interface {
+	ValidateFaultSyncer() bool
+}
+
+func (o *FaultSyncer) ValidateFaultSyncer() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadFaultSyncer(t task.Task, v FaultSyncerSetter) {
+	x, ok := t.(interface {
+		FaultSyncerGetter
+		FaultSyncerValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateFaultSyncer() {
+		return
+	}
+
+	v.SetFaultSyncer(x.GetFaultSyncer())
+}
+
+func (o FaultSyncer) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type FileFunc struct {
@@ -1476,7 +1720,7 @@ func (o *FileFunc) ValidateFileFunc() bool {
 	return o.valid
 }
 
-func LoadFileFunc(t navvy.Task, v FileFuncSetter) {
+func LoadFileFunc(t task.Task, v FileFuncSetter) {
 	x, ok := t.(interface {
 		FileFuncGetter
 		FileFuncValidator
@@ -1489,6 +1733,13 @@ func LoadFileFunc(t navvy.Task, v FileFuncSetter) {
 	}
 
 	v.SetFileFunc(x.GetFileFunc())
+}
+
+func (o FileFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Force struct {
@@ -1535,7 +1786,7 @@ func (o *Force) ValidateForce() bool {
 	return o.valid
 }
 
-func LoadForce(t navvy.Task, v ForceSetter) {
+func LoadForce(t task.Task, v ForceSetter) {
 	x, ok := t.(interface {
 		ForceGetter
 		ForceValidator
@@ -1550,32 +1801,39 @@ func LoadForce(t navvy.Task, v ForceSetter) {
 	v.SetForce(x.GetForce())
 }
 
-type HandleObjCallback struct {
+func (o Force) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
+type HandleObjCallbackFunc struct {
 	valid bool
 	v     func(*types.Object)
 
 	l sync.RWMutex
 }
 
-type HandleObjCallbackGetter interface {
-	GetHandleObjCallback() func(*types.Object)
+type HandleObjCallbackFuncGetter interface {
+	GetHandleObjCallbackFunc() func(*types.Object)
 }
 
-func (o *HandleObjCallback) GetHandleObjCallback() func(*types.Object) {
+func (o *HandleObjCallbackFunc) GetHandleObjCallbackFunc() func(*types.Object) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("HandleObjCallback value is not valid")
+		panic("HandleObjCallbackFunc value is not valid")
 	}
 	return o.v
 }
 
-type HandleObjCallbackSetter interface {
-	SetHandleObjCallback(func(*types.Object))
+type HandleObjCallbackFuncSetter interface {
+	SetHandleObjCallbackFunc(func(*types.Object))
 }
 
-func (o *HandleObjCallback) SetHandleObjCallback(v func(*types.Object)) {
+func (o *HandleObjCallbackFunc) SetHandleObjCallbackFunc(v func(*types.Object)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1583,58 +1841,65 @@ func (o *HandleObjCallback) SetHandleObjCallback(v func(*types.Object)) {
 	o.valid = true
 }
 
-type HandleObjCallbackValidator interface {
-	ValidateHandleObjCallback() bool
+type HandleObjCallbackFuncValidator interface {
+	ValidateHandleObjCallbackFunc() bool
 }
 
-func (o *HandleObjCallback) ValidateHandleObjCallback() bool {
+func (o *HandleObjCallbackFunc) ValidateHandleObjCallbackFunc() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadHandleObjCallback(t navvy.Task, v HandleObjCallbackSetter) {
+func LoadHandleObjCallbackFunc(t task.Task, v HandleObjCallbackFuncSetter) {
 	x, ok := t.(interface {
-		HandleObjCallbackGetter
-		HandleObjCallbackValidator
+		HandleObjCallbackFuncGetter
+		HandleObjCallbackFuncValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateHandleObjCallback() {
+	if !x.ValidateHandleObjCallbackFunc() {
 		return
 	}
 
-	v.SetHandleObjCallback(x.GetHandleObjCallback())
+	v.SetHandleObjCallbackFunc(x.GetHandleObjCallbackFunc())
 }
 
-type HandleSegmentCallback struct {
+func (o HandleObjCallbackFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type HandleSegmentCallbackFunc struct {
 	valid bool
 	v     func(segment.Segment)
 
 	l sync.RWMutex
 }
 
-type HandleSegmentCallbackGetter interface {
-	GetHandleSegmentCallback() func(segment.Segment)
+type HandleSegmentCallbackFuncGetter interface {
+	GetHandleSegmentCallbackFunc() func(segment.Segment)
 }
 
-func (o *HandleSegmentCallback) GetHandleSegmentCallback() func(segment.Segment) {
+func (o *HandleSegmentCallbackFunc) GetHandleSegmentCallbackFunc() func(segment.Segment) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("HandleSegmentCallback value is not valid")
+		panic("HandleSegmentCallbackFunc value is not valid")
 	}
 	return o.v
 }
 
-type HandleSegmentCallbackSetter interface {
-	SetHandleSegmentCallback(func(segment.Segment))
+type HandleSegmentCallbackFuncSetter interface {
+	SetHandleSegmentCallbackFunc(func(segment.Segment))
 }
 
-func (o *HandleSegmentCallback) SetHandleSegmentCallback(v func(segment.Segment)) {
+func (o *HandleSegmentCallbackFunc) SetHandleSegmentCallbackFunc(v func(segment.Segment)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1642,30 +1907,37 @@ func (o *HandleSegmentCallback) SetHandleSegmentCallback(v func(segment.Segment)
 	o.valid = true
 }
 
-type HandleSegmentCallbackValidator interface {
-	ValidateHandleSegmentCallback() bool
+type HandleSegmentCallbackFuncValidator interface {
+	ValidateHandleSegmentCallbackFunc() bool
 }
 
-func (o *HandleSegmentCallback) ValidateHandleSegmentCallback() bool {
+func (o *HandleSegmentCallbackFunc) ValidateHandleSegmentCallbackFunc() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadHandleSegmentCallback(t navvy.Task, v HandleSegmentCallbackSetter) {
+func LoadHandleSegmentCallbackFunc(t task.Task, v HandleSegmentCallbackFuncSetter) {
 	x, ok := t.(interface {
-		HandleSegmentCallbackGetter
-		HandleSegmentCallbackValidator
+		HandleSegmentCallbackFuncGetter
+		HandleSegmentCallbackFuncValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateHandleSegmentCallback() {
+	if !x.ValidateHandleSegmentCallbackFunc() {
 		return
 	}
 
-	v.SetHandleSegmentCallback(x.GetHandleSegmentCallback())
+	v.SetHandleSegmentCallbackFunc(x.GetHandleSegmentCallbackFunc())
+}
+
+func (o HandleSegmentCallbackFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type HumanReadable struct {
@@ -1712,7 +1984,7 @@ func (o *HumanReadable) ValidateHumanReadable() bool {
 	return o.valid
 }
 
-func LoadHumanReadable(t navvy.Task, v HumanReadableSetter) {
+func LoadHumanReadable(t task.Task, v HumanReadableSetter) {
 	x, ok := t.(interface {
 		HumanReadableGetter
 		HumanReadableValidator
@@ -1725,6 +1997,13 @@ func LoadHumanReadable(t navvy.Task, v HumanReadableSetter) {
 	}
 
 	v.SetHumanReadable(x.GetHumanReadable())
+}
+
+func (o HumanReadable) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ID struct {
@@ -1771,7 +2050,7 @@ func (o *ID) ValidateID() bool {
 	return o.valid
 }
 
-func LoadID(t navvy.Task, v IDSetter) {
+func LoadID(t task.Task, v IDSetter) {
 	x, ok := t.(interface {
 		IDGetter
 		IDValidator
@@ -1784,6 +2063,13 @@ func LoadID(t navvy.Task, v IDSetter) {
 	}
 
 	v.SetID(x.GetID())
+}
+
+func (o ID) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type IgnoreExisting struct {
@@ -1830,7 +2116,7 @@ func (o *IgnoreExisting) ValidateIgnoreExisting() bool {
 	return o.valid
 }
 
-func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
+func LoadIgnoreExisting(t task.Task, v IgnoreExistingSetter) {
 	x, ok := t.(interface {
 		IgnoreExistingGetter
 		IgnoreExistingValidator
@@ -1843,6 +2129,13 @@ func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
 	}
 
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
+}
+
+func (o IgnoreExisting) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type IncludeRegexp struct {
@@ -1889,7 +2182,7 @@ func (o *IncludeRegexp) ValidateIncludeRegexp() bool {
 	return o.valid
 }
 
-func LoadIncludeRegexp(t navvy.Task, v IncludeRegexpSetter) {
+func LoadIncludeRegexp(t task.Task, v IncludeRegexpSetter) {
 	x, ok := t.(interface {
 		IncludeRegexpGetter
 		IncludeRegexpValidator
@@ -1902,6 +2195,16 @@ func LoadIncludeRegexp(t navvy.Task, v IncludeRegexpSetter) {
 	}
 
 	v.SetIncludeRegexp(x.GetIncludeRegexp())
+}
+
+func (o IncludeRegexp) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return o.v.String()
 }
 
 type Index struct {
@@ -1948,7 +2251,7 @@ func (o *Index) ValidateIndex() bool {
 	return o.valid
 }
 
-func LoadIndex(t navvy.Task, v IndexSetter) {
+func LoadIndex(t task.Task, v IndexSetter) {
 	x, ok := t.(interface {
 		IndexGetter
 		IndexValidator
@@ -1961,6 +2264,13 @@ func LoadIndex(t navvy.Task, v IndexSetter) {
 	}
 
 	v.SetIndex(x.GetIndex())
+}
+
+func (o Index) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type IndexSegmenter struct {
@@ -2007,7 +2317,7 @@ func (o *IndexSegmenter) ValidateIndexSegmenter() bool {
 	return o.valid
 }
 
-func LoadIndexSegmenter(t navvy.Task, v IndexSegmenterSetter) {
+func LoadIndexSegmenter(t task.Task, v IndexSegmenterSetter) {
 	x, ok := t.(interface {
 		IndexSegmenterGetter
 		IndexSegmenterValidator
@@ -2020,6 +2330,13 @@ func LoadIndexSegmenter(t navvy.Task, v IndexSegmenterSetter) {
 	}
 
 	v.SetIndexSegmenter(x.GetIndexSegmenter())
+}
+
+func (o IndexSegmenter) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
 }
 
 type LongFormat struct {
@@ -2066,7 +2383,7 @@ func (o *LongFormat) ValidateLongFormat() bool {
 	return o.valid
 }
 
-func LoadLongFormat(t navvy.Task, v LongFormatSetter) {
+func LoadLongFormat(t task.Task, v LongFormatSetter) {
 	x, ok := t.(interface {
 		LongFormatGetter
 		LongFormatValidator
@@ -2079,6 +2396,13 @@ func LoadLongFormat(t navvy.Task, v LongFormatSetter) {
 	}
 
 	v.SetLongFormat(x.GetLongFormat())
+}
+
+func (o LongFormat) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type MD5Sum struct {
@@ -2125,7 +2449,7 @@ func (o *MD5Sum) ValidateMD5Sum() bool {
 	return o.valid
 }
 
-func LoadMD5Sum(t navvy.Task, v MD5SumSetter) {
+func LoadMD5Sum(t task.Task, v MD5SumSetter) {
 	x, ok := t.(interface {
 		MD5SumGetter
 		MD5SumValidator
@@ -2138,6 +2462,13 @@ func LoadMD5Sum(t navvy.Task, v MD5SumSetter) {
 	}
 
 	v.SetMD5Sum(x.GetMD5Sum())
+}
+
+func (o MD5Sum) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Name struct {
@@ -2184,7 +2515,7 @@ func (o *Name) ValidateName() bool {
 	return o.valid
 }
 
-func LoadName(t navvy.Task, v NameSetter) {
+func LoadName(t task.Task, v NameSetter) {
 	x, ok := t.(interface {
 		NameGetter
 		NameValidator
@@ -2197,6 +2528,13 @@ func LoadName(t navvy.Task, v NameSetter) {
 	}
 
 	v.SetName(x.GetName())
+}
+
+func (o Name) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type Object struct {
@@ -2243,7 +2581,7 @@ func (o *Object) ValidateObject() bool {
 	return o.valid
 }
 
-func LoadObject(t navvy.Task, v ObjectSetter) {
+func LoadObject(t task.Task, v ObjectSetter) {
 	x, ok := t.(interface {
 		ObjectGetter
 		ObjectValidator
@@ -2256,6 +2594,16 @@ func LoadObject(t navvy.Task, v ObjectSetter) {
 	}
 
 	v.SetObject(x.GetObject())
+}
+
+func (o Object) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
 }
 
 type ObjectFunc struct {
@@ -2302,7 +2650,7 @@ func (o *ObjectFunc) ValidateObjectFunc() bool {
 	return o.valid
 }
 
-func LoadObjectFunc(t navvy.Task, v ObjectFuncSetter) {
+func LoadObjectFunc(t task.Task, v ObjectFuncSetter) {
 	x, ok := t.(interface {
 		ObjectFuncGetter
 		ObjectFuncValidator
@@ -2315,6 +2663,13 @@ func LoadObjectFunc(t navvy.Task, v ObjectFuncSetter) {
 	}
 
 	v.SetObjectFunc(x.GetObjectFunc())
+}
+
+func (o ObjectFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Offset struct {
@@ -2361,7 +2716,7 @@ func (o *Offset) ValidateOffset() bool {
 	return o.valid
 }
 
-func LoadOffset(t navvy.Task, v OffsetSetter) {
+func LoadOffset(t task.Task, v OffsetSetter) {
 	x, ok := t.(interface {
 		OffsetGetter
 		OffsetValidator
@@ -2374,6 +2729,13 @@ func LoadOffset(t navvy.Task, v OffsetSetter) {
 	}
 
 	v.SetOffset(x.GetOffset())
+}
+
+func (o Offset) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type PartNumber struct {
@@ -2420,7 +2782,7 @@ func (o *PartNumber) ValidatePartNumber() bool {
 	return o.valid
 }
 
-func LoadPartNumber(t navvy.Task, v PartNumberSetter) {
+func LoadPartNumber(t task.Task, v PartNumberSetter) {
 	x, ok := t.(interface {
 		PartNumberGetter
 		PartNumberValidator
@@ -2433,6 +2795,13 @@ func LoadPartNumber(t navvy.Task, v PartNumberSetter) {
 	}
 
 	v.SetPartNumber(x.GetPartNumber())
+}
+
+func (o PartNumber) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type PartSize struct {
@@ -2479,7 +2848,7 @@ func (o *PartSize) ValidatePartSize() bool {
 	return o.valid
 }
 
-func LoadPartSize(t navvy.Task, v PartSizeSetter) {
+func LoadPartSize(t task.Task, v PartSizeSetter) {
 	x, ok := t.(interface {
 		PartSizeGetter
 		PartSizeValidator
@@ -2492,6 +2861,13 @@ func LoadPartSize(t navvy.Task, v PartSizeSetter) {
 	}
 
 	v.SetPartSize(x.GetPartSize())
+}
+
+func (o PartSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type PartThreshold struct {
@@ -2538,7 +2914,7 @@ func (o *PartThreshold) ValidatePartThreshold() bool {
 	return o.valid
 }
 
-func LoadPartThreshold(t navvy.Task, v PartThresholdSetter) {
+func LoadPartThreshold(t task.Task, v PartThresholdSetter) {
 	x, ok := t.(interface {
 		PartThresholdGetter
 		PartThresholdValidator
@@ -2551,6 +2927,13 @@ func LoadPartThreshold(t navvy.Task, v PartThresholdSetter) {
 	}
 
 	v.SetPartThreshold(x.GetPartThreshold())
+}
+
+func (o PartThreshold) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type Passed struct {
@@ -2597,7 +2980,7 @@ func (o *Passed) ValidatePassed() bool {
 	return o.valid
 }
 
-func LoadPassed(t navvy.Task, v PassedSetter) {
+func LoadPassed(t task.Task, v PassedSetter) {
 	x, ok := t.(interface {
 		PassedGetter
 		PassedValidator
@@ -2610,6 +2993,13 @@ func LoadPassed(t navvy.Task, v PassedSetter) {
 	}
 
 	v.SetPassed(x.GetPassed())
+}
+
+func (o Passed) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type Path struct {
@@ -2656,7 +3046,7 @@ func (o *Path) ValidatePath() bool {
 	return o.valid
 }
 
-func LoadPath(t navvy.Task, v PathSetter) {
+func LoadPath(t task.Task, v PathSetter) {
 	x, ok := t.(interface {
 		PathGetter
 		PathValidator
@@ -2671,63 +3061,11 @@ func LoadPath(t navvy.Task, v PathSetter) {
 	v.SetPath(x.GetPath())
 }
 
-type Pool struct {
-	valid bool
-	v     *navvy.Pool
-
-	l sync.RWMutex
-}
-
-type PoolGetter interface {
-	GetPool() *navvy.Pool
-}
-
-func (o *Pool) GetPool() *navvy.Pool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
+func (o Path) String() string {
 	if !o.valid {
-		panic("Pool value is not valid")
+		return ""
 	}
 	return o.v
-}
-
-type PoolSetter interface {
-	SetPool(*navvy.Pool)
-}
-
-func (o *Pool) SetPool(v *navvy.Pool) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type PoolValidator interface {
-	ValidatePool() bool
-}
-
-func (o *Pool) ValidatePool() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadPool(t navvy.Task, v PoolSetter) {
-	x, ok := t.(interface {
-		PoolGetter
-		PoolValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidatePool() {
-		return
-	}
-
-	v.SetPool(x.GetPool())
 }
 
 type PrefixLister struct {
@@ -2774,7 +3112,7 @@ func (o *PrefixLister) ValidatePrefixLister() bool {
 	return o.valid
 }
 
-func LoadPrefixLister(t navvy.Task, v PrefixListerSetter) {
+func LoadPrefixLister(t task.Task, v PrefixListerSetter) {
 	x, ok := t.(interface {
 		PrefixListerGetter
 		PrefixListerValidator
@@ -2787,6 +3125,13 @@ func LoadPrefixLister(t navvy.Task, v PrefixListerSetter) {
 	}
 
 	v.SetPrefixLister(x.GetPrefixLister())
+}
+
+func (o PrefixLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type PrefixSegmentsLister struct {
@@ -2833,7 +3178,7 @@ func (o *PrefixSegmentsLister) ValidatePrefixSegmentsLister() bool {
 	return o.valid
 }
 
-func LoadPrefixSegmentsLister(t navvy.Task, v PrefixSegmentsListerSetter) {
+func LoadPrefixSegmentsLister(t task.Task, v PrefixSegmentsListerSetter) {
 	x, ok := t.(interface {
 		PrefixSegmentsListerGetter
 		PrefixSegmentsListerValidator
@@ -2846,6 +3191,13 @@ func LoadPrefixSegmentsLister(t navvy.Task, v PrefixSegmentsListerSetter) {
 	}
 
 	v.SetPrefixSegmentsLister(x.GetPrefixSegmentsLister())
+}
+
+func (o PrefixSegmentsLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Reacher struct {
@@ -2892,7 +3244,7 @@ func (o *Reacher) ValidateReacher() bool {
 	return o.valid
 }
 
-func LoadReacher(t navvy.Task, v ReacherSetter) {
+func LoadReacher(t task.Task, v ReacherSetter) {
 	x, ok := t.(interface {
 		ReacherGetter
 		ReacherValidator
@@ -2905,6 +3257,13 @@ func LoadReacher(t navvy.Task, v ReacherSetter) {
 	}
 
 	v.SetReacher(x.GetReacher())
+}
+
+func (o Reacher) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type ReadableSize struct {
@@ -2951,7 +3310,7 @@ func (o *ReadableSize) ValidateReadableSize() bool {
 	return o.valid
 }
 
-func LoadReadableSize(t navvy.Task, v ReadableSizeSetter) {
+func LoadReadableSize(t task.Task, v ReadableSizeSetter) {
 	x, ok := t.(interface {
 		ReadableSizeGetter
 		ReadableSizeValidator
@@ -2964,6 +3323,13 @@ func LoadReadableSize(t navvy.Task, v ReadableSizeSetter) {
 	}
 
 	v.SetReadableSize(x.GetReadableSize())
+}
+
+func (o ReadableSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type Recursive struct {
@@ -3010,7 +3376,7 @@ func (o *Recursive) ValidateRecursive() bool {
 	return o.valid
 }
 
-func LoadRecursive(t navvy.Task, v RecursiveSetter) {
+func LoadRecursive(t task.Task, v RecursiveSetter) {
 	x, ok := t.(interface {
 		RecursiveGetter
 		RecursiveValidator
@@ -3023,6 +3389,13 @@ func LoadRecursive(t navvy.Task, v RecursiveSetter) {
 	}
 
 	v.SetRecursive(x.GetRecursive())
+}
+
+func (o Recursive) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type Result struct {
@@ -3069,7 +3442,7 @@ func (o *Result) ValidateResult() bool {
 	return o.valid
 }
 
-func LoadResult(t navvy.Task, v ResultSetter) {
+func LoadResult(t task.Task, v ResultSetter) {
 	x, ok := t.(interface {
 		ResultGetter
 		ResultValidator
@@ -3082,6 +3455,13 @@ func LoadResult(t navvy.Task, v ResultSetter) {
 	}
 
 	v.SetResult(x.GetResult())
+}
+
+func (o Result) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ScheduleFunc struct {
@@ -3128,7 +3508,7 @@ func (o *ScheduleFunc) ValidateScheduleFunc() bool {
 	return o.valid
 }
 
-func LoadScheduleFunc(t navvy.Task, v ScheduleFuncSetter) {
+func LoadScheduleFunc(t task.Task, v ScheduleFuncSetter) {
 	x, ok := t.(interface {
 		ScheduleFuncGetter
 		ScheduleFuncValidator
@@ -3141,6 +3521,13 @@ func LoadScheduleFunc(t navvy.Task, v ScheduleFuncSetter) {
 	}
 
 	v.SetScheduleFunc(x.GetScheduleFunc())
+}
+
+func (o ScheduleFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Scheduler struct {
@@ -3187,7 +3574,7 @@ func (o *Scheduler) ValidateScheduler() bool {
 	return o.valid
 }
 
-func LoadScheduler(t navvy.Task, v SchedulerSetter) {
+func LoadScheduler(t task.Task, v SchedulerSetter) {
 	x, ok := t.(interface {
 		SchedulerGetter
 		SchedulerValidator
@@ -3200,6 +3587,13 @@ func LoadScheduler(t navvy.Task, v SchedulerSetter) {
 	}
 
 	v.SetScheduler(x.GetScheduler())
+}
+
+func (o Scheduler) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Segment struct {
@@ -3246,7 +3640,7 @@ func (o *Segment) ValidateSegment() bool {
 	return o.valid
 }
 
-func LoadSegment(t navvy.Task, v SegmentSetter) {
+func LoadSegment(t task.Task, v SegmentSetter) {
 	x, ok := t.(interface {
 		SegmentGetter
 		SegmentValidator
@@ -3259,6 +3653,13 @@ func LoadSegment(t navvy.Task, v SegmentSetter) {
 	}
 
 	v.SetSegment(x.GetSegment())
+}
+
+func (o Segment) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type SegmentFunc struct {
@@ -3305,7 +3706,7 @@ func (o *SegmentFunc) ValidateSegmentFunc() bool {
 	return o.valid
 }
 
-func LoadSegmentFunc(t navvy.Task, v SegmentFuncSetter) {
+func LoadSegmentFunc(t task.Task, v SegmentFuncSetter) {
 	x, ok := t.(interface {
 		SegmentFuncGetter
 		SegmentFuncValidator
@@ -3318,6 +3719,13 @@ func LoadSegmentFunc(t navvy.Task, v SegmentFuncSetter) {
 	}
 
 	v.SetSegmentFunc(x.GetSegmentFunc())
+}
+
+func (o SegmentFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Service struct {
@@ -3364,7 +3772,7 @@ func (o *Service) ValidateService() bool {
 	return o.valid
 }
 
-func LoadService(t navvy.Task, v ServiceSetter) {
+func LoadService(t task.Task, v ServiceSetter) {
 	x, ok := t.(interface {
 		ServiceGetter
 		ServiceValidator
@@ -3377,6 +3785,13 @@ func LoadService(t navvy.Task, v ServiceSetter) {
 	}
 
 	v.SetService(x.GetService())
+}
+
+func (o Service) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type Size struct {
@@ -3423,7 +3838,7 @@ func (o *Size) ValidateSize() bool {
 	return o.valid
 }
 
-func LoadSize(t navvy.Task, v SizeSetter) {
+func LoadSize(t task.Task, v SizeSetter) {
 	x, ok := t.(interface {
 		SizeGetter
 		SizeValidator
@@ -3436,6 +3851,13 @@ func LoadSize(t navvy.Task, v SizeSetter) {
 	}
 
 	v.SetSize(x.GetSize())
+}
+
+func (o Size) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type SourceObject struct {
@@ -3482,7 +3904,7 @@ func (o *SourceObject) ValidateSourceObject() bool {
 	return o.valid
 }
 
-func LoadSourceObject(t navvy.Task, v SourceObjectSetter) {
+func LoadSourceObject(t task.Task, v SourceObjectSetter) {
 	x, ok := t.(interface {
 		SourceObjectGetter
 		SourceObjectValidator
@@ -3495,6 +3917,16 @@ func LoadSourceObject(t navvy.Task, v SourceObjectSetter) {
 	}
 
 	v.SetSourceObject(x.GetSourceObject())
+}
+
+func (o SourceObject) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
 }
 
 type SourcePath struct {
@@ -3541,7 +3973,7 @@ func (o *SourcePath) ValidateSourcePath() bool {
 	return o.valid
 }
 
-func LoadSourcePath(t navvy.Task, v SourcePathSetter) {
+func LoadSourcePath(t task.Task, v SourcePathSetter) {
 	x, ok := t.(interface {
 		SourcePathGetter
 		SourcePathValidator
@@ -3554,6 +3986,13 @@ func LoadSourcePath(t navvy.Task, v SourcePathSetter) {
 	}
 
 	v.SetSourcePath(x.GetSourcePath())
+}
+
+func (o SourcePath) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type SourceService struct {
@@ -3600,7 +4039,7 @@ func (o *SourceService) ValidateSourceService() bool {
 	return o.valid
 }
 
-func LoadSourceService(t navvy.Task, v SourceServiceSetter) {
+func LoadSourceService(t task.Task, v SourceServiceSetter) {
 	x, ok := t.(interface {
 		SourceServiceGetter
 		SourceServiceValidator
@@ -3613,6 +4052,13 @@ func LoadSourceService(t navvy.Task, v SourceServiceSetter) {
 	}
 
 	v.SetSourceService(x.GetSourceService())
+}
+
+func (o SourceService) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type SourceStorage struct {
@@ -3659,7 +4105,7 @@ func (o *SourceStorage) ValidateSourceStorage() bool {
 	return o.valid
 }
 
-func LoadSourceStorage(t navvy.Task, v SourceStorageSetter) {
+func LoadSourceStorage(t task.Task, v SourceStorageSetter) {
 	x, ok := t.(interface {
 		SourceStorageGetter
 		SourceStorageValidator
@@ -3672,6 +4118,13 @@ func LoadSourceStorage(t navvy.Task, v SourceStorageSetter) {
 	}
 
 	v.SetSourceStorage(x.GetSourceStorage())
+}
+
+func (o SourceStorage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type SourceType struct {
@@ -3718,7 +4171,7 @@ func (o *SourceType) ValidateSourceType() bool {
 	return o.valid
 }
 
-func LoadSourceType(t navvy.Task, v SourceTypeSetter) {
+func LoadSourceType(t task.Task, v SourceTypeSetter) {
 	x, ok := t.(interface {
 		SourceTypeGetter
 		SourceTypeValidator
@@ -3731,6 +4184,13 @@ func LoadSourceType(t navvy.Task, v SourceTypeSetter) {
 	}
 
 	v.SetSourceType(x.GetSourceType())
+}
+
+func (o SourceType) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type Storage struct {
@@ -3777,7 +4237,7 @@ func (o *Storage) ValidateStorage() bool {
 	return o.valid
 }
 
-func LoadStorage(t navvy.Task, v StorageSetter) {
+func LoadStorage(t task.Task, v StorageSetter) {
 	x, ok := t.(interface {
 		StorageGetter
 		StorageValidator
@@ -3790,6 +4250,13 @@ func LoadStorage(t navvy.Task, v StorageSetter) {
 	}
 
 	v.SetStorage(x.GetStorage())
+}
+
+func (o Storage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type StorageInfo struct {
@@ -3836,7 +4303,7 @@ func (o *StorageInfo) ValidateStorageInfo() bool {
 	return o.valid
 }
 
-func LoadStorageInfo(t navvy.Task, v StorageInfoSetter) {
+func LoadStorageInfo(t task.Task, v StorageInfoSetter) {
 	x, ok := t.(interface {
 		StorageInfoGetter
 		StorageInfoValidator
@@ -3849,6 +4316,13 @@ func LoadStorageInfo(t navvy.Task, v StorageInfoSetter) {
 	}
 
 	v.SetStorageInfo(x.GetStorageInfo())
+}
+
+func (o StorageInfo) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type StorageName struct {
@@ -3895,7 +4369,7 @@ func (o *StorageName) ValidateStorageName() bool {
 	return o.valid
 }
 
-func LoadStorageName(t navvy.Task, v StorageNameSetter) {
+func LoadStorageName(t task.Task, v StorageNameSetter) {
 	x, ok := t.(interface {
 		StorageNameGetter
 		StorageNameValidator
@@ -3908,6 +4382,13 @@ func LoadStorageName(t navvy.Task, v StorageNameSetter) {
 	}
 
 	v.SetStorageName(x.GetStorageName())
+}
+
+func (o StorageName) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type StoragerFunc struct {
@@ -3954,7 +4435,7 @@ func (o *StoragerFunc) ValidateStoragerFunc() bool {
 	return o.valid
 }
 
-func LoadStoragerFunc(t navvy.Task, v StoragerFuncSetter) {
+func LoadStoragerFunc(t task.Task, v StoragerFuncSetter) {
 	x, ok := t.(interface {
 		StoragerFuncGetter
 		StoragerFuncValidator
@@ -3967,6 +4448,13 @@ func LoadStoragerFunc(t navvy.Task, v StoragerFuncSetter) {
 	}
 
 	v.SetStoragerFunc(x.GetStoragerFunc())
+}
+
+func (o StoragerFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type TotalSize struct {
@@ -4013,7 +4501,7 @@ func (o *TotalSize) ValidateTotalSize() bool {
 	return o.valid
 }
 
-func LoadTotalSize(t navvy.Task, v TotalSizeSetter) {
+func LoadTotalSize(t task.Task, v TotalSizeSetter) {
 	x, ok := t.(interface {
 		TotalSizeGetter
 		TotalSizeValidator
@@ -4026,6 +4514,13 @@ func LoadTotalSize(t navvy.Task, v TotalSizeSetter) {
 	}
 
 	v.SetTotalSize(x.GetTotalSize())
+}
+
+func (o TotalSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type Type struct {
@@ -4072,7 +4567,7 @@ func (o *Type) ValidateType() bool {
 	return o.valid
 }
 
-func LoadType(t navvy.Task, v TypeSetter) {
+func LoadType(t task.Task, v TypeSetter) {
 	x, ok := t.(interface {
 		TypeGetter
 		TypeValidator
@@ -4085,6 +4580,13 @@ func LoadType(t navvy.Task, v TypeSetter) {
 	}
 
 	v.SetType(x.GetType())
+}
+
+func (o Type) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type URL struct {
@@ -4131,7 +4633,7 @@ func (o *URL) ValidateURL() bool {
 	return o.valid
 }
 
-func LoadURL(t navvy.Task, v URLSetter) {
+func LoadURL(t task.Task, v URLSetter) {
 	x, ok := t.(interface {
 		URLGetter
 		URLValidator
@@ -4144,6 +4646,13 @@ func LoadURL(t navvy.Task, v URLSetter) {
 	}
 
 	v.SetURL(x.GetURL())
+}
+
+func (o URL) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type Update struct {
@@ -4190,7 +4699,7 @@ func (o *Update) ValidateUpdate() bool {
 	return o.valid
 }
 
-func LoadUpdate(t navvy.Task, v UpdateSetter) {
+func LoadUpdate(t task.Task, v UpdateSetter) {
 	x, ok := t.(interface {
 		UpdateGetter
 		UpdateValidator
@@ -4203,6 +4712,13 @@ func LoadUpdate(t navvy.Task, v UpdateSetter) {
 	}
 
 	v.SetUpdate(x.GetUpdate())
+}
+
+func (o Update) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type WholeFile struct {
@@ -4249,7 +4765,7 @@ func (o *WholeFile) ValidateWholeFile() bool {
 	return o.valid
 }
 
-func LoadWholeFile(t navvy.Task, v WholeFileSetter) {
+func LoadWholeFile(t task.Task, v WholeFileSetter) {
 	x, ok := t.(interface {
 		WholeFileGetter
 		WholeFileValidator
@@ -4262,6 +4778,13 @@ func LoadWholeFile(t navvy.Task, v WholeFileSetter) {
 	}
 
 	v.SetWholeFile(x.GetWholeFile())
+}
+
+func (o WholeFile) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type Zone struct {
@@ -4308,7 +4831,7 @@ func (o *Zone) ValidateZone() bool {
 	return o.valid
 }
 
-func LoadZone(t navvy.Task, v ZoneSetter) {
+func LoadZone(t task.Task, v ZoneSetter) {
 	x, ok := t.(interface {
 		ZoneGetter
 		ZoneValidator
@@ -4321,4 +4844,11 @@ func LoadZone(t navvy.Task, v ZoneSetter) {
 	}
 
 	v.SetZone(x.GetZone())
+}
+
+func (o Zone) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
