@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	typ "github.com/aos-dev/go-storage/v2/types"
@@ -11,102 +12,247 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	"github.com/qingstor/noah/pkg/types"
 )
 
 func TestListDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	testErr := errors.New("test error")
+	it := typ.NewObjectIterator(nil)
 
-	ctx := context.Background()
+	cases := []struct {
+		name     string
+		wantIter *typ.ObjectIterator
+		hasErr   bool
+	}{
+		{
+			name:     "normal",
+			wantIter: it,
+			hasErr:   false,
+		},
+		{
+			name:     "fault",
+			wantIter: nil,
+			hasErr:   true,
+		},
+	}
 
-	store := mock.NewMockDirLister(ctrl)
-	testPath := uuid.New().String()
+	for _, tt := range cases {
+		ctx := context.Background()
 
-	task := &ListDirTask{}
-	task.SetID(uuid.New().String())
-	task.SetFault(fault.New())
-	task.SetDirLister(store)
-	task.SetPath(testPath)
+		store := mock.NewMockDirLister(ctrl)
+		testPath := uuid.New().String()
 
-	store.EXPECT().ListDirWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
-			assert.Equal(t, testPath, path)
-			return nil
-		})
+		task := &ListDirTask{}
+		task.SetID(uuid.New().String())
+		task.SetFault(fault.New())
+		task.SetDirLister(store)
+		task.SetPath(testPath)
 
-	task.run(ctx)
-	assert.Empty(t, task.GetFault().Error())
+		store.EXPECT().ListDirWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.ObjectIterator, error) {
+				assert.Equal(t, testPath, path, tt.name)
+				if tt.hasErr {
+					return nil, testErr
+				}
+				return tt.wantIter, nil
+			})
+
+		err := task.run(ctx)
+		if tt.hasErr {
+			assert.NotNil(t, err, tt.name)
+			ae := &types.Unhandled{}
+			assert.True(t, errors.As(err, &ae), tt.name)
+			assert.False(t, task.ValidateObjectIter(), tt.name)
+		} else {
+			assert.Nil(t, err, tt.name)
+			assert.Equal(t, tt.wantIter, task.GetObjectIter(), tt.name)
+		}
+	}
 }
 
 func TestListPrefixTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	testErr := errors.New("test error")
+	it := typ.NewObjectIterator(nil)
 
-	ctx := context.Background()
+	cases := []struct {
+		name     string
+		wantIter *typ.ObjectIterator
+		hasErr   bool
+	}{
+		{
+			name:     "normal",
+			wantIter: it,
+			hasErr:   false,
+		},
+		{
+			name:     "fault",
+			wantIter: nil,
+			hasErr:   true,
+		},
+	}
 
-	store := mock.NewMockPrefixLister(ctrl)
-	testPath := uuid.New().String()
+	for _, tt := range cases {
+		ctx := context.Background()
 
-	task := &ListPrefixTask{}
-	task.SetID(uuid.New().String())
-	task.SetFault(fault.New())
-	task.SetPrefixLister(store)
-	task.SetPath(testPath)
+		store := mock.NewMockPrefixLister(ctrl)
+		testPath := uuid.New().String()
 
-	store.EXPECT().ListPrefixWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
-			assert.Equal(t, testPath, path)
-			return nil
-		})
+		task := &ListPrefixTask{}
+		task.SetID(uuid.New().String())
+		task.SetFault(fault.New())
+		task.SetPrefixLister(store)
+		task.SetPath(testPath)
 
-	task.run(ctx)
-	assert.Empty(t, task.GetFault().Error())
+		store.EXPECT().ListPrefixWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.ObjectIterator, error) {
+				assert.Equal(t, testPath, path, tt.name)
+				if tt.hasErr {
+					return nil, testErr
+				}
+				return tt.wantIter, nil
+			})
+
+		err := task.run(ctx)
+		if tt.hasErr {
+			assert.NotNil(t, err, tt.name)
+			ae := &types.Unhandled{}
+			assert.True(t, errors.As(err, &ae), tt.name)
+			assert.False(t, task.ValidateObjectIter(), tt.name)
+		} else {
+			assert.Nil(t, err, tt.name)
+			assert.Equal(t, tt.wantIter, task.GetObjectIter(), tt.name)
+		}
+	}
 }
 
 func TestListSegmentTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	ctx := context.Background()
+	testErr := errors.New("test error")
+	it := typ.NewSegmentIterator(nil)
 
-	segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
-	testPath := uuid.New().String()
+	cases := []struct {
+		name     string
+		wantIter *typ.SegmentIterator
+		hasErr   bool
+	}{
+		{
+			name:     "normal",
+			wantIter: it,
+			hasErr:   false,
+		},
+		{
+			name:     "fault",
+			wantIter: nil,
+			hasErr:   true,
+		},
+	}
 
-	task := ListSegmentTask{}
-	task.SetFault(fault.New())
-	task.SetPrefixSegmentsLister(segmenter)
-	task.SetPath(testPath)
+	for _, tt := range cases {
+		ctx := context.Background()
 
-	segmenter.EXPECT().ListPrefixSegmentsWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
-			assert.Equal(t, testPath, path)
-			return nil
-		})
+		segmenter := mock.NewMockPrefixSegmentsLister(ctrl)
+		testPath := uuid.New().String()
 
-	task.run(ctx)
-	assert.Empty(t, task.GetFault().Error())
+		task := ListSegmentTask{}
+		task.SetFault(fault.New())
+		task.SetPrefixSegmentsLister(segmenter)
+		task.SetPath(testPath)
+
+		segmenter.EXPECT().ListPrefixSegmentsWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.SegmentIterator, error) {
+				assert.Equal(t, testPath, path, tt.name)
+				if tt.hasErr {
+					return nil, testErr
+				}
+				return tt.wantIter, nil
+			})
+
+		err := task.run(ctx)
+		if tt.hasErr {
+			assert.NotNil(t, err, tt.name)
+			ae := &types.Unhandled{}
+			assert.True(t, errors.As(err, &ae), tt.name)
+			assert.False(t, task.ValidateSegmentIter(), tt.name)
+		} else {
+			assert.Nil(t, err, tt.name)
+			assert.Equal(t, tt.wantIter, task.GetSegmentIter(), tt.name)
+		}
+	}
 }
 
 func TestListStorageTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	ctx := context.Background()
+	testErr := errors.New("test error")
+	it := typ.NewStoragerIterator(nil)
 
-	srv := mock.NewMockServicer(ctrl)
-	zone := uuid.New().String()
+	cases := []struct {
+		name     string
+		zone     string
+		wantIter *typ.StoragerIterator
+		hasErr   bool
+	}{
+		{
+			name:     "normal without zone",
+			wantIter: it,
+			hasErr:   false,
+		},
+		{
+			name:     "normal with zone",
+			zone:     "zone1",
+			wantIter: it,
+			hasErr:   false,
+		},
+		{
+			name:     "fault",
+			wantIter: nil,
+			hasErr:   true,
+		},
+	}
 
-	task := ListStorageTask{}
-	task.SetFault(fault.New())
-	task.SetService(srv)
-	task.SetZone(zone)
+	for _, tt := range cases {
+		ctx := context.Background()
 
-	srv.EXPECT().ListWithContext(gomock.Eq(ctx), gomock.Any()).
-		Do(func(ctx context.Context, pairs ...*typ.Pair) error {
-			assert.Equal(t, zone, pairs[0].Value.(string))
-			return nil
-		})
+		srv := mock.NewMockServicer(ctrl)
 
-	task.run(ctx)
-	assert.Empty(t, task.GetFault().Error())
+		task := ListStorageTask{}
+		task.SetFault(fault.New())
+		task.SetService(srv)
+		if tt.zone != "" {
+			task.SetZone(tt.zone)
+		}
+
+		srv.EXPECT().ListWithContext(gomock.Eq(ctx), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, pairs ...*typ.Pair) (*typ.StoragerIterator, error) {
+				if tt.zone != "" {
+					assert.Equal(t, tt.zone, pairs[0].Value.(string), tt.name)
+				} else {
+					assert.Equal(t, 0, len(pairs), tt.name)
+				}
+
+				if tt.hasErr {
+					return nil, testErr
+				}
+				return tt.wantIter, nil
+			})
+
+		err := task.run(ctx)
+		if tt.hasErr {
+			assert.NotNil(t, err, tt.name)
+			ae := &types.Unhandled{}
+			assert.True(t, errors.As(err, &ae), tt.name)
+			assert.False(t, task.ValidateStorageIter(), tt.name)
+		} else {
+			assert.Nil(t, err, tt.name)
+			assert.Equal(t, tt.wantIter, task.GetStorageIter(), tt.name)
+		}
+	}
+
 }

@@ -13,7 +13,6 @@ func (t *ListDirTask) new() {}
 func (t *ListDirTask) run(ctx context.Context) error {
 	it, err := t.GetDirLister().ListDirWithContext(
 		ctx, t.GetPath())
-	// , pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
@@ -25,7 +24,6 @@ func (t *ListPrefixTask) new() {}
 func (t *ListPrefixTask) run(ctx context.Context) error {
 	it, err := t.GetPrefixLister().ListPrefixWithContext(
 		ctx, t.GetPath())
-	// , pairs.WithObjectFunc(t.GetObjectFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
@@ -37,7 +35,6 @@ func (t *ListSegmentTask) new() {}
 func (t *ListSegmentTask) run(ctx context.Context) error {
 	it, err := t.GetPrefixSegmentsLister().ListPrefixSegmentsWithContext(
 		ctx, t.GetPath())
-	// , pairs.WithSegmentFunc(t.GetSegmentFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
