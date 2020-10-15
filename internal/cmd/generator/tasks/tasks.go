@@ -281,11 +281,11 @@ func (t *{{ .Name }}Task) String() string {
 }",
 {{- $called := false -}}
 {{- range $k, $v := .Input.Required -}}
-	{{ if $called }}, {{end}}t.{{$v}}
+	{{ if $called }}, {{end}}t.{{$v}}.String()
 	{{- $called = true -}}
 {{- end -}}
 {{- range $k, $v := .Input.Optional -}}
-	{{ if $called }}, {{end}}t.{{$v}}
+	{{ if $called }}, {{end}}t.{{$v}}.String()
 	{{- $called = true -}}
 {{- end -}})
 }
