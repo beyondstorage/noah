@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestBetweenStorageCheckTask_run(t *testing.T) {
@@ -52,7 +53,7 @@ func TestBetweenStorageCheckTask_run(t *testing.T) {
 			srcPath := uuid.New().String()
 			dstPath := uuid.New().String()
 
-			task := BetweenStorageCheckTask{}
+			task := task2.BetweenStorageCheckTask{}
 			task.SetSourceStorage(srcStore)
 			task.SetDestinationStorage(dstStore)
 			task.SetSourcePath(srcPath)
@@ -98,7 +99,7 @@ func TestIsDestinationObjectExistTask_run(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("destination object not exist", func(t *testing.T) {
-		task := IsDestinationObjectExistTask{}
+		task := task2.IsDestinationObjectExistTask{}
 		task.SetDestinationObject(nil)
 
 		task.run(ctx)
@@ -107,7 +108,7 @@ func TestIsDestinationObjectExistTask_run(t *testing.T) {
 	})
 
 	t.Run("destination object exists", func(t *testing.T) {
-		task := IsDestinationObjectExistTask{}
+		task := task2.IsDestinationObjectExistTask{}
 		task.SetDestinationObject(&typ.Object{})
 
 		task.run(ctx)
@@ -120,7 +121,7 @@ func TestIsSizeEqualTask_run(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("size equal", func(t *testing.T) {
-		task := IsSizeEqualTask{}
+		task := task2.IsSizeEqualTask{}
 		task.SetSourceObject(&typ.Object{Size: 111})
 		task.SetDestinationObject(&typ.Object{Size: 111})
 
@@ -130,7 +131,7 @@ func TestIsSizeEqualTask_run(t *testing.T) {
 	})
 
 	t.Run("size not equal", func(t *testing.T) {
-		task := IsSizeEqualTask{}
+		task := task2.IsSizeEqualTask{}
 		task.SetSourceObject(&typ.Object{Size: 222})
 		task.SetDestinationObject(&typ.Object{Size: 111})
 
@@ -144,7 +145,7 @@ func TestIsUpdateAtGreaterTask_run(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("updated at greater", func(t *testing.T) {
-		task := IsUpdateAtGreaterTask{}
+		task := task2.IsUpdateAtGreaterTask{}
 		task.SetSourceObject(&typ.Object{UpdatedAt: time.Now().Add(time.Hour)})
 		task.SetDestinationObject(&typ.Object{UpdatedAt: time.Now()})
 
@@ -154,7 +155,7 @@ func TestIsUpdateAtGreaterTask_run(t *testing.T) {
 	})
 
 	t.Run("updated at not greater", func(t *testing.T) {
-		task := IsUpdateAtGreaterTask{}
+		task := task2.IsUpdateAtGreaterTask{}
 		task.SetSourceObject(&typ.Object{UpdatedAt: time.Now()})
 		task.SetDestinationObject(&typ.Object{UpdatedAt: time.Now().Add(time.Hour)})
 
@@ -216,7 +217,7 @@ func TestIsSourcePathExcludeIncludeTask_run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task := IsSourcePathExcludeIncludeTask{}
+			task := task2.IsSourcePathExcludeIncludeTask{}
 			task.SetSourcePath(tt.sourcePath)
 			task.SetExcludeRegexp(tt.excludeReg)
 			task.SetIncludeRegexp(tt.includeReg)

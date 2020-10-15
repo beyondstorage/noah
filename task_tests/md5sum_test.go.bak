@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestMD5SumFileTask_run(t *testing.T) {
@@ -26,7 +27,7 @@ func TestMD5SumFileTask_run(t *testing.T) {
 	srcPath := uuid.New().String()
 	size := int64(1024)
 
-	task := MD5SumFileTask{}
+	task := task2.MD5SumFileTask{}
 	task.SetFault(fault.New())
 	task.SetStorage(store)
 	task.SetPath(srcPath)
@@ -49,7 +50,7 @@ func TestMD5SumFileTask_run(t *testing.T) {
 }
 
 func TestMD5SuSteamTask_run(t *testing.T) {
-	task := MD5SumStreamTask{}
+	task := task2.MD5SumStreamTask{}
 	task.SetFault(fault.New())
 	task.SetContent(&bytes.Buffer{})
 

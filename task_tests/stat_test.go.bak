@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
 	"github.com/qingstor/noah/pkg/types"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestStatFileTask_run(t *testing.T) {
@@ -26,7 +27,7 @@ func TestStatFileTask_run(t *testing.T) {
 	store := mock.NewMockStorager(ctrl)
 	expectedPath := uuid.New().String()
 
-	task := StatFileTask{}
+	task := task2.StatFileTask{}
 	task.SetFault(fault.New())
 	task.SetStorage(store)
 	task.SetPath(expectedPath)
@@ -54,7 +55,7 @@ func TestStatStorageTask_run(t *testing.T) {
 	}).AnyTimes()
 
 	t.Run("insufficient ability error return", func(t *testing.T) {
-		task := StatStorageTask{}
+		task := task2.StatStorageTask{}
 		task.SetFault(fault.New())
 		task.SetStorage(store)
 
@@ -78,7 +79,7 @@ func TestStatStorageTask_run(t *testing.T) {
 				return info.NewStorageStatistic(), nil
 			})
 
-		task := StatStorageTask{}
+		task := task2.StatStorageTask{}
 		task.SetFault(fault.New())
 		task.SetStorage(storeComb)
 

@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	typ "github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestSegmentInitTask_run(t *testing.T) {
@@ -27,9 +27,9 @@ func TestSegmentInitTask_run(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		store := mock.NewMockIndexSegmenter(ctrl)
 		path := uuid.New().String()
-		seg := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
+		seg := typ.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 
-		task := SegmentInitTask{}
+		task := task2.SegmentInitTask{}
 		task.SetIndexSegmenter(store)
 		task.SetPath(path)
 		task.SetPartSize(1000)
@@ -50,7 +50,7 @@ func TestSegmentInitTask_run(t *testing.T) {
 		store := mock.NewMockIndexSegmenter(ctrl)
 		path := uuid.New().String()
 
-		task := SegmentInitTask{}
+		task := task2.SegmentInitTask{}
 		task.SetFault(fault.New())
 		task.SetIndexSegmenter(store)
 		task.SetPath(path)
@@ -84,7 +84,7 @@ func TestSegmentFileCopyTask_run(t *testing.T) {
 	dstSegmenter := mock.NewMockIndexSegmenter(ctrl)
 	dstPath := uuid.New().String()
 
-	task := SegmentFileCopyTask{}
+	task := task2.SegmentFileCopyTask{}
 	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetSourcePath(srcPath)
@@ -125,7 +125,7 @@ func TestSegmentStreamCopyTask_run(t *testing.T) {
 	dstPath := uuid.New().String()
 	segmenter := mock.NewMockIndexSegmenter(ctrl)
 
-	task := SegmentStreamCopyTask{}
+	task := task2.SegmentStreamCopyTask{}
 	task.SetID(uuid.New().String())
 	task.SetFault(fault.New())
 	task.SetDestinationPath(dstPath)
@@ -157,7 +157,7 @@ func TestSegmentCompleteTask_run(t *testing.T) {
 	dstSegment := segment.NewIndexBasedSegment(uuid.New().String(), uuid.New().String())
 	segmenter := mock.NewMockIndexSegmenter(ctrl)
 
-	task := SegmentCompleteTask{}
+	task := task2.SegmentCompleteTask{}
 	task.SetFault(fault.New())
 	task.SetIndexSegmenter(segmenter)
 	task.SetSegment(dstSegment)

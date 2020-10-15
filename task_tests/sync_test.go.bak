@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestSyncTask_run(t *testing.T) {
@@ -46,13 +47,13 @@ func TestSyncTask_run(t *testing.T) {
 	t.Run("without flag", func(t *testing.T) {
 		srcLister := mock.NewMockDirLister(ctrl)
 		src := struct {
-			storage.Storager
-			storage.DirLister
+			types.Storager
+			types.DirLister
 		}{
 			srcStore, srcLister,
 		}
 
-		task := SyncTask{}
+		task := task2.SyncTask{}
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
@@ -69,7 +70,7 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
-			case *ListDirTask:
+			case *task2.ListDirTask:
 				v.SetDirFunc(nil)
 				v.validateInput()
 				v.GetFileFunc()(obj)
@@ -80,7 +81,7 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche.EXPECT().Async(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
-			case *CopyFileTask:
+			case *task2.CopyFileTask:
 				v.validateInput()
 				assert.Equal(t, obj.Name, v.GetSourcePath())
 				assert.Equal(t, obj.Name, v.GetDestinationPath())
@@ -103,7 +104,7 @@ func TestSyncTask_run(t *testing.T) {
 			srcStore, srcLister,
 		}
 
-		task := SyncTask{}
+		task := task2.SyncTask{}
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
@@ -116,15 +117,15 @@ func TestSyncTask_run(t *testing.T) {
 		task.SetCheckMD5(false)
 		task.SetCheckTasks(
 			[]func(navvy.Task) navvy.Task{
-				NewIsUpdateAtGreaterTask,
-				NewIsDestinationObjectNotExistTask,
-				NewIsDestinationObjectExistTask,
+				task2.NewIsUpdateAtGreaterTask,
+				task2.NewIsDestinationObjectNotExistTask,
+				task2.NewIsDestinationObjectExistTask,
 			})
 		task.SetPartThreshold(constants.MaximumAutoMultipartSize)
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
-			case *ListDirTask:
+			case *task2.ListDirTask:
 				v.SetDirFunc(nil)
 				v.validateInput()
 				v.GetFileFunc()(obj)
@@ -146,7 +147,7 @@ func TestSyncTask_run(t *testing.T) {
 			srcStore, srcLister,
 		}
 
-		task := SyncTask{}
+		task := task2.SyncTask{}
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
@@ -164,7 +165,7 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
-			case *ListDirTask:
+			case *task2.ListDirTask:
 				v.SetDirFunc(nil)
 				v.validateInput()
 				v.GetFileFunc()(obj)
@@ -186,7 +187,7 @@ func TestSyncTask_run(t *testing.T) {
 			srcStore, srcLister,
 		}
 
-		task := SyncTask{}
+		task := task2.SyncTask{}
 		task.SetPool(navvy.NewPool(10))
 		task.SetScheduler(sche)
 		task.SetFault(fault.New())
@@ -204,7 +205,7 @@ func TestSyncTask_run(t *testing.T) {
 
 		sche.EXPECT().Sync(gomock.Eq(ctx), gomock.Any()).Do(func(ctx context.Context, task navvy.Task) {
 			switch v := task.(type) {
-			case *ListDirTask:
+			case *task2.ListDirTask:
 				v.SetDirFunc(nil)
 				v.SetFileFunc(nil)
 				v.validateInput()

@@ -1,4 +1,4 @@
-package task
+package task_tests
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/mock"
+	task2 "github.com/qingstor/noah/task"
 )
 
 func TestReachFileTask_run(t *testing.T) {
@@ -24,7 +25,7 @@ func TestReachFileTask_run(t *testing.T) {
 	reachExpire := 1024
 	reachedURL := uuid.New().String()
 
-	task := ReachFileTask{}
+	task := task2.ReachFileTask{}
 	task.SetFault(fault.New())
 	task.SetReacher(reacher)
 	task.SetPath(reachPath)
