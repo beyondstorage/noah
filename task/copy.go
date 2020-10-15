@@ -131,8 +131,6 @@ func (t *CopySmallFileTask) run(ctx context.Context) error {
 			return err
 		}
 		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
-	} else {
-		fileCopyTask.SetMD5Sum(nil)
 	}
 
 	return t.Sync(ctx, fileCopyTask)
@@ -210,8 +208,6 @@ func (t *CopyPartialFileTask) run(ctx context.Context) error {
 			return err
 		}
 		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
-	} else {
-		fileCopyTask.SetMD5Sum(nil)
 	}
 
 	err := utils.ChooseDestinationStorageAsDestinationIndexSegmenter(fileCopyTask, t)
@@ -286,8 +282,6 @@ func (t *CopyPartialStreamTask) run(ctx context.Context) error {
 			return err
 		}
 		copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
-	} else {
-		copyTask.SetMD5Sum(nil)
 	}
 
 	err := utils.ChooseDestinationStorageAsDestinationIndexSegmenter(copyTask, t)

@@ -143,12 +143,10 @@
         "SourceStorage"
       ],
       "optional": [
-        "CheckMD5"
+        "CheckMD5",
+        "MD5Sum"
       ]
-    },
-    "output": [
-      "MD5Sum"
-    ]
+    }
   },
   "CopyStream": {
     "description": "copy a stream between two storager",
@@ -463,12 +461,14 @@
         "DestinationIndexSegmenter",
         "DestinationPath",
         "Index",
-        "MD5Sum",
         "Offset",
         "Segment",
         "Size",
         "SourcePath",
         "SourceStorage"
+      ],
+      "optional": [
+        "MD5Sum"
       ]
     }
   },
@@ -493,10 +493,12 @@
         "DestinationIndexSegmenter",
         "DestinationPath",
         "Index",
-        "MD5Sum",
         "Offset",
         "Segment",
         "Size"
+      ],
+      "optional": [
+        "MD5Sum"
       ]
     }
   },

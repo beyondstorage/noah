@@ -19,7 +19,6 @@ func (t *MD5SumFileTask) run(ctx context.Context) error {
 	}
 
 	t.SetMD5Sum(h.Sum(nil)[:])
-	println("md5", t.GetMD5Sum()) // 0xc00009a330
 	return nil
 }
 

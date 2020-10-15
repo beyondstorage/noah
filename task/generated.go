@@ -1072,9 +1072,9 @@ type CopySmallFileTask struct {
 
 	// Optional Input value
 	types.CheckMD5
+	types.MD5Sum
 
 	// Output value
-	types.MD5Sum
 }
 
 // NewCopySmallFile will create a CopySmallFileTask struct and fetch inherited data from parent task.
@@ -1127,6 +1127,7 @@ func (t *CopySmallFileTask) loadInput(task task.Task) {
 	types.LoadSourceStorage(task, t)
 	// load optional fields
 	types.LoadCheckMD5(task, t)
+	types.LoadMD5Sum(task, t)
 }
 
 // Sync run sub task directly
@@ -1188,7 +1189,7 @@ func (t *CopySmallFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySmallFileTask) String() string {
-	return fmt.Sprintf("CopySmallFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String())
+	return fmt.Sprintf("CopySmallFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, MD5Sum: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.MD5Sum.String())
 }
 
 // NewCopySmallFileTask will create a CopySmallFileTask which meets task.Task.
@@ -4185,7 +4186,6 @@ type SegmentFileCopyTask struct {
 	types.DestinationIndexSegmenter
 	types.DestinationPath
 	types.Index
-	types.MD5Sum
 	types.Offset
 	types.Segment
 	types.Size
@@ -4193,6 +4193,7 @@ type SegmentFileCopyTask struct {
 	types.SourceStorage
 
 	// Optional Input value
+	types.MD5Sum
 
 	// Output value
 }
@@ -4229,9 +4230,6 @@ func (t *SegmentFileCopyTask) validateInput() {
 	if !t.ValidateIndex() {
 		panic(fmt.Errorf("Task SegmentFileCopy value Index is invalid"))
 	}
-	if !t.ValidateMD5Sum() {
-		panic(fmt.Errorf("Task SegmentFileCopy value MD5Sum is invalid"))
-	}
 	if !t.ValidateOffset() {
 		panic(fmt.Errorf("Task SegmentFileCopy value Offset is invalid"))
 	}
@@ -4255,13 +4253,13 @@ func (t *SegmentFileCopyTask) loadInput(task task.Task) {
 	types.LoadDestinationIndexSegmenter(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadIndex(task, t)
-	types.LoadMD5Sum(task, t)
 	types.LoadOffset(task, t)
 	types.LoadSegment(task, t)
 	types.LoadSize(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
 	// load optional fields
+	types.LoadMD5Sum(task, t)
 }
 
 // Sync run sub task directly
@@ -4323,7 +4321,7 @@ func (t *SegmentFileCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentFileCopyTask) String() string {
-	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String())
+	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, Offset: %s, Segment: %s, Size: %s, SourcePath: %s, SourceStorage: %s, MD5Sum: %s}", t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.Offset.String(), t.Segment.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String(), t.MD5Sum.String())
 }
 
 // NewSegmentFileCopyTask will create a SegmentFileCopyTask which meets task.Task.
@@ -4477,12 +4475,12 @@ type SegmentStreamCopyTask struct {
 	types.DestinationIndexSegmenter
 	types.DestinationPath
 	types.Index
-	types.MD5Sum
 	types.Offset
 	types.Segment
 	types.Size
 
 	// Optional Input value
+	types.MD5Sum
 
 	// Output value
 }
@@ -4522,9 +4520,6 @@ func (t *SegmentStreamCopyTask) validateInput() {
 	if !t.ValidateIndex() {
 		panic(fmt.Errorf("Task SegmentStreamCopy value Index is invalid"))
 	}
-	if !t.ValidateMD5Sum() {
-		panic(fmt.Errorf("Task SegmentStreamCopy value MD5Sum is invalid"))
-	}
 	if !t.ValidateOffset() {
 		panic(fmt.Errorf("Task SegmentStreamCopy value Offset is invalid"))
 	}
@@ -4543,11 +4538,11 @@ func (t *SegmentStreamCopyTask) loadInput(task task.Task) {
 	types.LoadDestinationIndexSegmenter(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadIndex(task, t)
-	types.LoadMD5Sum(task, t)
 	types.LoadOffset(task, t)
 	types.LoadSegment(task, t)
 	types.LoadSize(task, t)
 	// load optional fields
+	types.LoadMD5Sum(task, t)
 }
 
 // Sync run sub task directly
@@ -4609,7 +4604,7 @@ func (t *SegmentStreamCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentStreamCopyTask) String() string {
-	return fmt.Sprintf("SegmentStreamCopyTask {Content: %s, DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s}", t.Content.String(), t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String())
+	return fmt.Sprintf("SegmentStreamCopyTask {Content: %s, DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, Offset: %s, Segment: %s, Size: %s, MD5Sum: %s}", t.Content.String(), t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.Offset.String(), t.Segment.String(), t.Size.String(), t.MD5Sum.String())
 }
 
 // NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets task.Task.
