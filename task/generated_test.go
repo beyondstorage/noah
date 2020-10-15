@@ -2,16 +2,12 @@
 package task
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/qingstor/noah/pkg/fault"
-	"github.com/qingstor/noah/pkg/types"
 )
-
-var _ types.Pool
 
 func TestBetweenStorageCheckTask_TriggerFault(t *testing.T) {
 	task := &BetweenStorageCheckTask{}
@@ -187,6 +183,12 @@ func TestReachFileTask_TriggerFault(t *testing.T) {
 	assert.True(t, task.GetFault().HasError())
 }
 
+func TestReadFileTask_TriggerFault(t *testing.T) {
+	task := &ReadFileTask{}
+	task.SetFault(fault.New())
+	assert.True(t, task.GetFault().HasError())
+}
+
 func TestSegmentCompleteTask_TriggerFault(t *testing.T) {
 	task := &SegmentCompleteTask{}
 	task.SetFault(fault.New())
@@ -231,6 +233,18 @@ func TestStatStorageTask_TriggerFault(t *testing.T) {
 
 func TestSyncTask_TriggerFault(t *testing.T) {
 	task := &SyncTask{}
+	task.SetFault(fault.New())
+	assert.True(t, task.GetFault().HasError())
+}
+
+func TestWriteFileTask_TriggerFault(t *testing.T) {
+	task := &WriteFileTask{}
+	task.SetFault(fault.New())
+	assert.True(t, task.GetFault().HasError())
+}
+
+func TestWriteSegmentTask_TriggerFault(t *testing.T) {
+	task := &WriteSegmentTask{}
 	task.SetFault(fault.New())
 	assert.True(t, task.GetFault().HasError())
 }

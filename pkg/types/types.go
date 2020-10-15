@@ -4,14 +4,12 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"sync"
 
-	"github.com/aos-dev/go-storage/v2"
-	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	"github.com/aos-dev/go-storage/v2/types"
-	"github.com/aos-dev/go-storage/v2/types/info"
 
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"
@@ -79,7 +77,7 @@ func LoadByteSize(t task.Task, v ByteSizeSetter) {
 	v.SetByteSize(x.GetByteSize())
 }
 
-func (o ByteSize) String() string {
+func (o *ByteSize) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -145,7 +143,7 @@ func LoadBytesPool(t task.Task, v BytesPoolSetter) {
 	v.SetBytesPool(x.GetBytesPool())
 }
 
-func (o BytesPool) String() string {
+func (o *BytesPool) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -211,7 +209,7 @@ func LoadCallbackFunc(t task.Task, v CallbackFuncSetter) {
 	v.SetCallbackFunc(x.GetCallbackFunc())
 }
 
-func (o CallbackFunc) String() string {
+func (o *CallbackFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -277,7 +275,7 @@ func LoadCheckMD5(t task.Task, v CheckMD5Setter) {
 	v.SetCheckMD5(x.GetCheckMD5())
 }
 
-func (o CheckMD5) String() string {
+func (o *CheckMD5) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -343,7 +341,7 @@ func LoadCheckTasks(t task.Task, v CheckTasksSetter) {
 	v.SetCheckTasks(x.GetCheckTasks())
 }
 
-func (o CheckTasks) String() string {
+func (o *CheckTasks) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -409,7 +407,7 @@ func LoadContent(t task.Task, v ContentSetter) {
 	v.SetContent(x.GetContent())
 }
 
-func (o Content) String() string {
+func (o *Content) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -475,7 +473,7 @@ func LoadDelete(t task.Task, v DeleteSetter) {
 	v.SetDelete(x.GetDelete())
 }
 
-func (o Delete) String() string {
+func (o *Delete) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -484,16 +482,16 @@ func (o Delete) String() string {
 
 type DestinationIndexSegmenter struct {
 	valid bool
-	v     storage.IndexSegmenter
+	v     types.IndexSegmenter
 
 	l sync.RWMutex
 }
 
 type DestinationIndexSegmenterGetter interface {
-	GetDestinationIndexSegmenter() storage.IndexSegmenter
+	GetDestinationIndexSegmenter() types.IndexSegmenter
 }
 
-func (o *DestinationIndexSegmenter) GetDestinationIndexSegmenter() storage.IndexSegmenter {
+func (o *DestinationIndexSegmenter) GetDestinationIndexSegmenter() types.IndexSegmenter {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -504,10 +502,10 @@ func (o *DestinationIndexSegmenter) GetDestinationIndexSegmenter() storage.Index
 }
 
 type DestinationIndexSegmenterSetter interface {
-	SetDestinationIndexSegmenter(storage.IndexSegmenter)
+	SetDestinationIndexSegmenter(types.IndexSegmenter)
 }
 
-func (o *DestinationIndexSegmenter) SetDestinationIndexSegmenter(v storage.IndexSegmenter) {
+func (o *DestinationIndexSegmenter) SetDestinationIndexSegmenter(v types.IndexSegmenter) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -541,11 +539,11 @@ func LoadDestinationIndexSegmenter(t task.Task, v DestinationIndexSegmenterSette
 	v.SetDestinationIndexSegmenter(x.GetDestinationIndexSegmenter())
 }
 
-func (o DestinationIndexSegmenter) String() string {
+func (o *DestinationIndexSegmenter) String() string {
 	if !o.valid {
 		return ""
 	}
-	return o.v.(storage.Storager).String()
+	return o.v.(types.Storager).String()
 }
 
 type DestinationObject struct {
@@ -607,7 +605,7 @@ func LoadDestinationObject(t task.Task, v DestinationObjectSetter) {
 	v.SetDestinationObject(x.GetDestinationObject())
 }
 
-func (o DestinationObject) String() string {
+func (o *DestinationObject) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -676,7 +674,7 @@ func LoadDestinationPath(t task.Task, v DestinationPathSetter) {
 	v.SetDestinationPath(x.GetDestinationPath())
 }
 
-func (o DestinationPath) String() string {
+func (o *DestinationPath) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -685,16 +683,16 @@ func (o DestinationPath) String() string {
 
 type DestinationService struct {
 	valid bool
-	v     storage.Servicer
+	v     types.Servicer
 
 	l sync.RWMutex
 }
 
 type DestinationServiceGetter interface {
-	GetDestinationService() storage.Servicer
+	GetDestinationService() types.Servicer
 }
 
-func (o *DestinationService) GetDestinationService() storage.Servicer {
+func (o *DestinationService) GetDestinationService() types.Servicer {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -705,10 +703,10 @@ func (o *DestinationService) GetDestinationService() storage.Servicer {
 }
 
 type DestinationServiceSetter interface {
-	SetDestinationService(storage.Servicer)
+	SetDestinationService(types.Servicer)
 }
 
-func (o *DestinationService) SetDestinationService(v storage.Servicer) {
+func (o *DestinationService) SetDestinationService(v types.Servicer) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -742,7 +740,7 @@ func LoadDestinationService(t task.Task, v DestinationServiceSetter) {
 	v.SetDestinationService(x.GetDestinationService())
 }
 
-func (o DestinationService) String() string {
+func (o *DestinationService) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -751,16 +749,16 @@ func (o DestinationService) String() string {
 
 type DestinationStorage struct {
 	valid bool
-	v     storage.Storager
+	v     types.Storager
 
 	l sync.RWMutex
 }
 
 type DestinationStorageGetter interface {
-	GetDestinationStorage() storage.Storager
+	GetDestinationStorage() types.Storager
 }
 
-func (o *DestinationStorage) GetDestinationStorage() storage.Storager {
+func (o *DestinationStorage) GetDestinationStorage() types.Storager {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -771,10 +769,10 @@ func (o *DestinationStorage) GetDestinationStorage() storage.Storager {
 }
 
 type DestinationStorageSetter interface {
-	SetDestinationStorage(storage.Storager)
+	SetDestinationStorage(types.Storager)
 }
 
-func (o *DestinationStorage) SetDestinationStorage(v storage.Storager) {
+func (o *DestinationStorage) SetDestinationStorage(v types.Storager) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -808,7 +806,7 @@ func LoadDestinationStorage(t task.Task, v DestinationStorageSetter) {
 	v.SetDestinationStorage(x.GetDestinationStorage())
 }
 
-func (o DestinationStorage) String() string {
+func (o *DestinationStorage) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -874,7 +872,7 @@ func LoadDestinationType(t task.Task, v DestinationTypeSetter) {
 	v.SetDestinationType(x.GetDestinationType())
 }
 
-func (o DestinationType) String() string {
+func (o *DestinationType) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -940,7 +938,7 @@ func LoadDirFunc(t task.Task, v DirFuncSetter) {
 	v.SetDirFunc(x.GetDirFunc())
 }
 
-func (o DirFunc) String() string {
+func (o *DirFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -949,16 +947,16 @@ func (o DirFunc) String() string {
 
 type DirLister struct {
 	valid bool
-	v     storage.DirLister
+	v     types.DirLister
 
 	l sync.RWMutex
 }
 
 type DirListerGetter interface {
-	GetDirLister() storage.DirLister
+	GetDirLister() types.DirLister
 }
 
-func (o *DirLister) GetDirLister() storage.DirLister {
+func (o *DirLister) GetDirLister() types.DirLister {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -969,10 +967,10 @@ func (o *DirLister) GetDirLister() storage.DirLister {
 }
 
 type DirListerSetter interface {
-	SetDirLister(storage.DirLister)
+	SetDirLister(types.DirLister)
 }
 
-func (o *DirLister) SetDirLister(v storage.DirLister) {
+func (o *DirLister) SetDirLister(v types.DirLister) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1006,11 +1004,11 @@ func LoadDirLister(t task.Task, v DirListerSetter) {
 	v.SetDirLister(x.GetDirLister())
 }
 
-func (o DirLister) String() string {
+func (o *DirLister) String() string {
 	if !o.valid {
 		return ""
 	}
-	return o.v.(storage.Storager).String()
+	return o.v.(types.Storager).String()
 }
 
 type Done struct {
@@ -1072,7 +1070,7 @@ func LoadDone(t task.Task, v DoneSetter) {
 	v.SetDone(x.GetDone())
 }
 
-func (o Done) String() string {
+func (o *Done) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1138,7 +1136,7 @@ func LoadDryRun(t task.Task, v DryRunSetter) {
 	v.SetDryRun(x.GetDryRun())
 }
 
-func (o DryRun) String() string {
+func (o *DryRun) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1204,7 +1202,7 @@ func LoadDryRunFunc(t task.Task, v DryRunFuncSetter) {
 	v.SetDryRunFunc(x.GetDryRunFunc())
 }
 
-func (o DryRunFunc) String() string {
+func (o *DryRunFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1270,7 +1268,7 @@ func LoadEnableBenchmark(t task.Task, v EnableBenchmarkSetter) {
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
 }
 
-func (o EnableBenchmark) String() string {
+func (o *EnableBenchmark) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1336,7 +1334,7 @@ func LoadExcludeRegexp(t task.Task, v ExcludeRegexpSetter) {
 	v.SetExcludeRegexp(x.GetExcludeRegexp())
 }
 
-func (o ExcludeRegexp) String() string {
+func (o *ExcludeRegexp) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1405,7 +1403,7 @@ func LoadExisting(t task.Task, v ExistingSetter) {
 	v.SetExisting(x.GetExisting())
 }
 
-func (o Existing) String() string {
+func (o *Existing) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1471,7 +1469,7 @@ func LoadExpectSize(t task.Task, v ExpectSizeSetter) {
 	v.SetExpectSize(x.GetExpectSize())
 }
 
-func (o ExpectSize) String() string {
+func (o *ExpectSize) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1537,7 +1535,7 @@ func LoadExpire(t task.Task, v ExpireSetter) {
 	v.SetExpire(x.GetExpire())
 }
 
-func (o Expire) String() string {
+func (o *Expire) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1603,7 +1601,7 @@ func LoadFault(t task.Task, v FaultSetter) {
 	v.SetFault(x.GetFault())
 }
 
-func (o Fault) String() string {
+func (o *Fault) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1669,7 +1667,7 @@ func LoadFaultSyncer(t task.Task, v FaultSyncerSetter) {
 	v.SetFaultSyncer(x.GetFaultSyncer())
 }
 
-func (o FaultSyncer) String() string {
+func (o *FaultSyncer) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1735,7 +1733,7 @@ func LoadFileFunc(t task.Task, v FileFuncSetter) {
 	v.SetFileFunc(x.GetFileFunc())
 }
 
-func (o FileFunc) String() string {
+func (o *FileFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1801,7 +1799,7 @@ func LoadForce(t task.Task, v ForceSetter) {
 	v.SetForce(x.GetForce())
 }
 
-func (o Force) String() string {
+func (o *Force) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1867,7 +1865,7 @@ func LoadHandleObjCallbackFunc(t task.Task, v HandleObjCallbackFuncSetter) {
 	v.SetHandleObjCallbackFunc(x.GetHandleObjCallbackFunc())
 }
 
-func (o HandleObjCallbackFunc) String() string {
+func (o *HandleObjCallbackFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1876,16 +1874,16 @@ func (o HandleObjCallbackFunc) String() string {
 
 type HandleSegmentCallbackFunc struct {
 	valid bool
-	v     func(segment.Segment)
+	v     func(types.Segment)
 
 	l sync.RWMutex
 }
 
 type HandleSegmentCallbackFuncGetter interface {
-	GetHandleSegmentCallbackFunc() func(segment.Segment)
+	GetHandleSegmentCallbackFunc() func(types.Segment)
 }
 
-func (o *HandleSegmentCallbackFunc) GetHandleSegmentCallbackFunc() func(segment.Segment) {
+func (o *HandleSegmentCallbackFunc) GetHandleSegmentCallbackFunc() func(types.Segment) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -1896,10 +1894,10 @@ func (o *HandleSegmentCallbackFunc) GetHandleSegmentCallbackFunc() func(segment.
 }
 
 type HandleSegmentCallbackFuncSetter interface {
-	SetHandleSegmentCallbackFunc(func(segment.Segment))
+	SetHandleSegmentCallbackFunc(func(types.Segment))
 }
 
-func (o *HandleSegmentCallbackFunc) SetHandleSegmentCallbackFunc(v func(segment.Segment)) {
+func (o *HandleSegmentCallbackFunc) SetHandleSegmentCallbackFunc(v func(types.Segment)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1933,7 +1931,7 @@ func LoadHandleSegmentCallbackFunc(t task.Task, v HandleSegmentCallbackFuncSette
 	v.SetHandleSegmentCallbackFunc(x.GetHandleSegmentCallbackFunc())
 }
 
-func (o HandleSegmentCallbackFunc) String() string {
+func (o *HandleSegmentCallbackFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -1999,7 +1997,7 @@ func LoadHumanReadable(t task.Task, v HumanReadableSetter) {
 	v.SetHumanReadable(x.GetHumanReadable())
 }
 
-func (o HumanReadable) String() string {
+func (o *HumanReadable) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2065,7 +2063,7 @@ func LoadID(t task.Task, v IDSetter) {
 	v.SetID(x.GetID())
 }
 
-func (o ID) String() string {
+func (o *ID) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2131,7 +2129,7 @@ func LoadIgnoreExisting(t task.Task, v IgnoreExistingSetter) {
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
 }
 
-func (o IgnoreExisting) String() string {
+func (o *IgnoreExisting) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2197,7 +2195,7 @@ func LoadIncludeRegexp(t task.Task, v IncludeRegexpSetter) {
 	v.SetIncludeRegexp(x.GetIncludeRegexp())
 }
 
-func (o IncludeRegexp) String() string {
+func (o *IncludeRegexp) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2266,7 +2264,7 @@ func LoadIndex(t task.Task, v IndexSetter) {
 	v.SetIndex(x.GetIndex())
 }
 
-func (o Index) String() string {
+func (o *Index) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2275,16 +2273,16 @@ func (o Index) String() string {
 
 type IndexSegmenter struct {
 	valid bool
-	v     storage.IndexSegmenter
+	v     types.IndexSegmenter
 
 	l sync.RWMutex
 }
 
 type IndexSegmenterGetter interface {
-	GetIndexSegmenter() storage.IndexSegmenter
+	GetIndexSegmenter() types.IndexSegmenter
 }
 
-func (o *IndexSegmenter) GetIndexSegmenter() storage.IndexSegmenter {
+func (o *IndexSegmenter) GetIndexSegmenter() types.IndexSegmenter {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -2295,10 +2293,10 @@ func (o *IndexSegmenter) GetIndexSegmenter() storage.IndexSegmenter {
 }
 
 type IndexSegmenterSetter interface {
-	SetIndexSegmenter(storage.IndexSegmenter)
+	SetIndexSegmenter(types.IndexSegmenter)
 }
 
-func (o *IndexSegmenter) SetIndexSegmenter(v storage.IndexSegmenter) {
+func (o *IndexSegmenter) SetIndexSegmenter(v types.IndexSegmenter) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -2332,11 +2330,11 @@ func LoadIndexSegmenter(t task.Task, v IndexSegmenterSetter) {
 	v.SetIndexSegmenter(x.GetIndexSegmenter())
 }
 
-func (o IndexSegmenter) String() string {
+func (o *IndexSegmenter) String() string {
 	if !o.valid {
 		return ""
 	}
-	return o.v.(storage.Storager).String()
+	return o.v.(types.Storager).String()
 }
 
 type LongFormat struct {
@@ -2398,7 +2396,7 @@ func LoadLongFormat(t task.Task, v LongFormatSetter) {
 	v.SetLongFormat(x.GetLongFormat())
 }
 
-func (o LongFormat) String() string {
+func (o *LongFormat) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2464,7 +2462,7 @@ func LoadMD5Sum(t task.Task, v MD5SumSetter) {
 	v.SetMD5Sum(x.GetMD5Sum())
 }
 
-func (o MD5Sum) String() string {
+func (o *MD5Sum) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2530,7 +2528,7 @@ func LoadName(t task.Task, v NameSetter) {
 	v.SetName(x.GetName())
 }
 
-func (o Name) String() string {
+func (o *Name) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2596,7 +2594,7 @@ func LoadObject(t task.Task, v ObjectSetter) {
 	v.SetObject(x.GetObject())
 }
 
-func (o Object) String() string {
+func (o *Object) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2665,7 +2663,73 @@ func LoadObjectFunc(t task.Task, v ObjectFuncSetter) {
 	v.SetObjectFunc(x.GetObjectFunc())
 }
 
-func (o ObjectFunc) String() string {
+func (o *ObjectFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type ObjectIter struct {
+	valid bool
+	v     *types.ObjectIterator
+
+	l sync.RWMutex
+}
+
+type ObjectIterGetter interface {
+	GetObjectIter() *types.ObjectIterator
+}
+
+func (o *ObjectIter) GetObjectIter() *types.ObjectIterator {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ObjectIter value is not valid")
+	}
+	return o.v
+}
+
+type ObjectIterSetter interface {
+	SetObjectIter(*types.ObjectIterator)
+}
+
+func (o *ObjectIter) SetObjectIter(v *types.ObjectIterator) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ObjectIterValidator interface {
+	ValidateObjectIter() bool
+}
+
+func (o *ObjectIter) ValidateObjectIter() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadObjectIter(t task.Task, v ObjectIterSetter) {
+	x, ok := t.(interface {
+		ObjectIterGetter
+		ObjectIterValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateObjectIter() {
+		return
+	}
+
+	v.SetObjectIter(x.GetObjectIter())
+}
+
+func (o *ObjectIter) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2731,7 +2795,7 @@ func LoadOffset(t task.Task, v OffsetSetter) {
 	v.SetOffset(x.GetOffset())
 }
 
-func (o Offset) String() string {
+func (o *Offset) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2797,7 +2861,7 @@ func LoadPartNumber(t task.Task, v PartNumberSetter) {
 	v.SetPartNumber(x.GetPartNumber())
 }
 
-func (o PartNumber) String() string {
+func (o *PartNumber) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2863,7 +2927,7 @@ func LoadPartSize(t task.Task, v PartSizeSetter) {
 	v.SetPartSize(x.GetPartSize())
 }
 
-func (o PartSize) String() string {
+func (o *PartSize) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2929,7 +2993,7 @@ func LoadPartThreshold(t task.Task, v PartThresholdSetter) {
 	v.SetPartThreshold(x.GetPartThreshold())
 }
 
-func (o PartThreshold) String() string {
+func (o *PartThreshold) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -2995,7 +3059,7 @@ func LoadPassed(t task.Task, v PassedSetter) {
 	v.SetPassed(x.GetPassed())
 }
 
-func (o Passed) String() string {
+func (o *Passed) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3061,7 +3125,7 @@ func LoadPath(t task.Task, v PathSetter) {
 	v.SetPath(x.GetPath())
 }
 
-func (o Path) String() string {
+func (o *Path) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3070,16 +3134,16 @@ func (o Path) String() string {
 
 type PrefixLister struct {
 	valid bool
-	v     storage.PrefixLister
+	v     types.PrefixLister
 
 	l sync.RWMutex
 }
 
 type PrefixListerGetter interface {
-	GetPrefixLister() storage.PrefixLister
+	GetPrefixLister() types.PrefixLister
 }
 
-func (o *PrefixLister) GetPrefixLister() storage.PrefixLister {
+func (o *PrefixLister) GetPrefixLister() types.PrefixLister {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3090,10 +3154,10 @@ func (o *PrefixLister) GetPrefixLister() storage.PrefixLister {
 }
 
 type PrefixListerSetter interface {
-	SetPrefixLister(storage.PrefixLister)
+	SetPrefixLister(types.PrefixLister)
 }
 
-func (o *PrefixLister) SetPrefixLister(v storage.PrefixLister) {
+func (o *PrefixLister) SetPrefixLister(v types.PrefixLister) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3127,7 +3191,7 @@ func LoadPrefixLister(t task.Task, v PrefixListerSetter) {
 	v.SetPrefixLister(x.GetPrefixLister())
 }
 
-func (o PrefixLister) String() string {
+func (o *PrefixLister) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3136,16 +3200,16 @@ func (o PrefixLister) String() string {
 
 type PrefixSegmentsLister struct {
 	valid bool
-	v     storage.PrefixSegmentsLister
+	v     types.PrefixSegmentsLister
 
 	l sync.RWMutex
 }
 
 type PrefixSegmentsListerGetter interface {
-	GetPrefixSegmentsLister() storage.PrefixSegmentsLister
+	GetPrefixSegmentsLister() types.PrefixSegmentsLister
 }
 
-func (o *PrefixSegmentsLister) GetPrefixSegmentsLister() storage.PrefixSegmentsLister {
+func (o *PrefixSegmentsLister) GetPrefixSegmentsLister() types.PrefixSegmentsLister {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3156,10 +3220,10 @@ func (o *PrefixSegmentsLister) GetPrefixSegmentsLister() storage.PrefixSegmentsL
 }
 
 type PrefixSegmentsListerSetter interface {
-	SetPrefixSegmentsLister(storage.PrefixSegmentsLister)
+	SetPrefixSegmentsLister(types.PrefixSegmentsLister)
 }
 
-func (o *PrefixSegmentsLister) SetPrefixSegmentsLister(v storage.PrefixSegmentsLister) {
+func (o *PrefixSegmentsLister) SetPrefixSegmentsLister(v types.PrefixSegmentsLister) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3193,7 +3257,7 @@ func LoadPrefixSegmentsLister(t task.Task, v PrefixSegmentsListerSetter) {
 	v.SetPrefixSegmentsLister(x.GetPrefixSegmentsLister())
 }
 
-func (o PrefixSegmentsLister) String() string {
+func (o *PrefixSegmentsLister) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3202,16 +3266,16 @@ func (o PrefixSegmentsLister) String() string {
 
 type Reacher struct {
 	valid bool
-	v     storage.Reacher
+	v     types.Reacher
 
 	l sync.RWMutex
 }
 
 type ReacherGetter interface {
-	GetReacher() storage.Reacher
+	GetReacher() types.Reacher
 }
 
-func (o *Reacher) GetReacher() storage.Reacher {
+func (o *Reacher) GetReacher() types.Reacher {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3222,10 +3286,10 @@ func (o *Reacher) GetReacher() storage.Reacher {
 }
 
 type ReacherSetter interface {
-	SetReacher(storage.Reacher)
+	SetReacher(types.Reacher)
 }
 
-func (o *Reacher) SetReacher(v storage.Reacher) {
+func (o *Reacher) SetReacher(v types.Reacher) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3259,7 +3323,139 @@ func LoadReacher(t task.Task, v ReacherSetter) {
 	v.SetReacher(x.GetReacher())
 }
 
-func (o Reacher) String() string {
+func (o *Reacher) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type ReadCallBackFunc struct {
+	valid bool
+	v     func([]byte)
+
+	l sync.RWMutex
+}
+
+type ReadCallBackFuncGetter interface {
+	GetReadCallBackFunc() func([]byte)
+}
+
+func (o *ReadCallBackFunc) GetReadCallBackFunc() func([]byte) {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ReadCallBackFunc value is not valid")
+	}
+	return o.v
+}
+
+type ReadCallBackFuncSetter interface {
+	SetReadCallBackFunc(func([]byte))
+}
+
+func (o *ReadCallBackFunc) SetReadCallBackFunc(v func([]byte)) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ReadCallBackFuncValidator interface {
+	ValidateReadCallBackFunc() bool
+}
+
+func (o *ReadCallBackFunc) ValidateReadCallBackFunc() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadReadCallBackFunc(t task.Task, v ReadCallBackFuncSetter) {
+	x, ok := t.(interface {
+		ReadCallBackFuncGetter
+		ReadCallBackFuncValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateReadCallBackFunc() {
+		return
+	}
+
+	v.SetReadCallBackFunc(x.GetReadCallBackFunc())
+}
+
+func (o *ReadCallBackFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type ReadCloser struct {
+	valid bool
+	v     io.ReadCloser
+
+	l sync.RWMutex
+}
+
+type ReadCloserGetter interface {
+	GetReadCloser() io.ReadCloser
+}
+
+func (o *ReadCloser) GetReadCloser() io.ReadCloser {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("ReadCloser value is not valid")
+	}
+	return o.v
+}
+
+type ReadCloserSetter interface {
+	SetReadCloser(io.ReadCloser)
+}
+
+func (o *ReadCloser) SetReadCloser(v io.ReadCloser) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type ReadCloserValidator interface {
+	ValidateReadCloser() bool
+}
+
+func (o *ReadCloser) ValidateReadCloser() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadReadCloser(t task.Task, v ReadCloserSetter) {
+	x, ok := t.(interface {
+		ReadCloserGetter
+		ReadCloserValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateReadCloser() {
+		return
+	}
+
+	v.SetReadCloser(x.GetReadCloser())
+}
+
+func (o *ReadCloser) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3325,7 +3521,7 @@ func LoadReadableSize(t task.Task, v ReadableSizeSetter) {
 	v.SetReadableSize(x.GetReadableSize())
 }
 
-func (o ReadableSize) String() string {
+func (o *ReadableSize) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3391,7 +3587,7 @@ func LoadRecursive(t task.Task, v RecursiveSetter) {
 	v.SetRecursive(x.GetRecursive())
 }
 
-func (o Recursive) String() string {
+func (o *Recursive) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3457,7 +3653,7 @@ func LoadResult(t task.Task, v ResultSetter) {
 	v.SetResult(x.GetResult())
 }
 
-func (o Result) String() string {
+func (o *Result) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3523,7 +3719,7 @@ func LoadScheduleFunc(t task.Task, v ScheduleFuncSetter) {
 	v.SetScheduleFunc(x.GetScheduleFunc())
 }
 
-func (o ScheduleFunc) String() string {
+func (o *ScheduleFunc) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3589,7 +3785,7 @@ func LoadScheduler(t task.Task, v SchedulerSetter) {
 	v.SetScheduler(x.GetScheduler())
 }
 
-func (o Scheduler) String() string {
+func (o *Scheduler) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3598,16 +3794,16 @@ func (o Scheduler) String() string {
 
 type Segment struct {
 	valid bool
-	v     segment.Segment
+	v     types.Segment
 
 	l sync.RWMutex
 }
 
 type SegmentGetter interface {
-	GetSegment() segment.Segment
+	GetSegment() types.Segment
 }
 
-func (o *Segment) GetSegment() segment.Segment {
+func (o *Segment) GetSegment() types.Segment {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3618,10 +3814,10 @@ func (o *Segment) GetSegment() segment.Segment {
 }
 
 type SegmentSetter interface {
-	SetSegment(segment.Segment)
+	SetSegment(types.Segment)
 }
 
-func (o *Segment) SetSegment(v segment.Segment) {
+func (o *Segment) SetSegment(v types.Segment) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3655,7 +3851,7 @@ func LoadSegment(t task.Task, v SegmentSetter) {
 	v.SetSegment(x.GetSegment())
 }
 
-func (o Segment) String() string {
+func (o *Segment) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3664,16 +3860,16 @@ func (o Segment) String() string {
 
 type SegmentFunc struct {
 	valid bool
-	v     func(segment.Segment)
+	v     func(types.Segment)
 
 	l sync.RWMutex
 }
 
 type SegmentFuncGetter interface {
-	GetSegmentFunc() func(segment.Segment)
+	GetSegmentFunc() func(types.Segment)
 }
 
-func (o *SegmentFunc) GetSegmentFunc() func(segment.Segment) {
+func (o *SegmentFunc) GetSegmentFunc() func(types.Segment) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3684,10 +3880,10 @@ func (o *SegmentFunc) GetSegmentFunc() func(segment.Segment) {
 }
 
 type SegmentFuncSetter interface {
-	SetSegmentFunc(func(segment.Segment))
+	SetSegmentFunc(func(types.Segment))
 }
 
-func (o *SegmentFunc) SetSegmentFunc(v func(segment.Segment)) {
+func (o *SegmentFunc) SetSegmentFunc(v func(types.Segment)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3721,7 +3917,73 @@ func LoadSegmentFunc(t task.Task, v SegmentFuncSetter) {
 	v.SetSegmentFunc(x.GetSegmentFunc())
 }
 
-func (o SegmentFunc) String() string {
+func (o *SegmentFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type SegmentIter struct {
+	valid bool
+	v     *types.SegmentIterator
+
+	l sync.RWMutex
+}
+
+type SegmentIterGetter interface {
+	GetSegmentIter() *types.SegmentIterator
+}
+
+func (o *SegmentIter) GetSegmentIter() *types.SegmentIterator {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("SegmentIter value is not valid")
+	}
+	return o.v
+}
+
+type SegmentIterSetter interface {
+	SetSegmentIter(*types.SegmentIterator)
+}
+
+func (o *SegmentIter) SetSegmentIter(v *types.SegmentIterator) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type SegmentIterValidator interface {
+	ValidateSegmentIter() bool
+}
+
+func (o *SegmentIter) ValidateSegmentIter() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadSegmentIter(t task.Task, v SegmentIterSetter) {
+	x, ok := t.(interface {
+		SegmentIterGetter
+		SegmentIterValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateSegmentIter() {
+		return
+	}
+
+	v.SetSegmentIter(x.GetSegmentIter())
+}
+
+func (o *SegmentIter) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3730,16 +3992,16 @@ func (o SegmentFunc) String() string {
 
 type Service struct {
 	valid bool
-	v     storage.Servicer
+	v     types.Servicer
 
 	l sync.RWMutex
 }
 
 type ServiceGetter interface {
-	GetService() storage.Servicer
+	GetService() types.Servicer
 }
 
-func (o *Service) GetService() storage.Servicer {
+func (o *Service) GetService() types.Servicer {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -3750,10 +4012,10 @@ func (o *Service) GetService() storage.Servicer {
 }
 
 type ServiceSetter interface {
-	SetService(storage.Servicer)
+	SetService(types.Servicer)
 }
 
-func (o *Service) SetService(v storage.Servicer) {
+func (o *Service) SetService(v types.Servicer) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -3787,7 +4049,7 @@ func LoadService(t task.Task, v ServiceSetter) {
 	v.SetService(x.GetService())
 }
 
-func (o Service) String() string {
+func (o *Service) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3853,7 +4115,7 @@ func LoadSize(t task.Task, v SizeSetter) {
 	v.SetSize(x.GetSize())
 }
 
-func (o Size) String() string {
+func (o *Size) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3919,7 +4181,7 @@ func LoadSourceObject(t task.Task, v SourceObjectSetter) {
 	v.SetSourceObject(x.GetSourceObject())
 }
 
-func (o SourceObject) String() string {
+func (o *SourceObject) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3988,7 +4250,7 @@ func LoadSourcePath(t task.Task, v SourcePathSetter) {
 	v.SetSourcePath(x.GetSourcePath())
 }
 
-func (o SourcePath) String() string {
+func (o *SourcePath) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -3997,16 +4259,16 @@ func (o SourcePath) String() string {
 
 type SourceService struct {
 	valid bool
-	v     storage.Servicer
+	v     types.Servicer
 
 	l sync.RWMutex
 }
 
 type SourceServiceGetter interface {
-	GetSourceService() storage.Servicer
+	GetSourceService() types.Servicer
 }
 
-func (o *SourceService) GetSourceService() storage.Servicer {
+func (o *SourceService) GetSourceService() types.Servicer {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -4017,10 +4279,10 @@ func (o *SourceService) GetSourceService() storage.Servicer {
 }
 
 type SourceServiceSetter interface {
-	SetSourceService(storage.Servicer)
+	SetSourceService(types.Servicer)
 }
 
-func (o *SourceService) SetSourceService(v storage.Servicer) {
+func (o *SourceService) SetSourceService(v types.Servicer) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -4054,7 +4316,7 @@ func LoadSourceService(t task.Task, v SourceServiceSetter) {
 	v.SetSourceService(x.GetSourceService())
 }
 
-func (o SourceService) String() string {
+func (o *SourceService) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4063,16 +4325,16 @@ func (o SourceService) String() string {
 
 type SourceStorage struct {
 	valid bool
-	v     storage.Storager
+	v     types.Storager
 
 	l sync.RWMutex
 }
 
 type SourceStorageGetter interface {
-	GetSourceStorage() storage.Storager
+	GetSourceStorage() types.Storager
 }
 
-func (o *SourceStorage) GetSourceStorage() storage.Storager {
+func (o *SourceStorage) GetSourceStorage() types.Storager {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -4083,10 +4345,10 @@ func (o *SourceStorage) GetSourceStorage() storage.Storager {
 }
 
 type SourceStorageSetter interface {
-	SetSourceStorage(storage.Storager)
+	SetSourceStorage(types.Storager)
 }
 
-func (o *SourceStorage) SetSourceStorage(v storage.Storager) {
+func (o *SourceStorage) SetSourceStorage(v types.Storager) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -4120,7 +4382,7 @@ func LoadSourceStorage(t task.Task, v SourceStorageSetter) {
 	v.SetSourceStorage(x.GetSourceStorage())
 }
 
-func (o SourceStorage) String() string {
+func (o *SourceStorage) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4186,7 +4448,7 @@ func LoadSourceType(t task.Task, v SourceTypeSetter) {
 	v.SetSourceType(x.GetSourceType())
 }
 
-func (o SourceType) String() string {
+func (o *SourceType) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4195,16 +4457,16 @@ func (o SourceType) String() string {
 
 type Storage struct {
 	valid bool
-	v     storage.Storager
+	v     types.Storager
 
 	l sync.RWMutex
 }
 
 type StorageGetter interface {
-	GetStorage() storage.Storager
+	GetStorage() types.Storager
 }
 
-func (o *Storage) GetStorage() storage.Storager {
+func (o *Storage) GetStorage() types.Storager {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -4215,10 +4477,10 @@ func (o *Storage) GetStorage() storage.Storager {
 }
 
 type StorageSetter interface {
-	SetStorage(storage.Storager)
+	SetStorage(types.Storager)
 }
 
-func (o *Storage) SetStorage(v storage.Storager) {
+func (o *Storage) SetStorage(v types.Storager) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -4252,7 +4514,7 @@ func LoadStorage(t task.Task, v StorageSetter) {
 	v.SetStorage(x.GetStorage())
 }
 
-func (o Storage) String() string {
+func (o *Storage) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4261,16 +4523,16 @@ func (o Storage) String() string {
 
 type StorageInfo struct {
 	valid bool
-	v     info.StorageStatistic
+	v     types.StorageStatistic
 
 	l sync.RWMutex
 }
 
 type StorageInfoGetter interface {
-	GetStorageInfo() info.StorageStatistic
+	GetStorageInfo() types.StorageStatistic
 }
 
-func (o *StorageInfo) GetStorageInfo() info.StorageStatistic {
+func (o *StorageInfo) GetStorageInfo() types.StorageStatistic {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -4281,10 +4543,10 @@ func (o *StorageInfo) GetStorageInfo() info.StorageStatistic {
 }
 
 type StorageInfoSetter interface {
-	SetStorageInfo(info.StorageStatistic)
+	SetStorageInfo(types.StorageStatistic)
 }
 
-func (o *StorageInfo) SetStorageInfo(v info.StorageStatistic) {
+func (o *StorageInfo) SetStorageInfo(v types.StorageStatistic) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -4318,7 +4580,73 @@ func LoadStorageInfo(t task.Task, v StorageInfoSetter) {
 	v.SetStorageInfo(x.GetStorageInfo())
 }
 
-func (o StorageInfo) String() string {
+func (o *StorageInfo) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
+type StorageIter struct {
+	valid bool
+	v     *types.StoragerIterator
+
+	l sync.RWMutex
+}
+
+type StorageIterGetter interface {
+	GetStorageIter() *types.StoragerIterator
+}
+
+func (o *StorageIter) GetStorageIter() *types.StoragerIterator {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("StorageIter value is not valid")
+	}
+	return o.v
+}
+
+type StorageIterSetter interface {
+	SetStorageIter(*types.StoragerIterator)
+}
+
+func (o *StorageIter) SetStorageIter(v *types.StoragerIterator) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type StorageIterValidator interface {
+	ValidateStorageIter() bool
+}
+
+func (o *StorageIter) ValidateStorageIter() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadStorageIter(t task.Task, v StorageIterSetter) {
+	x, ok := t.(interface {
+		StorageIterGetter
+		StorageIterValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateStorageIter() {
+		return
+	}
+
+	v.SetStorageIter(x.GetStorageIter())
+}
+
+func (o *StorageIter) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4384,77 +4712,11 @@ func LoadStorageName(t task.Task, v StorageNameSetter) {
 	v.SetStorageName(x.GetStorageName())
 }
 
-func (o StorageName) String() string {
+func (o *StorageName) String() string {
 	if !o.valid {
 		return ""
 	}
 	return o.v
-}
-
-type StoragerFunc struct {
-	valid bool
-	v     storage.StoragerFunc
-
-	l sync.RWMutex
-}
-
-type StoragerFuncGetter interface {
-	GetStoragerFunc() storage.StoragerFunc
-}
-
-func (o *StoragerFunc) GetStoragerFunc() storage.StoragerFunc {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("StoragerFunc value is not valid")
-	}
-	return o.v
-}
-
-type StoragerFuncSetter interface {
-	SetStoragerFunc(storage.StoragerFunc)
-}
-
-func (o *StoragerFunc) SetStoragerFunc(v storage.StoragerFunc) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type StoragerFuncValidator interface {
-	ValidateStoragerFunc() bool
-}
-
-func (o *StoragerFunc) ValidateStoragerFunc() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadStoragerFunc(t task.Task, v StoragerFuncSetter) {
-	x, ok := t.(interface {
-		StoragerFuncGetter
-		StoragerFuncValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateStoragerFunc() {
-		return
-	}
-
-	v.SetStoragerFunc(x.GetStoragerFunc())
-}
-
-func (o StoragerFunc) String() string {
-	if !o.valid {
-		return ""
-	}
-	return ""
 }
 
 type TotalSize struct {
@@ -4516,7 +4778,7 @@ func LoadTotalSize(t task.Task, v TotalSizeSetter) {
 	v.SetTotalSize(x.GetTotalSize())
 }
 
-func (o TotalSize) String() string {
+func (o *TotalSize) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4582,7 +4844,7 @@ func LoadType(t task.Task, v TypeSetter) {
 	v.SetType(x.GetType())
 }
 
-func (o Type) String() string {
+func (o *Type) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4648,7 +4910,7 @@ func LoadURL(t task.Task, v URLSetter) {
 	v.SetURL(x.GetURL())
 }
 
-func (o URL) String() string {
+func (o *URL) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4714,7 +4976,7 @@ func LoadUpdate(t task.Task, v UpdateSetter) {
 	v.SetUpdate(x.GetUpdate())
 }
 
-func (o Update) String() string {
+func (o *Update) String() string {
 	if !o.valid {
 		return ""
 	}
@@ -4780,11 +5042,77 @@ func LoadWholeFile(t task.Task, v WholeFileSetter) {
 	v.SetWholeFile(x.GetWholeFile())
 }
 
-func (o WholeFile) String() string {
+func (o *WholeFile) String() string {
 	if !o.valid {
 		return ""
 	}
 	return strconv.FormatBool(o.v)
+}
+
+type WriteCloser struct {
+	valid bool
+	v     io.WriteCloser
+
+	l sync.RWMutex
+}
+
+type WriteCloserGetter interface {
+	GetWriteCloser() io.WriteCloser
+}
+
+func (o *WriteCloser) GetWriteCloser() io.WriteCloser {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("WriteCloser value is not valid")
+	}
+	return o.v
+}
+
+type WriteCloserSetter interface {
+	SetWriteCloser(io.WriteCloser)
+}
+
+func (o *WriteCloser) SetWriteCloser(v io.WriteCloser) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type WriteCloserValidator interface {
+	ValidateWriteCloser() bool
+}
+
+func (o *WriteCloser) ValidateWriteCloser() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadWriteCloser(t task.Task, v WriteCloserSetter) {
+	x, ok := t.(interface {
+		WriteCloserGetter
+		WriteCloserValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateWriteCloser() {
+		return
+	}
+
+	v.SetWriteCloser(x.GetWriteCloser())
+}
+
+func (o *WriteCloser) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Zone struct {
@@ -4846,7 +5174,7 @@ func LoadZone(t task.Task, v ZoneSetter) {
 	v.SetZone(x.GetZone())
 }
 
-func (o Zone) String() string {
+func (o *Zone) String() string {
 	if !o.valid {
 		return ""
 	}

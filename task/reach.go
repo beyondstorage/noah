@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/aos-dev/go-storage/v2/types/pairs"
+	"github.com/aos-dev/go-storage/v2/pairs"
 
 	"github.com/qingstor/noah/pkg/types"
 )

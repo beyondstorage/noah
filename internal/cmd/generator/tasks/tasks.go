@@ -173,13 +173,14 @@ func New{{ .Name }}(task task.Task) *{{ .Name }}Task {
 	t := &{{ .Name }}Task{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -300,16 +301,13 @@ var testPageTmpl = template.Must(template.New("testPage").Parse(`// Code generat
 package task
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/pkg/fault"
 )
 
-var _ types.Pool
 `))
 
 var testTmpl = template.Must(template.New("test").Funcs(funcs).Parse(`

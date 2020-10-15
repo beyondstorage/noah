@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	typ "github.com/aos-dev/go-storage/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -28,8 +27,6 @@ func TestListDirTask_run(t *testing.T) {
 	task.SetFault(fault.New())
 	task.SetDirLister(store)
 	task.SetPath(testPath)
-	task.SetDirFunc(func(*typ.Object) {})
-	task.SetFileFunc(func(*typ.Object) {})
 
 	store.EXPECT().ListDirWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
 		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
@@ -55,7 +52,6 @@ func TestListPrefixTask_run(t *testing.T) {
 	task.SetFault(fault.New())
 	task.SetPrefixLister(store)
 	task.SetPath(testPath)
-	task.SetObjectFunc(func(*typ.Object) {})
 
 	store.EXPECT().ListPrefixWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
 		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {
@@ -80,7 +76,6 @@ func TestListSegmentTask_run(t *testing.T) {
 	task.SetFault(fault.New())
 	task.SetPrefixSegmentsLister(segmenter)
 	task.SetPath(testPath)
-	task.SetSegmentFunc(func(segment segment.Segment) {})
 
 	segmenter.EXPECT().ListPrefixSegmentsWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
 		Do(func(ctx context.Context, path string, opts ...*typ.Pair) error {

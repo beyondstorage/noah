@@ -2,12 +2,14 @@ github.com/Xuanwo/go-bufferpool v0.0.0-20200622083641-bc954721ce54 h1:wA7f87ODtF
 github.com/Xuanwo/go-bufferpool v0.0.0-20200622083641-bc954721ce54/go.mod h1:Mle++9GGouhOwGj52i9PJLNAPmW2nb8PWBP7JJzNCzk=
 github.com/Xuanwo/navvy v0.0.0-20200811093125-d2896821f0d2 h1:oGya5YgvunubJ+JFAQkTpwAmGo6E55bykXxFu1NT2Bo=
 github.com/Xuanwo/navvy v0.0.0-20200811093125-d2896821f0d2/go.mod h1:FfMsXg0w9OrzdLvhDHGzdBx35cw1qTpKLcGNC8RtgQA=
-github.com/aos-dev/go-storage/v2 v2.0.0-20200701095044-534f1fbfb062 h1:GerKn/8KCo9CkUpJUjEYJGQFsQcAavqDoZBn3pLx+WE=
-github.com/aos-dev/go-storage/v2 v2.0.0-20200701095044-534f1fbfb062/go.mod h1:fdonF870IKNAqZMHnHr3gs/RImEqx9kjyJ33k4LtBEI=
+github.com/aos-dev/go-storage/v2 v2.0.0-20201014090157-eaa542995c9c h1:V0HJg9rVG6yM8xFOO7IQ/aAuRMXlTeV4ykbpf+JEv2E=
+github.com/aos-dev/go-storage/v2 v2.0.0-20201014090157-eaa542995c9c/go.mod h1:fdonF870IKNAqZMHnHr3gs/RImEqx9kjyJ33k4LtBEI=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/golang/mock v1.4.3 h1:GV+pQPG/EUUbkh47niozDcADz6go/dUwhVzdUQHIVRw=
 github.com/golang/mock v1.4.3/go.mod h1:UOMv5ysSaYNkG+OFQykRIcU/QvvxJf3p21QfJ2Bt3cw=
+github.com/golang/mock v1.4.4 h1:l75CXGRSwbaYNpl/Z2X1XIIAMSCquvXgpVZDhwEIJsc=
+github.com/golang/mock v1.4.4/go.mod h1:l3mdAwkq5BuhzHwde/uurv3sEJeZMXNpwsxVWU71h+4=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

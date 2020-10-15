@@ -44,13 +44,14 @@ func NewBetweenStorageCheck(task task.Task) *BetweenStorageCheckTask {
 	t := &BetweenStorageCheckTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -144,7 +145,7 @@ func (t *BetweenStorageCheckTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *BetweenStorageCheckTask) String() string {
-	return fmt.Sprintf("BetweenStorageCheckTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage)
+	return fmt.Sprintf("BetweenStorageCheckTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewBetweenStorageCheckTask will create a BetweenStorageCheckTask which meets task.Task.
@@ -183,13 +184,14 @@ func NewCopyDir(task task.Task) *CopyDirTask {
 	t := &CopyDirTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -288,7 +290,7 @@ func (t *CopyDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyDirTask) String() string {
-	return fmt.Sprintf("CopyDirTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.CheckTasks, t.HandleObjCallbackFunc, t.PartSize, t.PartThreshold)
+	return fmt.Sprintf("CopyDirTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.CheckTasks.String(), t.HandleObjCallbackFunc.String(), t.PartSize.String(), t.PartThreshold.String())
 }
 
 // NewCopyDirTask will create a CopyDirTask which meets task.Task.
@@ -315,6 +317,7 @@ type CopyFileTask struct {
 	// Optional Input value
 	types.CheckMD5
 	types.CheckTasks
+	types.DryRunFunc
 	types.HandleObjCallbackFunc
 	types.PartSize
 	types.PartThreshold
@@ -327,13 +330,14 @@ func NewCopyFile(task task.Task) *CopyFileTask {
 	t := &CopyFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -368,6 +372,7 @@ func (t *CopyFileTask) loadInput(task task.Task) {
 	// load optional fields
 	types.LoadCheckMD5(task, t)
 	types.LoadCheckTasks(task, t)
+	types.LoadDryRunFunc(task, t)
 	types.LoadHandleObjCallbackFunc(task, t)
 	types.LoadPartSize(task, t)
 	types.LoadPartThreshold(task, t)
@@ -432,7 +437,7 @@ func (t *CopyFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyFileTask) String() string {
-	return fmt.Sprintf("CopyFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.CheckTasks, t.HandleObjCallbackFunc, t.PartSize, t.PartThreshold)
+	return fmt.Sprintf("CopyFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, DryRunFunc: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.CheckTasks.String(), t.DryRunFunc.String(), t.HandleObjCallbackFunc.String(), t.PartSize.String(), t.PartThreshold.String())
 }
 
 // NewCopyFileTask will create a CopyFileTask which meets task.Task.
@@ -471,13 +476,14 @@ func NewCopyLargeFile(task task.Task) *CopyLargeFileTask {
 	t := &CopyLargeFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -577,7 +583,7 @@ func (t *CopyLargeFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyLargeFileTask) String() string {
-	return fmt.Sprintf("CopyLargeFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s, CheckMD5: %s, PartSize: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.TotalSize, t.CheckMD5, t.PartSize)
+	return fmt.Sprintf("CopyLargeFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s, CheckMD5: %s, PartSize: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.TotalSize.String(), t.CheckMD5.String(), t.PartSize.String())
 }
 
 // NewCopyLargeFileTask will create a CopyLargeFileTask which meets task.Task.
@@ -619,13 +625,14 @@ func NewCopyPartialFile(task task.Task) *CopyPartialFileTask {
 	t := &CopyPartialFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -740,7 +747,7 @@ func (t *CopyPartialFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialFileTask) String() string {
-	return fmt.Sprintf("CopyPartialFileTask {DestinationPath: %s, DestinationStorage: %s, Index: %s, Offset: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s, CheckMD5: %s}", t.DestinationPath, t.DestinationStorage, t.Index, t.Offset, t.PartSize, t.Segment, t.SourcePath, t.SourceStorage, t.TotalSize, t.CheckMD5)
+	return fmt.Sprintf("CopyPartialFileTask {DestinationPath: %s, DestinationStorage: %s, Index: %s, Offset: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s, CheckMD5: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Index.String(), t.Offset.String(), t.PartSize.String(), t.Segment.String(), t.SourcePath.String(), t.SourceStorage.String(), t.TotalSize.String(), t.CheckMD5.String())
 }
 
 // NewCopyPartialFileTask will create a CopyPartialFileTask which meets task.Task.
@@ -782,13 +789,14 @@ func NewCopyPartialStream(task task.Task) *CopyPartialStreamTask {
 	t := &CopyPartialStreamTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -895,7 +903,7 @@ func (t *CopyPartialStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialStreamTask) String() string {
-	return fmt.Sprintf("CopyPartialStreamTask {DestinationPath: %s, DestinationStorage: %s, Index: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s}", t.DestinationPath, t.DestinationStorage, t.Index, t.PartSize, t.Segment, t.SourcePath, t.SourceStorage, t.CheckMD5)
+	return fmt.Sprintf("CopyPartialStreamTask {DestinationPath: %s, DestinationStorage: %s, Index: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Index.String(), t.PartSize.String(), t.Segment.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String())
 }
 
 // NewCopyPartialStreamTask will create a CopyPartialStreamTask which meets task.Task.
@@ -931,13 +939,14 @@ func NewCopySingleFile(task task.Task) *CopySingleFileTask {
 	t := &CopySingleFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1036,7 +1045,7 @@ func (t *CopySingleFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySingleFileTask) String() string {
-	return fmt.Sprintf("CopySingleFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, MD5Sum: %s}", t.DestinationPath, t.DestinationStorage, t.Size, t.SourcePath, t.SourceStorage, t.MD5Sum)
+	return fmt.Sprintf("CopySingleFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, MD5Sum: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String(), t.MD5Sum.String())
 }
 
 // NewCopySingleFileTask will create a CopySingleFileTask which meets task.Task.
@@ -1073,13 +1082,14 @@ func NewCopySmallFile(task task.Task) *CopySmallFileTask {
 	t := &CopySmallFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1178,7 +1188,7 @@ func (t *CopySmallFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySmallFileTask) String() string {
-	return fmt.Sprintf("CopySmallFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s}", t.DestinationPath, t.DestinationStorage, t.Size, t.SourcePath, t.SourceStorage, t.CheckMD5)
+	return fmt.Sprintf("CopySmallFileTask {DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String())
 }
 
 // NewCopySmallFileTask will create a CopySmallFileTask which meets task.Task.
@@ -1216,13 +1226,14 @@ func NewCopyStream(task task.Task) *CopyStreamTask {
 	t := &CopyStreamTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1318,7 +1329,7 @@ func (t *CopyStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyStreamTask) String() string {
-	return fmt.Sprintf("CopyStreamTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, PartSize: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.PartSize)
+	return fmt.Sprintf("CopyStreamTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, PartSize: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.PartSize.String())
 }
 
 // NewCopyStreamTask will create a CopyStreamTask which meets task.Task.
@@ -1351,13 +1362,14 @@ func NewCreateStorage(task task.Task) *CreateStorageTask {
 	t := &CreateStorageTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1440,7 +1452,7 @@ func (t *CreateStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CreateStorageTask) String() string {
-	return fmt.Sprintf("CreateStorageTask {Service: %s, Zone: %s}", t.Service, t.Zone)
+	return fmt.Sprintf("CreateStorageTask {Service: %s, Zone: %s}", t.Service.String(), t.Zone.String())
 }
 
 // NewCreateStorageTask will create a CreateStorageTask which meets task.Task.
@@ -1473,13 +1485,14 @@ func NewDeleteDir(task task.Task) *DeleteDirTask {
 	t := &DeleteDirTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1566,7 +1579,7 @@ func (t *DeleteDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteDirTask) String() string {
-	return fmt.Sprintf("DeleteDirTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path, t.Storage, t.HandleObjCallbackFunc)
+	return fmt.Sprintf("DeleteDirTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path.String(), t.Storage.String(), t.HandleObjCallbackFunc.String())
 }
 
 // NewDeleteDirTask will create a DeleteDirTask which meets task.Task.
@@ -1599,13 +1612,14 @@ func NewDeleteFile(task task.Task) *DeleteFileTask {
 	t := &DeleteFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1692,7 +1706,7 @@ func (t *DeleteFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteFileTask) String() string {
-	return fmt.Sprintf("DeleteFileTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path, t.Storage, t.HandleObjCallbackFunc)
+	return fmt.Sprintf("DeleteFileTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path.String(), t.Storage.String(), t.HandleObjCallbackFunc.String())
 }
 
 // NewDeleteFileTask will create a DeleteFileTask which meets task.Task.
@@ -1725,13 +1739,14 @@ func NewDeletePrefix(task task.Task) *DeletePrefixTask {
 	t := &DeletePrefixTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1818,7 +1833,7 @@ func (t *DeletePrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeletePrefixTask) String() string {
-	return fmt.Sprintf("DeletePrefixTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path, t.Storage, t.HandleObjCallbackFunc)
+	return fmt.Sprintf("DeletePrefixTask {Path: %s, Storage: %s, HandleObjCallbackFunc: %s}", t.Path.String(), t.Storage.String(), t.HandleObjCallbackFunc.String())
 }
 
 // NewDeletePrefixTask will create a DeletePrefixTask which meets task.Task.
@@ -1851,13 +1866,14 @@ func NewDeleteSegment(task task.Task) *DeleteSegmentTask {
 	t := &DeleteSegmentTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -1944,7 +1960,7 @@ func (t *DeleteSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteSegmentTask) String() string {
-	return fmt.Sprintf("DeleteSegmentTask {PrefixSegmentsLister: %s, Segment: %s, HandleSegmentCallbackFunc: %s}", t.PrefixSegmentsLister, t.Segment, t.HandleSegmentCallbackFunc)
+	return fmt.Sprintf("DeleteSegmentTask {PrefixSegmentsLister: %s, Segment: %s, HandleSegmentCallbackFunc: %s}", t.PrefixSegmentsLister.String(), t.Segment.String(), t.HandleSegmentCallbackFunc.String())
 }
 
 // NewDeleteSegmentTask will create a DeleteSegmentTask which meets task.Task.
@@ -1980,13 +1996,14 @@ func NewDeleteStorage(task task.Task) *DeleteStorageTask {
 	t := &DeleteStorageTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2082,7 +2099,7 @@ func (t *DeleteStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteStorageTask) String() string {
-	return fmt.Sprintf("DeleteStorageTask {Force: %s, Service: %s, StorageName: %s, Zone: %s, HandleObjCallbackFunc: %s, HandleSegmentCallbackFunc: %s}", t.Force, t.Service, t.StorageName, t.Zone, t.HandleObjCallbackFunc, t.HandleSegmentCallbackFunc)
+	return fmt.Sprintf("DeleteStorageTask {Force: %s, Service: %s, StorageName: %s, Zone: %s, HandleObjCallbackFunc: %s, HandleSegmentCallbackFunc: %s}", t.Force.String(), t.Service.String(), t.StorageName.String(), t.Zone.String(), t.HandleObjCallbackFunc.String(), t.HandleSegmentCallbackFunc.String())
 }
 
 // NewDeleteStorageTask will create a DeleteStorageTask which meets task.Task.
@@ -2114,13 +2131,14 @@ func NewIsDestinationObjectExist(task task.Task) *IsDestinationObjectExistTask {
 	t := &IsDestinationObjectExistTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2202,7 +2220,7 @@ func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsDestinationObjectExistTask) String() string {
-	return fmt.Sprintf("IsDestinationObjectExistTask {DestinationObject: %s}", t.DestinationObject)
+	return fmt.Sprintf("IsDestinationObjectExistTask {DestinationObject: %s}", t.DestinationObject.String())
 }
 
 // NewIsDestinationObjectExistTask will create a IsDestinationObjectExistTask which meets task.Task.
@@ -2234,13 +2252,14 @@ func NewIsDestinationObjectNotExist(task task.Task) *IsDestinationObjectNotExist
 	t := &IsDestinationObjectNotExistTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2322,7 +2341,7 @@ func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsDestinationObjectNotExistTask) String() string {
-	return fmt.Sprintf("IsDestinationObjectNotExistTask {DestinationObject: %s}", t.DestinationObject)
+	return fmt.Sprintf("IsDestinationObjectNotExistTask {DestinationObject: %s}", t.DestinationObject.String())
 }
 
 // NewIsDestinationObjectNotExistTask will create a IsDestinationObjectNotExistTask which meets task.Task.
@@ -2355,13 +2374,14 @@ func NewIsSizeEqual(task task.Task) *IsSizeEqualTask {
 	t := &IsSizeEqualTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2447,7 +2467,7 @@ func (t *IsSizeEqualTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsSizeEqualTask) String() string {
-	return fmt.Sprintf("IsSizeEqualTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject, t.SourceObject)
+	return fmt.Sprintf("IsSizeEqualTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject.String(), t.SourceObject.String())
 }
 
 // NewIsSizeEqualTask will create a IsSizeEqualTask which meets task.Task.
@@ -2481,13 +2501,14 @@ func NewIsSourcePathExcludeInclude(task task.Task) *IsSourcePathExcludeIncludeTa
 	t := &IsSourcePathExcludeIncludeTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2571,7 +2592,7 @@ func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsSourcePathExcludeIncludeTask) String() string {
-	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {SourcePath: %s, ExcludeRegexp: %s, IncludeRegexp: %s}", t.SourcePath, t.ExcludeRegexp, t.IncludeRegexp)
+	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {SourcePath: %s, ExcludeRegexp: %s, IncludeRegexp: %s}", t.SourcePath.String(), t.ExcludeRegexp.String(), t.IncludeRegexp.String())
 }
 
 // NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets task.Task.
@@ -2604,13 +2625,14 @@ func NewIsUpdateAtGreater(task task.Task) *IsUpdateAtGreaterTask {
 	t := &IsUpdateAtGreaterTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2696,7 +2718,7 @@ func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsUpdateAtGreaterTask) String() string {
-	return fmt.Sprintf("IsUpdateAtGreaterTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject, t.SourceObject)
+	return fmt.Sprintf("IsUpdateAtGreaterTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject.String(), t.SourceObject.String())
 }
 
 // NewIsUpdateAtGreaterTask will create a IsUpdateAtGreaterTask which meets task.Task.
@@ -2715,14 +2737,13 @@ type ListDirTask struct {
 	types.FaultSyncer
 
 	// Required Input value
-	types.DirFunc
 	types.DirLister
-	types.FileFunc
 	types.Path
 
 	// Optional Input value
 
 	// Output value
+	types.ObjectIter
 }
 
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
@@ -2730,13 +2751,14 @@ func NewListDir(task task.Task) *ListDirTask {
 	t := &ListDirTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2747,14 +2769,8 @@ func NewListDir(task task.Task) *ListDirTask {
 
 // validateInput will validate all input before run task.
 func (t *ListDirTask) validateInput() {
-	if !t.ValidateDirFunc() {
-		panic(fmt.Errorf("Task ListDir value DirFunc is invalid"))
-	}
 	if !t.ValidateDirLister() {
 		panic(fmt.Errorf("Task ListDir value DirLister is invalid"))
-	}
-	if !t.ValidateFileFunc() {
-		panic(fmt.Errorf("Task ListDir value FileFunc is invalid"))
 	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListDir value Path is invalid"))
@@ -2764,9 +2780,7 @@ func (t *ListDirTask) validateInput() {
 // loadInput will check and load all input before new task.
 func (t *ListDirTask) loadInput(task task.Task) {
 	// load required fields
-	types.LoadDirFunc(task, t)
 	types.LoadDirLister(task, t)
-	types.LoadFileFunc(task, t)
 	types.LoadPath(task, t)
 	// load optional fields
 }
@@ -2830,7 +2844,7 @@ func (t *ListDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListDirTask) String() string {
-	return fmt.Sprintf("ListDirTask {DirFunc: %s, DirLister: %s, FileFunc: %s, Path: %s}", t.DirFunc, t.DirLister, t.FileFunc, t.Path)
+	return fmt.Sprintf("ListDirTask {DirLister: %s, Path: %s}", t.DirLister.String(), t.Path.String())
 }
 
 // NewListDirTask will create a ListDirTask which meets task.Task.
@@ -2849,13 +2863,13 @@ type ListPrefixTask struct {
 	types.FaultSyncer
 
 	// Required Input value
-	types.ObjectFunc
 	types.Path
 	types.PrefixLister
 
 	// Optional Input value
 
 	// Output value
+	types.ObjectIter
 }
 
 // NewListPrefix will create a ListPrefixTask struct and fetch inherited data from parent task.
@@ -2863,13 +2877,14 @@ func NewListPrefix(task task.Task) *ListPrefixTask {
 	t := &ListPrefixTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -2880,9 +2895,6 @@ func NewListPrefix(task task.Task) *ListPrefixTask {
 
 // validateInput will validate all input before run task.
 func (t *ListPrefixTask) validateInput() {
-	if !t.ValidateObjectFunc() {
-		panic(fmt.Errorf("Task ListPrefix value ObjectFunc is invalid"))
-	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListPrefix value Path is invalid"))
 	}
@@ -2894,7 +2906,6 @@ func (t *ListPrefixTask) validateInput() {
 // loadInput will check and load all input before new task.
 func (t *ListPrefixTask) loadInput(task task.Task) {
 	// load required fields
-	types.LoadObjectFunc(task, t)
 	types.LoadPath(task, t)
 	types.LoadPrefixLister(task, t)
 	// load optional fields
@@ -2959,7 +2970,7 @@ func (t *ListPrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListPrefixTask) String() string {
-	return fmt.Sprintf("ListPrefixTask {ObjectFunc: %s, Path: %s, PrefixLister: %s}", t.ObjectFunc, t.Path, t.PrefixLister)
+	return fmt.Sprintf("ListPrefixTask {Path: %s, PrefixLister: %s}", t.Path.String(), t.PrefixLister.String())
 }
 
 // NewListPrefixTask will create a ListPrefixTask which meets task.Task.
@@ -2980,11 +2991,11 @@ type ListSegmentTask struct {
 	// Required Input value
 	types.Path
 	types.PrefixSegmentsLister
-	types.SegmentFunc
 
 	// Optional Input value
 
 	// Output value
+	types.SegmentIter
 }
 
 // NewListSegment will create a ListSegmentTask struct and fetch inherited data from parent task.
@@ -2992,13 +3003,14 @@ func NewListSegment(task task.Task) *ListSegmentTask {
 	t := &ListSegmentTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3015,9 +3027,6 @@ func (t *ListSegmentTask) validateInput() {
 	if !t.ValidatePrefixSegmentsLister() {
 		panic(fmt.Errorf("Task ListSegment value PrefixSegmentsLister is invalid"))
 	}
-	if !t.ValidateSegmentFunc() {
-		panic(fmt.Errorf("Task ListSegment value SegmentFunc is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
@@ -3025,7 +3034,6 @@ func (t *ListSegmentTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadPrefixSegmentsLister(task, t)
-	types.LoadSegmentFunc(task, t)
 	// load optional fields
 }
 
@@ -3088,7 +3096,7 @@ func (t *ListSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListSegmentTask) String() string {
-	return fmt.Sprintf("ListSegmentTask {Path: %s, PrefixSegmentsLister: %s, SegmentFunc: %s}", t.Path, t.PrefixSegmentsLister, t.SegmentFunc)
+	return fmt.Sprintf("ListSegmentTask {Path: %s, PrefixSegmentsLister: %s}", t.Path.String(), t.PrefixSegmentsLister.String())
 }
 
 // NewListSegmentTask will create a ListSegmentTask which meets task.Task.
@@ -3108,12 +3116,12 @@ type ListStorageTask struct {
 
 	// Required Input value
 	types.Service
-	types.StoragerFunc
 
 	// Optional Input value
 	types.Zone
 
 	// Output value
+	types.StorageIter
 }
 
 // NewListStorage will create a ListStorageTask struct and fetch inherited data from parent task.
@@ -3121,13 +3129,14 @@ func NewListStorage(task task.Task) *ListStorageTask {
 	t := &ListStorageTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3141,16 +3150,12 @@ func (t *ListStorageTask) validateInput() {
 	if !t.ValidateService() {
 		panic(fmt.Errorf("Task ListStorage value Service is invalid"))
 	}
-	if !t.ValidateStoragerFunc() {
-		panic(fmt.Errorf("Task ListStorage value StoragerFunc is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
 func (t *ListStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadService(task, t)
-	types.LoadStoragerFunc(task, t)
 	// load optional fields
 	types.LoadZone(task, t)
 }
@@ -3214,7 +3219,7 @@ func (t *ListStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListStorageTask) String() string {
-	return fmt.Sprintf("ListStorageTask {Service: %s, StoragerFunc: %s, Zone: %s}", t.Service, t.StoragerFunc, t.Zone)
+	return fmt.Sprintf("ListStorageTask {Service: %s, Zone: %s}", t.Service.String(), t.Zone.String())
 }
 
 // NewListStorageTask will create a ListStorageTask which meets task.Task.
@@ -3249,13 +3254,14 @@ func NewMD5SumFile(task task.Task) *MD5SumFileTask {
 	t := &MD5SumFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3349,7 +3355,7 @@ func (t *MD5SumFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MD5SumFileTask) String() string {
-	return fmt.Sprintf("MD5SumFileTask {Offset: %s, Path: %s, Size: %s, Storage: %s}", t.Offset, t.Path, t.Size, t.Storage)
+	return fmt.Sprintf("MD5SumFileTask {Offset: %s, Path: %s, Size: %s, Storage: %s}", t.Offset.String(), t.Path.String(), t.Size.String(), t.Storage.String())
 }
 
 // NewMD5SumFileTask will create a MD5SumFileTask which meets task.Task.
@@ -3381,13 +3387,14 @@ func NewMD5SumStream(task task.Task) *MD5SumStreamTask {
 	t := &MD5SumStreamTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3469,7 +3476,7 @@ func (t *MD5SumStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MD5SumStreamTask) String() string {
-	return fmt.Sprintf("MD5SumStreamTask {Content: %s}", t.Content)
+	return fmt.Sprintf("MD5SumStreamTask {Content: %s}", t.Content.String())
 }
 
 // NewMD5SumStreamTask will create a MD5SumStreamTask which meets task.Task.
@@ -3508,13 +3515,14 @@ func NewMoveDir(task task.Task) *MoveDirTask {
 	t := &MoveDirTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3613,7 +3621,7 @@ func (t *MoveDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveDirTask) String() string {
-	return fmt.Sprintf("MoveDirTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.CheckTasks, t.HandleObjCallbackFunc, t.PartSize, t.PartThreshold)
+	return fmt.Sprintf("MoveDirTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.CheckTasks.String(), t.HandleObjCallbackFunc.String(), t.PartSize.String(), t.PartThreshold.String())
 }
 
 // NewMoveDirTask will create a MoveDirTask which meets task.Task.
@@ -3652,13 +3660,14 @@ func NewMoveFile(task task.Task) *MoveFileTask {
 	t := &MoveFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3757,7 +3766,7 @@ func (t *MoveFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveFileTask) String() string {
-	return fmt.Sprintf("MoveFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.CheckTasks, t.HandleObjCallbackFunc, t.PartSize, t.PartThreshold)
+	return fmt.Sprintf("MoveFileTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.CheckTasks.String(), t.HandleObjCallbackFunc.String(), t.PartSize.String(), t.PartThreshold.String())
 }
 
 // NewMoveFileTask will create a MoveFileTask which meets task.Task.
@@ -3791,13 +3800,14 @@ func NewReachFile(task task.Task) *ReachFileTask {
 	t := &ReachFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -3887,12 +3897,148 @@ func (t *ReachFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ReachFileTask) String() string {
-	return fmt.Sprintf("ReachFileTask {Expire: %s, Path: %s, Reacher: %s}", t.Expire, t.Path, t.Reacher)
+	return fmt.Sprintf("ReachFileTask {Expire: %s, Path: %s, Reacher: %s}", t.Expire.String(), t.Path.String(), t.Reacher.String())
 }
 
 // NewReachFileTask will create a ReachFileTask which meets task.Task.
 func NewReachFileTask(task task.Task) task.Task {
 	return NewReachFile(task)
+}
+
+// ReadFileTask will read file from storage.
+type ReadFileTask struct {
+	wg *sync.WaitGroup
+
+	// Predefined value
+	types.Fault
+	types.ID
+	types.CallbackFunc
+	types.FaultSyncer
+
+	// Required Input value
+	types.Path
+	types.Storage
+	types.WriteCloser
+
+	// Optional Input value
+	types.Offset
+	types.ReadCallBackFunc
+	types.Size
+
+	// Output value
+}
+
+// NewReadFile will create a ReadFileTask struct and fetch inherited data from parent task.
+func NewReadFile(task task.Task) *ReadFileTask {
+	t := &ReadFileTask{}
+	t.wg = new(sync.WaitGroup)
+	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
+	t.SetFaultSyncer(fault.NewSyncer())
+
+	go func() {
+		for err := range t.GetFaultSyncer().GetErrChan() {
+			t.GetFault().Append(err)
+		}
+		t.GetFaultSyncer().Wait()
+	}()
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *ReadFileTask) validateInput() {
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task ReadFile value Path is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task ReadFile value Storage is invalid"))
+	}
+	if !t.ValidateWriteCloser() {
+		panic(fmt.Errorf("Task ReadFile value WriteCloser is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *ReadFileTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPath(task, t)
+	types.LoadStorage(task, t)
+	types.LoadWriteCloser(task, t)
+	// load optional fields
+	types.LoadOffset(task, t)
+	types.LoadReadCallBackFunc(task, t)
+	types.LoadSize(task, t)
+}
+
+// Sync run sub task directly
+func (t *ReadFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ReadFileTask) Async(ctx context.Context, st task.Task) {
+	t.wg.Add(1)
+	go func() {
+		defer t.wg.Done()
+		if err := st.Run(ctx); err != nil {
+			t.GetFaultSyncer().GetErrChan() <- err
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ReadFileTask) Await() {
+	t.wg.Wait()
+}
+
+// Run implement task.Task
+func (t *ReadFileTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.GetFaultSyncer().GetErrChan() <- err
+	}
+
+	t.Await()
+	t.GetFaultSyncer().Finish()
+	if t.GetFault().HasError() {
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
+		return t.GetFault()
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *ReadFileTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *ReadFileTask) String() string {
+	return fmt.Sprintf("ReadFileTask {Path: %s, Storage: %s, WriteCloser: %s, Offset: %s, ReadCallBackFunc: %s, Size: %s}", t.Path.String(), t.Storage.String(), t.WriteCloser.String(), t.Offset.String(), t.ReadCallBackFunc.String(), t.Size.String())
+}
+
+// NewReadFileTask will create a ReadFileTask which meets task.Task.
+func NewReadFileTask(task task.Task) task.Task {
+	return NewReadFile(task)
 }
 
 // SegmentCompleteTask will complete a segment.
@@ -3920,13 +4066,14 @@ func NewSegmentComplete(task task.Task) *SegmentCompleteTask {
 	t := &SegmentCompleteTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4016,7 +4163,7 @@ func (t *SegmentCompleteTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentCompleteTask) String() string {
-	return fmt.Sprintf("SegmentCompleteTask {IndexSegmenter: %s, Path: %s, Segment: %s}", t.IndexSegmenter, t.Path, t.Segment)
+	return fmt.Sprintf("SegmentCompleteTask {IndexSegmenter: %s, Path: %s, Segment: %s}", t.IndexSegmenter.String(), t.Path.String(), t.Segment.String())
 }
 
 // NewSegmentCompleteTask will create a SegmentCompleteTask which meets task.Task.
@@ -4055,13 +4202,14 @@ func NewSegmentFileCopy(task task.Task) *SegmentFileCopyTask {
 	t := &SegmentFileCopyTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4175,7 +4323,7 @@ func (t *SegmentFileCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentFileCopyTask) String() string {
-	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationIndexSegmenter, t.DestinationPath, t.Index, t.MD5Sum, t.Offset, t.Segment, t.Size, t.SourcePath, t.SourceStorage)
+	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewSegmentFileCopyTask will create a SegmentFileCopyTask which meets task.Task.
@@ -4209,13 +4357,14 @@ func NewSegmentInit(task task.Task) *SegmentInitTask {
 	t := &SegmentInitTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4305,7 +4454,7 @@ func (t *SegmentInitTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentInitTask) String() string {
-	return fmt.Sprintf("SegmentInitTask {IndexSegmenter: %s, PartSize: %s, Path: %s}", t.IndexSegmenter, t.PartSize, t.Path)
+	return fmt.Sprintf("SegmentInitTask {IndexSegmenter: %s, PartSize: %s, Path: %s}", t.IndexSegmenter.String(), t.PartSize.String(), t.Path.String())
 }
 
 // NewSegmentInitTask will create a SegmentInitTask which meets task.Task.
@@ -4343,13 +4492,14 @@ func NewSegmentStreamCopy(task task.Task) *SegmentStreamCopyTask {
 	t := &SegmentStreamCopyTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4459,7 +4609,7 @@ func (t *SegmentStreamCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentStreamCopyTask) String() string {
-	return fmt.Sprintf("SegmentStreamCopyTask {Content: %s, DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s}", t.Content, t.DestinationIndexSegmenter, t.DestinationPath, t.Index, t.MD5Sum, t.Offset, t.Segment, t.Size)
+	return fmt.Sprintf("SegmentStreamCopyTask {Content: %s, DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s}", t.Content.String(), t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String())
 }
 
 // NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets task.Task.
@@ -4496,13 +4646,14 @@ func NewSegmentStreamInit(task task.Task) *SegmentStreamInitTask {
 	t := &SegmentStreamInitTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4596,7 +4747,7 @@ func (t *SegmentStreamInitTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentStreamInitTask) String() string {
-	return fmt.Sprintf("SegmentStreamInitTask {BytesPool: %s, PartSize: %s, SourcePath: %s, SourceStorage: %s}", t.BytesPool, t.PartSize, t.SourcePath, t.SourceStorage)
+	return fmt.Sprintf("SegmentStreamInitTask {BytesPool: %s, PartSize: %s, SourcePath: %s, SourceStorage: %s}", t.BytesPool.String(), t.PartSize.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewSegmentStreamInitTask will create a SegmentStreamInitTask which meets task.Task.
@@ -4629,13 +4780,14 @@ func NewStatFile(task task.Task) *StatFileTask {
 	t := &StatFileTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4721,7 +4873,7 @@ func (t *StatFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *StatFileTask) String() string {
-	return fmt.Sprintf("StatFileTask {Path: %s, Storage: %s}", t.Path, t.Storage)
+	return fmt.Sprintf("StatFileTask {Path: %s, Storage: %s}", t.Path.String(), t.Storage.String())
 }
 
 // NewStatFileTask will create a StatFileTask which meets task.Task.
@@ -4753,13 +4905,14 @@ func NewStatStorage(task task.Task) *StatStorageTask {
 	t := &StatStorageTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4841,7 +4994,7 @@ func (t *StatStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *StatStorageTask) String() string {
-	return fmt.Sprintf("StatStorageTask {Storage: %s}", t.Storage)
+	return fmt.Sprintf("StatStorageTask {Storage: %s}", t.Storage.String())
 }
 
 // NewStatStorageTask will create a StatStorageTask which meets task.Task.
@@ -4882,13 +5035,14 @@ func NewSync(task task.Task) *SyncTask {
 	t := &SyncTask{}
 	t.wg = new(sync.WaitGroup)
 	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
 	t.SetFaultSyncer(fault.NewSyncer())
 
 	go func() {
 		for err := range t.GetFaultSyncer().GetErrChan() {
 			t.GetFault().Append(err)
 		}
-		t.GetFaultSyncer().Finish()
+		t.GetFaultSyncer().Wait()
 	}()
 
 	t.loadInput(task)
@@ -4989,10 +5143,290 @@ func (t *SyncTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SyncTask) String() string {
-	return fmt.Sprintf("SyncTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, DryRunFunc: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s, Recursive: %s}", t.DestinationPath, t.DestinationStorage, t.SourcePath, t.SourceStorage, t.CheckMD5, t.CheckTasks, t.DryRunFunc, t.HandleObjCallbackFunc, t.PartSize, t.PartThreshold, t.Recursive)
+	return fmt.Sprintf("SyncTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, CheckMD5: %s, CheckTasks: %s, DryRunFunc: %s, HandleObjCallbackFunc: %s, PartSize: %s, PartThreshold: %s, Recursive: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.CheckMD5.String(), t.CheckTasks.String(), t.DryRunFunc.String(), t.HandleObjCallbackFunc.String(), t.PartSize.String(), t.PartThreshold.String(), t.Recursive.String())
 }
 
 // NewSyncTask will create a SyncTask which meets task.Task.
 func NewSyncTask(task task.Task) task.Task {
 	return NewSync(task)
+}
+
+// WriteFileTask will write file to storage.
+type WriteFileTask struct {
+	wg *sync.WaitGroup
+
+	// Predefined value
+	types.Fault
+	types.ID
+	types.CallbackFunc
+	types.FaultSyncer
+
+	// Required Input value
+	types.Path
+	types.ReadCloser
+	types.Storage
+
+	// Optional Input value
+	types.Offset
+	types.ReadCallBackFunc
+	types.Size
+
+	// Output value
+}
+
+// NewWriteFile will create a WriteFileTask struct and fetch inherited data from parent task.
+func NewWriteFile(task task.Task) *WriteFileTask {
+	t := &WriteFileTask{}
+	t.wg = new(sync.WaitGroup)
+	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
+	t.SetFaultSyncer(fault.NewSyncer())
+
+	go func() {
+		for err := range t.GetFaultSyncer().GetErrChan() {
+			t.GetFault().Append(err)
+		}
+		t.GetFaultSyncer().Wait()
+	}()
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *WriteFileTask) validateInput() {
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task WriteFile value Path is invalid"))
+	}
+	if !t.ValidateReadCloser() {
+		panic(fmt.Errorf("Task WriteFile value ReadCloser is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task WriteFile value Storage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *WriteFileTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPath(task, t)
+	types.LoadReadCloser(task, t)
+	types.LoadStorage(task, t)
+	// load optional fields
+	types.LoadOffset(task, t)
+	types.LoadReadCallBackFunc(task, t)
+	types.LoadSize(task, t)
+}
+
+// Sync run sub task directly
+func (t *WriteFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *WriteFileTask) Async(ctx context.Context, st task.Task) {
+	t.wg.Add(1)
+	go func() {
+		defer t.wg.Done()
+		if err := st.Run(ctx); err != nil {
+			t.GetFaultSyncer().GetErrChan() <- err
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *WriteFileTask) Await() {
+	t.wg.Wait()
+}
+
+// Run implement task.Task
+func (t *WriteFileTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.GetFaultSyncer().GetErrChan() <- err
+	}
+
+	t.Await()
+	t.GetFaultSyncer().Finish()
+	if t.GetFault().HasError() {
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
+		return t.GetFault()
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *WriteFileTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *WriteFileTask) String() string {
+	return fmt.Sprintf("WriteFileTask {Path: %s, ReadCloser: %s, Storage: %s, Offset: %s, ReadCallBackFunc: %s, Size: %s}", t.Path.String(), t.ReadCloser.String(), t.Storage.String(), t.Offset.String(), t.ReadCallBackFunc.String(), t.Size.String())
+}
+
+// NewWriteFileTask will create a WriteFileTask which meets task.Task.
+func NewWriteFileTask(task task.Task) task.Task {
+	return NewWriteFile(task)
+}
+
+// WriteSegmentTask will write segment to storage.
+type WriteSegmentTask struct {
+	wg *sync.WaitGroup
+
+	// Predefined value
+	types.Fault
+	types.ID
+	types.CallbackFunc
+	types.FaultSyncer
+
+	// Required Input value
+	types.Index
+	types.IndexSegmenter
+	types.ReadCloser
+	types.Segment
+	types.Size
+
+	// Optional Input value
+	types.Path
+	types.ReadCallBackFunc
+
+	// Output value
+}
+
+// NewWriteSegment will create a WriteSegmentTask struct and fetch inherited data from parent task.
+func NewWriteSegment(task task.Task) *WriteSegmentTask {
+	t := &WriteSegmentTask{}
+	t.wg = new(sync.WaitGroup)
+	t.SetID(uuid.New().String())
+	t.SetFault(fault.New())
+	t.SetFaultSyncer(fault.NewSyncer())
+
+	go func() {
+		for err := range t.GetFaultSyncer().GetErrChan() {
+			t.GetFault().Append(err)
+		}
+		t.GetFaultSyncer().Wait()
+	}()
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *WriteSegmentTask) validateInput() {
+	if !t.ValidateIndex() {
+		panic(fmt.Errorf("Task WriteSegment value Index is invalid"))
+	}
+	if !t.ValidateIndexSegmenter() {
+		panic(fmt.Errorf("Task WriteSegment value IndexSegmenter is invalid"))
+	}
+	if !t.ValidateReadCloser() {
+		panic(fmt.Errorf("Task WriteSegment value ReadCloser is invalid"))
+	}
+	if !t.ValidateSegment() {
+		panic(fmt.Errorf("Task WriteSegment value Segment is invalid"))
+	}
+	if !t.ValidateSize() {
+		panic(fmt.Errorf("Task WriteSegment value Size is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *WriteSegmentTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadIndex(task, t)
+	types.LoadIndexSegmenter(task, t)
+	types.LoadReadCloser(task, t)
+	types.LoadSegment(task, t)
+	types.LoadSize(task, t)
+	// load optional fields
+	types.LoadPath(task, t)
+	types.LoadReadCallBackFunc(task, t)
+}
+
+// Sync run sub task directly
+func (t *WriteSegmentTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *WriteSegmentTask) Async(ctx context.Context, st task.Task) {
+	t.wg.Add(1)
+	go func() {
+		defer t.wg.Done()
+		if err := st.Run(ctx); err != nil {
+			t.GetFaultSyncer().GetErrChan() <- err
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *WriteSegmentTask) Await() {
+	t.wg.Wait()
+}
+
+// Run implement task.Task
+func (t *WriteSegmentTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.GetFaultSyncer().GetErrChan() <- err
+	}
+
+	t.Await()
+	t.GetFaultSyncer().Finish()
+	if t.GetFault().HasError() {
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
+		return t.GetFault()
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *WriteSegmentTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *WriteSegmentTask) String() string {
+	return fmt.Sprintf("WriteSegmentTask {Index: %s, IndexSegmenter: %s, ReadCloser: %s, Segment: %s, Size: %s, Path: %s, ReadCallBackFunc: %s}", t.Index.String(), t.IndexSegmenter.String(), t.ReadCloser.String(), t.Segment.String(), t.Size.String(), t.Path.String(), t.ReadCallBackFunc.String())
+}
+
+// NewWriteSegmentTask will create a WriteSegmentTask which meets task.Task.
+func NewWriteSegmentTask(task task.Task) task.Task {
+	return NewWriteSegment(task)
 }

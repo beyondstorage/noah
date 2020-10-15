@@ -3,50 +3,60 @@ package task
 import (
 	"context"
 
-	"github.com/aos-dev/go-storage/v2"
-	"github.com/aos-dev/go-storage/v2/types/pairs"
+	"github.com/aos-dev/go-storage/v2/pairs"
+	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/pkg/types"
 )
 
 func (t *ListDirTask) new() {}
 func (t *ListDirTask) run(ctx context.Context) error {
-	err := t.GetDirLister().ListDirWithContext(
-		ctx, t.GetPath(), pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
+	it, err := t.GetDirLister().ListDirWithContext(
+		ctx, t.GetPath())
+	// , pairs.WithDirFunc(t.GetDirFunc()), pairs.WithFileFunc(t.GetFileFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
+	t.SetObjectIter(it)
 	return nil
 }
 
 func (t *ListPrefixTask) new() {}
 func (t *ListPrefixTask) run(ctx context.Context) error {
-	err := t.GetPrefixLister().ListPrefixWithContext(
-		ctx, t.GetPath(), pairs.WithObjectFunc(t.GetObjectFunc()))
+	it, err := t.GetPrefixLister().ListPrefixWithContext(
+		ctx, t.GetPath())
+	// , pairs.WithObjectFunc(t.GetObjectFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
+	t.SetObjectIter(it)
 	return nil
 }
 
 func (t *ListSegmentTask) new() {}
 func (t *ListSegmentTask) run(ctx context.Context) error {
-	err := t.GetPrefixSegmentsLister().ListPrefixSegmentsWithContext(
-		ctx, t.GetPath(), pairs.WithSegmentFunc(t.GetSegmentFunc()))
+	it, err := t.GetPrefixSegmentsLister().ListPrefixSegmentsWithContext(
+		ctx, t.GetPath())
+	// , pairs.WithSegmentFunc(t.GetSegmentFunc()))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
+	t.SetSegmentIter(it)
 	return nil
 }
 
 func (t *ListStorageTask) new() {}
 func (t *ListStorageTask) run(ctx context.Context) error {
-	err := t.GetService().ListWithContext(
-		ctx, pairs.WithLocation(t.GetZone()), pairs.WithStoragerFunc(func(storager storage.Storager) {
-			t.GetStoragerFunc()(storager)
-		}))
+	ps := make([]*typ.Pair, 0)
+	if t.ValidateZone() {
+		ps = append(ps, pairs.WithLocation(t.GetZone()))
+	}
+
+	it, err := t.GetService().ListWithContext(
+		ctx, ps...)
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}
+	t.SetStorageIter(it)
 	return nil
 }

@@ -2,11 +2,10 @@ package task
 
 import (
 	"context"
+	"errors"
 
-	"github.com/aos-dev/go-storage/v2"
-	"github.com/aos-dev/go-storage/v2/pkg/segment"
+	"github.com/aos-dev/go-storage/v2/pairs"
 	typ "github.com/aos-dev/go-storage/v2/types"
-	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
@@ -28,25 +27,44 @@ func (t *DeleteDirTask) run(ctx context.Context) error {
 		return err
 	}
 
-	x.SetFileFunc(func(o *typ.Object) {
-		sf := NewDeleteFile(t)
-		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallbackFunc()(o)
-			})
-		}
-		t.Async(ctx, sf)
-	})
-	x.SetDirFunc(func(o *typ.Object) {
-		sf := NewDeleteDir(t)
-		sf.SetPath(o.Name)
-		t.Sync(ctx, sf)
-	})
 	if err := t.Sync(ctx, x); err != nil {
 		return err
 	}
 
+	it := x.GetObjectIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
+			}
+			return types.NewErrUnhandled(err)
+		}
+		switch obj.Type {
+		case typ.ObjectTypeFile:
+			sf := NewDeleteFile(t)
+			sf.SetPath(obj.Name)
+			if t.ValidateHandleObjCallbackFunc() {
+				sf.SetCallbackFunc(func() {
+					t.GetHandleObjCallbackFunc()(obj)
+				})
+			}
+			t.Async(ctx, sf)
+		case typ.ObjectTypeDir:
+			sf := NewDeleteDir(t)
+			sf.SetPath(obj.Name)
+			t.Async(ctx, sf)
+		default:
+			return types.NewErrObjectTypeInvalid(nil, obj)
+		}
+	}
+
+	// Make sure all objects in current dir deleted.
+	t.Await()
+	// if meet error, not continue run delete itself
+	if t.GetFault().HasError() {
+		return nil
+	}
 	// after delete all files in this dir, delete dir itself as a file, see issue #43
 	dr := NewDeleteFile(t)
 	return t.Sync(ctx, dr)
@@ -60,18 +78,31 @@ func (t *DeletePrefixTask) run(ctx context.Context) error {
 		return err
 	}
 
-	x.SetObjectFunc(func(o *typ.Object) {
+	if err := t.Sync(ctx, x); err != nil {
+		return err
+	}
+
+	it := x.GetObjectIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
+			}
+			return types.NewErrUnhandled(err)
+		}
+
 		sf := NewDeleteFile(t)
-		sf.SetPath(o.Name)
+		sf.SetPath(obj.Name)
 		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallbackFunc()(o)
+				t.GetHandleObjCallbackFunc()(obj)
 			})
 		}
 		t.Async(ctx, sf)
-	})
+	}
 
-	return t.Sync(ctx, x)
+	return nil
 }
 
 func (t *DeleteSegmentTask) new() {}
@@ -100,31 +131,42 @@ func (t *DeleteStorageTask) run(ctx context.Context) error {
 
 		t.Async(ctx, deletePrefix)
 
-		segmenter, ok := store.(storage.PrefixSegmentsLister)
+		segmenter, ok := store.(typ.PrefixSegmentsLister)
 		if ok {
 			listSegments := NewListSegment(t)
 			listSegments.SetPrefixSegmentsLister(segmenter)
 			listSegments.SetPath("")
-			listSegments.SetSegmentFunc(func(s segment.Segment) {
+			if err := t.Sync(ctx, listSegments); err != nil {
+				return err
+			}
+
+			it := listSegments.GetSegmentIter()
+			for {
+				obj, err := it.Next()
+				if err != nil {
+					if errors.Is(err, typ.IterateDone) {
+						break
+					}
+					return types.NewErrUnhandled(err)
+				}
+
 				sf := NewDeleteSegment(t)
 				sf.SetPrefixSegmentsLister(segmenter)
-				sf.SetSegment(s)
+				sf.SetSegment(obj)
 				if t.ValidateHandleSegmentCallbackFunc() {
 					sf.SetCallbackFunc(func() {
-						t.GetHandleSegmentCallbackFunc()(s)
+						t.GetHandleSegmentCallbackFunc()(obj)
 					})
 				}
 				t.Async(ctx, sf)
-			})
-
-			t.Async(ctx, listSegments)
+			}
 		}
 
 		t.Await()
+		// if meet error, not continue to delete storage
 		if t.GetFault().HasError() {
-			return t.GetFault()
+			return nil
 		}
-		return nil
 	}
 
 	if err := t.GetService().DeleteWithContext(ctx, t.GetStorageName(), ps...); err != nil {

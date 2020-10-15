@@ -80,20 +80,20 @@ var stringMap = map[string]func(s string) string{
 }
 return fmt.Sprint(%s)`, s, s)
 	},
-	"storage.IndexSegmenter": func(s string) string {
-		return fmt.Sprintf("%s.(storage.Storager).String()", s)
+	"types.IndexSegmenter": func(s string) string {
+		return fmt.Sprintf("%s.(types.Storager).String()", s)
 	},
-	"storage.Servicer": func(s string) string {
+	"types.Servicer": func(s string) string {
 		return fmt.Sprintf("%s.String()", s)
 	},
-	"storage.Storager": func(s string) string {
+	"types.Storager": func(s string) string {
 		return fmt.Sprintf("%s.String()", s)
 	},
 	"types.ObjectType": func(s string) string {
 		return fmt.Sprintf("string(%s)", s)
 	},
-	"storage.DirLister": func(s string) string {
-		return fmt.Sprintf("%s.(storage.Storager).String()", s)
+	"types.DirLister": func(s string) string {
+		return fmt.Sprintf("%s.(types.Storager).String()", s)
 	},
 	"*regexp.Regexp": func(s string) string {
 		return fmt.Sprintf(
@@ -116,14 +116,12 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"sync"
 
-	"github.com/aos-dev/go-storage/v2"
-	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	"github.com/aos-dev/go-storage/v2/types"
-	"github.com/aos-dev/go-storage/v2/types/info"
 
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/fault"
@@ -192,7 +190,7 @@ func Load{{$k}}(t task.Task, v {{$k}}Setter) {
 	v.Set{{$k}}(x.Get{{$k}}())
 }
 
-func (o {{$k}}) String() string {
+func (o *{{$k}}) String() string {
 	if !o.valid {
 		return ""
 	}

@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/types"
@@ -54,6 +54,18 @@ func ChooseSourceStorage(x interface {
 	x.SetStorage(y.GetSourceStorage())
 }
 
+// ChooseDestinationIndexSegmenter will choose the destination segmenter to fill.
+func ChooseDestinationIndexSegmenter(x interface {
+	types.PathSetter
+	types.IndexSegmenterSetter
+}, y interface {
+	types.DestinationPathGetter
+	types.DestinationIndexSegmenterGetter
+}) {
+	x.SetPath(y.GetDestinationPath())
+	x.SetIndexSegmenter(y.GetDestinationIndexSegmenter())
+}
+
 // ChooseSourceStorageAsDirLister will choose the source storage to fill as the dir lister.
 func ChooseSourceStorageAsDirLister(x interface {
 	types.PathSetter
@@ -64,7 +76,7 @@ func ChooseSourceStorageAsDirLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetSourcePath())
 
-	lister, ok := y.GetSourceStorage().(storage.DirLister)
+	lister, ok := y.GetSourceStorage().(typ.DirLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -82,7 +94,7 @@ func ChooseStorageAsDirLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetPath())
 
-	lister, ok := y.GetStorage().(storage.DirLister)
+	lister, ok := y.GetStorage().(typ.DirLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -100,7 +112,7 @@ func ChooseStorageAsPrefixLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetPath())
 
-	lister, ok := y.GetStorage().(storage.PrefixLister)
+	lister, ok := y.GetStorage().(typ.PrefixLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -118,7 +130,7 @@ func ChooseDestinationStorageAsIndexSegmenter(x interface {
 }) (err error) {
 	x.SetPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
+	segmenter, ok := y.GetDestinationStorage().(typ.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -126,8 +138,8 @@ func ChooseDestinationStorageAsIndexSegmenter(x interface {
 	return
 }
 
-// ChooseDestinationIndexSegmenter will choose the destination storage as a segmenter.
-func ChooseDestinationIndexSegmenter(x interface {
+// ChooseDestinationStorageAsDestinationIndexSegmenter will choose the destination storage as a segmenter.
+func ChooseDestinationStorageAsDestinationIndexSegmenter(x interface {
 	types.DestinationPathSetter
 	types.DestinationIndexSegmenterSetter
 }, y interface {
@@ -136,7 +148,7 @@ func ChooseDestinationIndexSegmenter(x interface {
 }) (err error) {
 	x.SetDestinationPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
+	segmenter, ok := y.GetDestinationStorage().(typ.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
