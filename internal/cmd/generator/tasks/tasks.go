@@ -128,12 +128,11 @@ package task
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/task"
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -144,13 +143,10 @@ var _ = uuid.New()
 var taskTmpl = template.Must(template.New("task").Funcs(funcs).Parse(`
 // {{ .Name }}Task will {{ .Description }}.
 type {{ .Name }}Task struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 {{- range $k, $v := .Input.Required }}
@@ -171,17 +167,8 @@ type {{ .Name }}Task struct {
 // New{{ .Name }} will create a {{ .Name }}Task struct and fetch inherited data from parent task.
 func New{{ .Name }}(task task.Task) *{{ .Name }}Task {
 	t := &{{ .Name }}Task{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -217,18 +204,18 @@ func (t *{{ .Name }}Task) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *{{ .Name }}Task) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-        defer t.wg.Done()
+        defer t.GetScheduler().Done()
         if err := st.Run(ctx); err != nil {
-            t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
         }
     }()
 }
 
 // Await wait sub task done
-func (t *{{ .Name }}Task) Await() {
-	t.wg.Wait()
+func (t *{{ .Name }}Task) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -241,17 +228,15 @@ func (t *{{ .Name }}Task) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "{{ .Name }}Task"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -264,7 +249,7 @@ func (t *{{ .Name }}Task) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *{{ .Name }}Task) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}",t , err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -305,7 +290,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/schedule"
+	"github.com/qingstor/noah/pkg/types"
 )
 
 `))
@@ -313,7 +299,9 @@ import (
 var testTmpl = template.Must(template.New("test").Funcs(funcs).Parse(`
 func Test{{ .Name }}Task_TriggerFault(t *testing.T) {
 	task := &{{ .Name }}Task{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 `))

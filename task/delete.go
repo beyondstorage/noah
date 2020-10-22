@@ -19,6 +19,14 @@ func (t *DeleteFileTask) run(ctx context.Context) error {
 	return nil
 }
 
+func (t *DeleteSegmentTask) new() {}
+func (t *DeleteSegmentTask) run(ctx context.Context) error {
+	if err := t.GetPrefixSegmentsLister().AbortSegmentWithContext(ctx, t.GetSegment()); err != nil {
+		return types.NewErrUnhandled(err)
+	}
+	return nil
+}
+
 func (t *DeleteDirTask) new() {}
 func (t *DeleteDirTask) run(ctx context.Context) error {
 	x := NewListDir(t)
@@ -60,10 +68,9 @@ func (t *DeleteDirTask) run(ctx context.Context) error {
 	}
 
 	// Make sure all objects in current dir deleted.
-	t.Await()
 	// if meet error, not continue run delete itself
-	if t.GetFault().HasError() {
-		return nil
+	if err := t.Await(); err != nil {
+		return err
 	}
 	// after delete all files in this dir, delete dir itself as a file, see issue #43
 	dr := NewDeleteFile(t)
@@ -105,10 +112,32 @@ func (t *DeletePrefixTask) run(ctx context.Context) error {
 	return nil
 }
 
-func (t *DeleteSegmentTask) new() {}
-func (t *DeleteSegmentTask) run(ctx context.Context) error {
-	if err := t.GetPrefixSegmentsLister().AbortSegmentWithContext(ctx, t.GetSegment()); err != nil {
-		return types.NewErrUnhandled(err)
+func (t *DeleteSegmentsByPrefixTask) new() {}
+func (t *DeleteSegmentsByPrefixTask) run(ctx context.Context) error {
+	listSegments := NewListSegment(t)
+	listSegments.SetPath(t.GetPrefix())
+	if err := t.Sync(ctx, listSegments); err != nil {
+		return err
+	}
+
+	it := listSegments.GetSegmentIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
+			}
+			return types.NewErrUnhandled(err)
+		}
+
+		sf := NewDeleteSegment(t)
+		sf.SetSegment(obj)
+		if t.ValidateHandleSegmentCallbackFunc() {
+			sf.SetCallbackFunc(func() {
+				t.GetHandleSegmentCallbackFunc()(obj)
+			})
+		}
+		t.Async(ctx, sf)
 	}
 	return nil
 }
@@ -116,10 +145,10 @@ func (t *DeleteSegmentTask) run(ctx context.Context) error {
 func (t *DeleteStorageTask) new() {}
 func (t *DeleteStorageTask) run(ctx context.Context) error {
 	var ps []*typ.Pair
-	if t.GetZone() != "" {
+	if t.ValidateZone() {
 		ps = append(ps, pairs.WithLocation(t.GetZone()))
 	}
-	if t.GetForce() {
+	if t.ValidateForce() && t.GetForce() {
 		store, err := t.GetService().GetWithContext(ctx, t.GetStorageName(), ps...)
 		if err != nil {
 			return types.NewErrUnhandled(err)
@@ -133,39 +162,16 @@ func (t *DeleteStorageTask) run(ctx context.Context) error {
 
 		segmenter, ok := store.(typ.PrefixSegmentsLister)
 		if ok {
-			listSegments := NewListSegment(t)
-			listSegments.SetPrefixSegmentsLister(segmenter)
-			listSegments.SetPath("")
-			if err := t.Sync(ctx, listSegments); err != nil {
-				return err
-			}
+			deleteSegs := NewDeleteSegmentsByPrefix(t)
+			deleteSegs.SetPrefixSegmentsLister(segmenter)
+			deleteSegs.SetPrefix("")
 
-			it := listSegments.GetSegmentIter()
-			for {
-				obj, err := it.Next()
-				if err != nil {
-					if errors.Is(err, typ.IterateDone) {
-						break
-					}
-					return types.NewErrUnhandled(err)
-				}
-
-				sf := NewDeleteSegment(t)
-				sf.SetPrefixSegmentsLister(segmenter)
-				sf.SetSegment(obj)
-				if t.ValidateHandleSegmentCallbackFunc() {
-					sf.SetCallbackFunc(func() {
-						t.GetHandleSegmentCallbackFunc()(obj)
-					})
-				}
-				t.Async(ctx, sf)
-			}
+			t.Async(ctx, deletePrefix)
 		}
 
-		t.Await()
 		// if meet error, not continue to delete storage
-		if t.GetFault().HasError() {
-			return nil
+		if err := t.Await(); err != nil {
+			return err
 		}
 	}
 

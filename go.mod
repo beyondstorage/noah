@@ -3,7 +3,7 @@ module github.com/qingstor/noah
 go 1.13
 
 require (
-	github.com/Xuanwo/navvy v0.0.0-20200811093125-d2896821f0d2
+	bou.ke/monkey v1.0.2
 	github.com/aos-dev/go-storage/v2 v2.0.0-20201014090157-eaa542995c9c
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.1

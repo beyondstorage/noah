@@ -4,12 +4,11 @@ package task
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/task"
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -18,13 +17,10 @@ var _ = uuid.New()
 
 // BetweenStorageCheckTask will Do check for between storage task.
 type BetweenStorageCheckTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -42,17 +38,8 @@ type BetweenStorageCheckTask struct {
 // NewBetweenStorageCheck will create a BetweenStorageCheckTask struct and fetch inherited data from parent task.
 func NewBetweenStorageCheck(task task.Task) *BetweenStorageCheckTask {
 	t := &BetweenStorageCheckTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -93,18 +80,18 @@ func (t *BetweenStorageCheckTask) Sync(ctx context.Context, st task.Task) error 
 
 // Async run sub task asynchronously
 func (t *BetweenStorageCheckTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *BetweenStorageCheckTask) Await() {
-	t.wg.Wait()
+func (t *BetweenStorageCheckTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -117,17 +104,15 @@ func (t *BetweenStorageCheckTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "BetweenStorageCheckTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -140,7 +125,7 @@ func (t *BetweenStorageCheckTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *BetweenStorageCheckTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -155,13 +140,10 @@ func NewBetweenStorageCheckTask(task task.Task) task.Task {
 
 // CopyDirTask will copy a directory recursively between two storager.
 type CopyDirTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -182,17 +164,8 @@ type CopyDirTask struct {
 // NewCopyDir will create a CopyDirTask struct and fetch inherited data from parent task.
 func NewCopyDir(task task.Task) *CopyDirTask {
 	t := &CopyDirTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -238,18 +211,18 @@ func (t *CopyDirTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyDirTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyDirTask) Await() {
-	t.wg.Wait()
+func (t *CopyDirTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -262,17 +235,15 @@ func (t *CopyDirTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyDirTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -285,7 +256,7 @@ func (t *CopyDirTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -300,13 +271,10 @@ func NewCopyDirTask(task task.Task) task.Task {
 
 // CopyFileTask will copy a file between two storager.
 type CopyFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -328,17 +296,8 @@ type CopyFileTask struct {
 // NewCopyFile will create a CopyFileTask struct and fetch inherited data from parent task.
 func NewCopyFile(task task.Task) *CopyFileTask {
 	t := &CopyFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -385,18 +344,18 @@ func (t *CopyFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyFileTask) Await() {
-	t.wg.Wait()
+func (t *CopyFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -409,17 +368,15 @@ func (t *CopyFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -432,7 +389,7 @@ func (t *CopyFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -447,13 +404,10 @@ func NewCopyFileTask(task task.Task) task.Task {
 
 // CopyLargeFileTask will copy a large file between two storager.
 type CopyLargeFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -474,17 +428,8 @@ type CopyLargeFileTask struct {
 // NewCopyLargeFile will create a CopyLargeFileTask struct and fetch inherited data from parent task.
 func NewCopyLargeFile(task task.Task) *CopyLargeFileTask {
 	t := &CopyLargeFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -531,18 +476,18 @@ func (t *CopyLargeFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyLargeFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyLargeFileTask) Await() {
-	t.wg.Wait()
+func (t *CopyLargeFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -555,17 +500,15 @@ func (t *CopyLargeFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyLargeFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -578,7 +521,7 @@ func (t *CopyLargeFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyLargeFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -593,13 +536,10 @@ func NewCopyLargeFileTask(task task.Task) task.Task {
 
 // CopyPartialFileTask will copy a partial file to between two storager.
 type CopyPartialFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -623,17 +563,8 @@ type CopyPartialFileTask struct {
 // NewCopyPartialFile will create a CopyPartialFileTask struct and fetch inherited data from parent task.
 func NewCopyPartialFile(task task.Task) *CopyPartialFileTask {
 	t := &CopyPartialFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -695,18 +626,18 @@ func (t *CopyPartialFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyPartialFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyPartialFileTask) Await() {
-	t.wg.Wait()
+func (t *CopyPartialFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -719,17 +650,15 @@ func (t *CopyPartialFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyPartialFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -742,7 +671,7 @@ func (t *CopyPartialFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -757,13 +686,10 @@ func NewCopyPartialFileTask(task task.Task) task.Task {
 
 // CopyPartialStreamTask will copy a partial stream between two storager.
 type CopyPartialStreamTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -787,17 +713,8 @@ type CopyPartialStreamTask struct {
 // NewCopyPartialStream will create a CopyPartialStreamTask struct and fetch inherited data from parent task.
 func NewCopyPartialStream(task task.Task) *CopyPartialStreamTask {
 	t := &CopyPartialStreamTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -851,18 +768,18 @@ func (t *CopyPartialStreamTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyPartialStreamTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyPartialStreamTask) Await() {
-	t.wg.Wait()
+func (t *CopyPartialStreamTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -875,17 +792,15 @@ func (t *CopyPartialStreamTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyPartialStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -898,7 +813,7 @@ func (t *CopyPartialStreamTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -913,13 +828,10 @@ func NewCopyPartialStreamTask(task task.Task) task.Task {
 
 // CopySingleFileTask will execute a file copy operation between two storager.
 type CopySingleFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -937,17 +849,8 @@ type CopySingleFileTask struct {
 // NewCopySingleFile will create a CopySingleFileTask struct and fetch inherited data from parent task.
 func NewCopySingleFile(task task.Task) *CopySingleFileTask {
 	t := &CopySingleFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -993,18 +896,18 @@ func (t *CopySingleFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopySingleFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopySingleFileTask) Await() {
-	t.wg.Wait()
+func (t *CopySingleFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1017,17 +920,15 @@ func (t *CopySingleFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopySingleFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1040,7 +941,7 @@ func (t *CopySingleFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySingleFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1055,13 +956,10 @@ func NewCopySingleFileTask(task task.Task) task.Task {
 
 // CopySmallFileTask will copy a small file between two storager.
 type CopySmallFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -1080,17 +978,8 @@ type CopySmallFileTask struct {
 // NewCopySmallFile will create a CopySmallFileTask struct and fetch inherited data from parent task.
 func NewCopySmallFile(task task.Task) *CopySmallFileTask {
 	t := &CopySmallFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1137,18 +1026,18 @@ func (t *CopySmallFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopySmallFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopySmallFileTask) Await() {
-	t.wg.Wait()
+func (t *CopySmallFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1161,17 +1050,15 @@ func (t *CopySmallFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopySmallFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1184,7 +1071,7 @@ func (t *CopySmallFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySmallFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1199,13 +1086,10 @@ func NewCopySmallFileTask(task task.Task) task.Task {
 
 // CopyStreamTask will copy a stream between two storager.
 type CopyStreamTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -1225,17 +1109,8 @@ type CopyStreamTask struct {
 // NewCopyStream will create a CopyStreamTask struct and fetch inherited data from parent task.
 func NewCopyStream(task task.Task) *CopyStreamTask {
 	t := &CopyStreamTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1278,18 +1153,18 @@ func (t *CopyStreamTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CopyStreamTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CopyStreamTask) Await() {
-	t.wg.Wait()
+func (t *CopyStreamTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1302,17 +1177,15 @@ func (t *CopyStreamTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1325,7 +1198,7 @@ func (t *CopyStreamTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1340,13 +1213,10 @@ func NewCopyStreamTask(task task.Task) task.Task {
 
 // CreateStorageTask will create a storage.
 type CreateStorageTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Service
@@ -1361,17 +1231,8 @@ type CreateStorageTask struct {
 // NewCreateStorage will create a CreateStorageTask struct and fetch inherited data from parent task.
 func NewCreateStorage(task task.Task) *CreateStorageTask {
 	t := &CreateStorageTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1401,18 +1262,18 @@ func (t *CreateStorageTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *CreateStorageTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *CreateStorageTask) Await() {
-	t.wg.Wait()
+func (t *CreateStorageTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1425,17 +1286,15 @@ func (t *CreateStorageTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CreateStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1448,7 +1307,7 @@ func (t *CreateStorageTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CreateStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1463,13 +1322,10 @@ func NewCreateStorageTask(task task.Task) task.Task {
 
 // DeleteDirTask will will delete a dir recursively.
 type DeleteDirTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -1484,17 +1340,8 @@ type DeleteDirTask struct {
 // NewDeleteDir will create a DeleteDirTask struct and fetch inherited data from parent task.
 func NewDeleteDir(task task.Task) *DeleteDirTask {
 	t := &DeleteDirTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1528,18 +1375,18 @@ func (t *DeleteDirTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *DeleteDirTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *DeleteDirTask) Await() {
-	t.wg.Wait()
+func (t *DeleteDirTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1552,17 +1399,15 @@ func (t *DeleteDirTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteDirTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1575,7 +1420,7 @@ func (t *DeleteDirTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1590,13 +1435,10 @@ func NewDeleteDirTask(task task.Task) task.Task {
 
 // DeleteFileTask will will delete a file from storage.
 type DeleteFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -1611,17 +1453,8 @@ type DeleteFileTask struct {
 // NewDeleteFile will create a DeleteFileTask struct and fetch inherited data from parent task.
 func NewDeleteFile(task task.Task) *DeleteFileTask {
 	t := &DeleteFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1655,18 +1488,18 @@ func (t *DeleteFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *DeleteFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *DeleteFileTask) Await() {
-	t.wg.Wait()
+func (t *DeleteFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1679,17 +1512,15 @@ func (t *DeleteFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1702,7 +1533,7 @@ func (t *DeleteFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1717,13 +1548,10 @@ func NewDeleteFileTask(task task.Task) task.Task {
 
 // DeletePrefixTask will will delete objects with given prefix from storage.
 type DeletePrefixTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -1738,17 +1566,8 @@ type DeletePrefixTask struct {
 // NewDeletePrefix will create a DeletePrefixTask struct and fetch inherited data from parent task.
 func NewDeletePrefix(task task.Task) *DeletePrefixTask {
 	t := &DeletePrefixTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1782,18 +1601,18 @@ func (t *DeletePrefixTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *DeletePrefixTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *DeletePrefixTask) Await() {
-	t.wg.Wait()
+func (t *DeletePrefixTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1806,17 +1625,15 @@ func (t *DeletePrefixTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeletePrefixTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1829,7 +1646,7 @@ func (t *DeletePrefixTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeletePrefixTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1842,15 +1659,12 @@ func NewDeletePrefixTask(task task.Task) task.Task {
 	return NewDeletePrefix(task)
 }
 
-// DeleteSegmentTask will delete all segments with a given path.
+// DeleteSegmentTask will delete segments with a given path.
 type DeleteSegmentTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.PrefixSegmentsLister
@@ -1865,17 +1679,8 @@ type DeleteSegmentTask struct {
 // NewDeleteSegment will create a DeleteSegmentTask struct and fetch inherited data from parent task.
 func NewDeleteSegment(task task.Task) *DeleteSegmentTask {
 	t := &DeleteSegmentTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -1909,18 +1714,18 @@ func (t *DeleteSegmentTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *DeleteSegmentTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *DeleteSegmentTask) Await() {
-	t.wg.Wait()
+func (t *DeleteSegmentTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -1933,17 +1738,15 @@ func (t *DeleteSegmentTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteSegmentTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1956,7 +1759,7 @@ func (t *DeleteSegmentTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteSegmentTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1969,25 +1772,140 @@ func NewDeleteSegmentTask(task task.Task) task.Task {
 	return NewDeleteSegment(task)
 }
 
-// DeleteStorageTask will delete a storage.
-type DeleteStorageTask struct {
-	wg *sync.WaitGroup
-
+// DeleteSegmentsByPrefixTask will delete all segments with a given path.
+type DeleteSegmentsByPrefixTask struct {
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
-	types.Force
-	types.Service
-	types.StorageName
-	types.Zone
+	types.Prefix
+	types.PrefixSegmentsLister
+	types.Segment
 
 	// Optional Input value
+	types.HandleSegmentCallbackFunc
+
+	// Output value
+}
+
+// NewDeleteSegmentsByPrefix will create a DeleteSegmentsByPrefixTask struct and fetch inherited data from parent task.
+func NewDeleteSegmentsByPrefix(task task.Task) *DeleteSegmentsByPrefixTask {
+	t := &DeleteSegmentsByPrefixTask{}
+	t.SetScheduler(schedule.NewScheduler())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *DeleteSegmentsByPrefixTask) validateInput() {
+	if !t.ValidatePrefix() {
+		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value Prefix is invalid"))
+	}
+	if !t.ValidatePrefixSegmentsLister() {
+		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value PrefixSegmentsLister is invalid"))
+	}
+	if !t.ValidateSegment() {
+		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value Segment is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *DeleteSegmentsByPrefixTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPrefix(task, t)
+	types.LoadPrefixSegmentsLister(task, t)
+	types.LoadSegment(task, t)
+	// load optional fields
+	types.LoadHandleSegmentCallbackFunc(task, t)
+}
+
+// Sync run sub task directly
+func (t *DeleteSegmentsByPrefixTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteSegmentsByPrefixTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteSegmentsByPrefixTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteSegmentsByPrefixTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "DeleteSegmentsByPrefixTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *DeleteSegmentsByPrefixTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *DeleteSegmentsByPrefixTask) String() string {
+	return fmt.Sprintf("DeleteSegmentsByPrefixTask {Prefix: %s, PrefixSegmentsLister: %s, Segment: %s, HandleSegmentCallbackFunc: %s}", t.Prefix.String(), t.PrefixSegmentsLister.String(), t.Segment.String(), t.HandleSegmentCallbackFunc.String())
+}
+
+// NewDeleteSegmentsByPrefixTask will create a DeleteSegmentsByPrefixTask which meets task.Task.
+func NewDeleteSegmentsByPrefixTask(task task.Task) task.Task {
+	return NewDeleteSegmentsByPrefix(task)
+}
+
+// DeleteStorageTask will delete a storage.
+type DeleteStorageTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Service
+	types.StorageName
+
+	// Optional Input value
+	types.Force
 	types.HandleObjCallbackFunc
 	types.HandleSegmentCallbackFunc
+	types.Zone
 
 	// Output value
 }
@@ -1995,17 +1913,8 @@ type DeleteStorageTask struct {
 // NewDeleteStorage will create a DeleteStorageTask struct and fetch inherited data from parent task.
 func NewDeleteStorage(task task.Task) *DeleteStorageTask {
 	t := &DeleteStorageTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2015,30 +1924,24 @@ func NewDeleteStorage(task task.Task) *DeleteStorageTask {
 
 // validateInput will validate all input before run task.
 func (t *DeleteStorageTask) validateInput() {
-	if !t.ValidateForce() {
-		panic(fmt.Errorf("Task DeleteStorage value Force is invalid"))
-	}
 	if !t.ValidateService() {
 		panic(fmt.Errorf("Task DeleteStorage value Service is invalid"))
 	}
 	if !t.ValidateStorageName() {
 		panic(fmt.Errorf("Task DeleteStorage value StorageName is invalid"))
 	}
-	if !t.ValidateZone() {
-		panic(fmt.Errorf("Task DeleteStorage value Zone is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
 func (t *DeleteStorageTask) loadInput(task task.Task) {
 	// load required fields
-	types.LoadForce(task, t)
 	types.LoadService(task, t)
 	types.LoadStorageName(task, t)
-	types.LoadZone(task, t)
 	// load optional fields
+	types.LoadForce(task, t)
 	types.LoadHandleObjCallbackFunc(task, t)
 	types.LoadHandleSegmentCallbackFunc(task, t)
+	types.LoadZone(task, t)
 }
 
 // Sync run sub task directly
@@ -2048,18 +1951,18 @@ func (t *DeleteStorageTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *DeleteStorageTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *DeleteStorageTask) Await() {
-	t.wg.Wait()
+func (t *DeleteStorageTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2072,17 +1975,15 @@ func (t *DeleteStorageTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2095,12 +1996,12 @@ func (t *DeleteStorageTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
 func (t *DeleteStorageTask) String() string {
-	return fmt.Sprintf("DeleteStorageTask {Force: %s, Service: %s, StorageName: %s, Zone: %s, HandleObjCallbackFunc: %s, HandleSegmentCallbackFunc: %s}", t.Force.String(), t.Service.String(), t.StorageName.String(), t.Zone.String(), t.HandleObjCallbackFunc.String(), t.HandleSegmentCallbackFunc.String())
+	return fmt.Sprintf("DeleteStorageTask {Service: %s, StorageName: %s, Force: %s, HandleObjCallbackFunc: %s, HandleSegmentCallbackFunc: %s, Zone: %s}", t.Service.String(), t.StorageName.String(), t.Force.String(), t.HandleObjCallbackFunc.String(), t.HandleSegmentCallbackFunc.String(), t.Zone.String())
 }
 
 // NewDeleteStorageTask will create a DeleteStorageTask which meets task.Task.
@@ -2110,13 +2011,10 @@ func NewDeleteStorageTask(task task.Task) task.Task {
 
 // IsDestinationObjectExistTask will check if destination object exist.
 type IsDestinationObjectExistTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationObject
@@ -2130,17 +2028,8 @@ type IsDestinationObjectExistTask struct {
 // NewIsDestinationObjectExist will create a IsDestinationObjectExistTask struct and fetch inherited data from parent task.
 func NewIsDestinationObjectExist(task task.Task) *IsDestinationObjectExistTask {
 	t := &IsDestinationObjectExistTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2169,18 +2058,18 @@ func (t *IsDestinationObjectExistTask) Sync(ctx context.Context, st task.Task) e
 
 // Async run sub task asynchronously
 func (t *IsDestinationObjectExistTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *IsDestinationObjectExistTask) Await() {
-	t.wg.Wait()
+func (t *IsDestinationObjectExistTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2193,17 +2082,15 @@ func (t *IsDestinationObjectExistTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsDestinationObjectExistTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2216,7 +2103,7 @@ func (t *IsDestinationObjectExistTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2231,13 +2118,10 @@ func NewIsDestinationObjectExistTask(task task.Task) task.Task {
 
 // IsDestinationObjectNotExistTask will check if destination object not exist.
 type IsDestinationObjectNotExistTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationObject
@@ -2251,17 +2135,8 @@ type IsDestinationObjectNotExistTask struct {
 // NewIsDestinationObjectNotExist will create a IsDestinationObjectNotExistTask struct and fetch inherited data from parent task.
 func NewIsDestinationObjectNotExist(task task.Task) *IsDestinationObjectNotExistTask {
 	t := &IsDestinationObjectNotExistTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2290,18 +2165,18 @@ func (t *IsDestinationObjectNotExistTask) Sync(ctx context.Context, st task.Task
 
 // Async run sub task asynchronously
 func (t *IsDestinationObjectNotExistTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *IsDestinationObjectNotExistTask) Await() {
-	t.wg.Wait()
+func (t *IsDestinationObjectNotExistTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2314,17 +2189,15 @@ func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsDestinationObjectNotExistTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2337,7 +2210,7 @@ func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2352,13 +2225,10 @@ func NewIsDestinationObjectNotExistTask(task task.Task) task.Task {
 
 // IsSizeEqualTask will check if source object and destination object size equal.
 type IsSizeEqualTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationObject
@@ -2373,17 +2243,8 @@ type IsSizeEqualTask struct {
 // NewIsSizeEqual will create a IsSizeEqualTask struct and fetch inherited data from parent task.
 func NewIsSizeEqual(task task.Task) *IsSizeEqualTask {
 	t := &IsSizeEqualTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2416,18 +2277,18 @@ func (t *IsSizeEqualTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *IsSizeEqualTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *IsSizeEqualTask) Await() {
-	t.wg.Wait()
+func (t *IsSizeEqualTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2440,17 +2301,15 @@ func (t *IsSizeEqualTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsSizeEqualTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2463,7 +2322,7 @@ func (t *IsSizeEqualTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsSizeEqualTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2478,13 +2337,10 @@ func NewIsSizeEqualTask(task task.Task) task.Task {
 
 // IsSourcePathExcludeIncludeTask will check if source path is excluded or included.
 type IsSourcePathExcludeIncludeTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.SourcePath
@@ -2500,17 +2356,8 @@ type IsSourcePathExcludeIncludeTask struct {
 // NewIsSourcePathExcludeInclude will create a IsSourcePathExcludeIncludeTask struct and fetch inherited data from parent task.
 func NewIsSourcePathExcludeInclude(task task.Task) *IsSourcePathExcludeIncludeTask {
 	t := &IsSourcePathExcludeIncludeTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2541,18 +2388,18 @@ func (t *IsSourcePathExcludeIncludeTask) Sync(ctx context.Context, st task.Task)
 
 // Async run sub task asynchronously
 func (t *IsSourcePathExcludeIncludeTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *IsSourcePathExcludeIncludeTask) Await() {
-	t.wg.Wait()
+func (t *IsSourcePathExcludeIncludeTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2565,17 +2412,15 @@ func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsSourcePathExcludeIncludeTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2588,7 +2433,7 @@ func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2603,13 +2448,10 @@ func NewIsSourcePathExcludeIncludeTask(task task.Task) task.Task {
 
 // IsUpdateAtGreaterTask will check if source object's mtime is greater (newer) than destination object's.
 type IsUpdateAtGreaterTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationObject
@@ -2624,17 +2466,8 @@ type IsUpdateAtGreaterTask struct {
 // NewIsUpdateAtGreater will create a IsUpdateAtGreaterTask struct and fetch inherited data from parent task.
 func NewIsUpdateAtGreater(task task.Task) *IsUpdateAtGreaterTask {
 	t := &IsUpdateAtGreaterTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2667,18 +2500,18 @@ func (t *IsUpdateAtGreaterTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *IsUpdateAtGreaterTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *IsUpdateAtGreaterTask) Await() {
-	t.wg.Wait()
+func (t *IsUpdateAtGreaterTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2691,17 +2524,15 @@ func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsUpdateAtGreaterTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2714,7 +2545,7 @@ func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2729,13 +2560,10 @@ func NewIsUpdateAtGreaterTask(task task.Task) task.Task {
 
 // ListDirTask will list dirs.
 type ListDirTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DirLister
@@ -2750,17 +2578,8 @@ type ListDirTask struct {
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
 func NewListDir(task task.Task) *ListDirTask {
 	t := &ListDirTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2793,18 +2612,18 @@ func (t *ListDirTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ListDirTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ListDirTask) Await() {
-	t.wg.Wait()
+func (t *ListDirTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2817,17 +2636,15 @@ func (t *ListDirTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListDirTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2840,7 +2657,7 @@ func (t *ListDirTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2855,13 +2672,10 @@ func NewListDirTask(task task.Task) task.Task {
 
 // ListPrefixTask will list prefix.
 type ListPrefixTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -2876,17 +2690,8 @@ type ListPrefixTask struct {
 // NewListPrefix will create a ListPrefixTask struct and fetch inherited data from parent task.
 func NewListPrefix(task task.Task) *ListPrefixTask {
 	t := &ListPrefixTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -2919,18 +2724,18 @@ func (t *ListPrefixTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ListPrefixTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ListPrefixTask) Await() {
-	t.wg.Wait()
+func (t *ListPrefixTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -2943,17 +2748,15 @@ func (t *ListPrefixTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListPrefixTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2966,7 +2769,7 @@ func (t *ListPrefixTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListPrefixTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2981,13 +2784,10 @@ func NewListPrefixTask(task task.Task) task.Task {
 
 // ListSegmentTask will list segments.
 type ListSegmentTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -3002,17 +2802,8 @@ type ListSegmentTask struct {
 // NewListSegment will create a ListSegmentTask struct and fetch inherited data from parent task.
 func NewListSegment(task task.Task) *ListSegmentTask {
 	t := &ListSegmentTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3045,18 +2836,18 @@ func (t *ListSegmentTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ListSegmentTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ListSegmentTask) Await() {
-	t.wg.Wait()
+func (t *ListSegmentTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3069,17 +2860,15 @@ func (t *ListSegmentTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListSegmentTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3092,7 +2881,7 @@ func (t *ListSegmentTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListSegmentTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3107,13 +2896,10 @@ func NewListSegmentTask(task task.Task) task.Task {
 
 // ListStorageTask will send get request to get bucket list.
 type ListStorageTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Service
@@ -3128,17 +2914,8 @@ type ListStorageTask struct {
 // NewListStorage will create a ListStorageTask struct and fetch inherited data from parent task.
 func NewListStorage(task task.Task) *ListStorageTask {
 	t := &ListStorageTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3168,18 +2945,18 @@ func (t *ListStorageTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ListStorageTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ListStorageTask) Await() {
-	t.wg.Wait()
+func (t *ListStorageTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3192,17 +2969,15 @@ func (t *ListStorageTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3215,7 +2990,7 @@ func (t *ListStorageTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3230,13 +3005,10 @@ func NewListStorageTask(task task.Task) task.Task {
 
 // MD5SumFileTask will get file's md5 sum.
 type MD5SumFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Offset
@@ -3253,17 +3025,8 @@ type MD5SumFileTask struct {
 // NewMD5SumFile will create a MD5SumFileTask struct and fetch inherited data from parent task.
 func NewMD5SumFile(task task.Task) *MD5SumFileTask {
 	t := &MD5SumFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3304,18 +3067,18 @@ func (t *MD5SumFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *MD5SumFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *MD5SumFileTask) Await() {
-	t.wg.Wait()
+func (t *MD5SumFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3328,17 +3091,15 @@ func (t *MD5SumFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MD5SumFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3351,7 +3112,7 @@ func (t *MD5SumFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3366,13 +3127,10 @@ func NewMD5SumFileTask(task task.Task) task.Task {
 
 // MD5SumStreamTask will get stream's md5 sum.
 type MD5SumStreamTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Content
@@ -3386,17 +3144,8 @@ type MD5SumStreamTask struct {
 // NewMD5SumStream will create a MD5SumStreamTask struct and fetch inherited data from parent task.
 func NewMD5SumStream(task task.Task) *MD5SumStreamTask {
 	t := &MD5SumStreamTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3425,18 +3174,18 @@ func (t *MD5SumStreamTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *MD5SumStreamTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *MD5SumStreamTask) Await() {
-	t.wg.Wait()
+func (t *MD5SumStreamTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3449,17 +3198,15 @@ func (t *MD5SumStreamTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MD5SumStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3472,7 +3219,7 @@ func (t *MD5SumStreamTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3487,13 +3234,10 @@ func NewMD5SumStreamTask(task task.Task) task.Task {
 
 // MoveDirTask will move a directory recursively between two storager.
 type MoveDirTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -3514,17 +3258,8 @@ type MoveDirTask struct {
 // NewMoveDir will create a MoveDirTask struct and fetch inherited data from parent task.
 func NewMoveDir(task task.Task) *MoveDirTask {
 	t := &MoveDirTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3570,18 +3305,18 @@ func (t *MoveDirTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *MoveDirTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *MoveDirTask) Await() {
-	t.wg.Wait()
+func (t *MoveDirTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3594,17 +3329,15 @@ func (t *MoveDirTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MoveDirTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3617,7 +3350,7 @@ func (t *MoveDirTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3632,13 +3365,10 @@ func NewMoveDirTask(task task.Task) task.Task {
 
 // MoveFileTask will move a file between two storager.
 type MoveFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -3659,17 +3389,8 @@ type MoveFileTask struct {
 // NewMoveFile will create a MoveFileTask struct and fetch inherited data from parent task.
 func NewMoveFile(task task.Task) *MoveFileTask {
 	t := &MoveFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3715,18 +3436,18 @@ func (t *MoveFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *MoveFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *MoveFileTask) Await() {
-	t.wg.Wait()
+func (t *MoveFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3739,17 +3460,15 @@ func (t *MoveFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MoveFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3762,7 +3481,7 @@ func (t *MoveFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3777,13 +3496,10 @@ func NewMoveFileTask(task task.Task) task.Task {
 
 // ReachFileTask will will reach a remote object and return the signed url.
 type ReachFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Expire
@@ -3799,17 +3515,8 @@ type ReachFileTask struct {
 // NewReachFile will create a ReachFileTask struct and fetch inherited data from parent task.
 func NewReachFile(task task.Task) *ReachFileTask {
 	t := &ReachFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3846,18 +3553,18 @@ func (t *ReachFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ReachFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ReachFileTask) Await() {
-	t.wg.Wait()
+func (t *ReachFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -3870,17 +3577,15 @@ func (t *ReachFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ReachFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3893,7 +3598,7 @@ func (t *ReachFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ReachFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3908,13 +3613,10 @@ func NewReachFileTask(task task.Task) task.Task {
 
 // ReadFileTask will read file from storage.
 type ReadFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -3932,17 +3634,8 @@ type ReadFileTask struct {
 // NewReadFile will create a ReadFileTask struct and fetch inherited data from parent task.
 func NewReadFile(task task.Task) *ReadFileTask {
 	t := &ReadFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -3982,18 +3675,18 @@ func (t *ReadFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *ReadFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *ReadFileTask) Await() {
-	t.wg.Wait()
+func (t *ReadFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4006,17 +3699,15 @@ func (t *ReadFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ReadFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4029,7 +3720,7 @@ func (t *ReadFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ReadFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4044,13 +3735,10 @@ func NewReadFileTask(task task.Task) task.Task {
 
 // SegmentCompleteTask will complete a segment.
 type SegmentCompleteTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.IndexSegmenter
@@ -4065,17 +3753,8 @@ type SegmentCompleteTask struct {
 // NewSegmentComplete will create a SegmentCompleteTask struct and fetch inherited data from parent task.
 func NewSegmentComplete(task task.Task) *SegmentCompleteTask {
 	t := &SegmentCompleteTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4112,18 +3791,18 @@ func (t *SegmentCompleteTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SegmentCompleteTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SegmentCompleteTask) Await() {
-	t.wg.Wait()
+func (t *SegmentCompleteTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4136,17 +3815,15 @@ func (t *SegmentCompleteTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentCompleteTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4159,7 +3836,7 @@ func (t *SegmentCompleteTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentCompleteTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4174,13 +3851,10 @@ func NewSegmentCompleteTask(task task.Task) task.Task {
 
 // SegmentFileCopyTask will copy a segment file.
 type SegmentFileCopyTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationIndexSegmenter
@@ -4201,17 +3875,8 @@ type SegmentFileCopyTask struct {
 // NewSegmentFileCopy will create a SegmentFileCopyTask struct and fetch inherited data from parent task.
 func NewSegmentFileCopy(task task.Task) *SegmentFileCopyTask {
 	t := &SegmentFileCopyTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4269,18 +3934,18 @@ func (t *SegmentFileCopyTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SegmentFileCopyTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SegmentFileCopyTask) Await() {
-	t.wg.Wait()
+func (t *SegmentFileCopyTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4293,17 +3958,15 @@ func (t *SegmentFileCopyTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentFileCopyTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4316,7 +3979,7 @@ func (t *SegmentFileCopyTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentFileCopyTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4331,13 +3994,10 @@ func NewSegmentFileCopyTask(task task.Task) task.Task {
 
 // SegmentInitTask will init a segment upload.
 type SegmentInitTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.IndexSegmenter
@@ -4353,17 +4013,8 @@ type SegmentInitTask struct {
 // NewSegmentInit will create a SegmentInitTask struct and fetch inherited data from parent task.
 func NewSegmentInit(task task.Task) *SegmentInitTask {
 	t := &SegmentInitTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4400,18 +4051,18 @@ func (t *SegmentInitTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SegmentInitTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SegmentInitTask) Await() {
-	t.wg.Wait()
+func (t *SegmentInitTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4424,17 +4075,15 @@ func (t *SegmentInitTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentInitTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4447,7 +4096,7 @@ func (t *SegmentInitTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentInitTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4462,13 +4111,10 @@ func NewSegmentInitTask(task task.Task) task.Task {
 
 // SegmentStreamCopyTask will copy a segment stream.
 type SegmentStreamCopyTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Content
@@ -4488,17 +4134,8 @@ type SegmentStreamCopyTask struct {
 // NewSegmentStreamCopy will create a SegmentStreamCopyTask struct and fetch inherited data from parent task.
 func NewSegmentStreamCopy(task task.Task) *SegmentStreamCopyTask {
 	t := &SegmentStreamCopyTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4552,18 +4189,18 @@ func (t *SegmentStreamCopyTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SegmentStreamCopyTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SegmentStreamCopyTask) Await() {
-	t.wg.Wait()
+func (t *SegmentStreamCopyTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4576,17 +4213,15 @@ func (t *SegmentStreamCopyTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentStreamCopyTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4599,7 +4234,7 @@ func (t *SegmentStreamCopyTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentStreamCopyTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4614,13 +4249,10 @@ func NewSegmentStreamCopyTask(task task.Task) task.Task {
 
 // SegmentStreamInitTask will init a partial stream between two storager.
 type SegmentStreamInitTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.BytesPool
@@ -4639,17 +4271,8 @@ type SegmentStreamInitTask struct {
 // NewSegmentStreamInit will create a SegmentStreamInitTask struct and fetch inherited data from parent task.
 func NewSegmentStreamInit(task task.Task) *SegmentStreamInitTask {
 	t := &SegmentStreamInitTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4690,18 +4313,18 @@ func (t *SegmentStreamInitTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SegmentStreamInitTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SegmentStreamInitTask) Await() {
-	t.wg.Wait()
+func (t *SegmentStreamInitTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4714,17 +4337,15 @@ func (t *SegmentStreamInitTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentStreamInitTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4737,7 +4358,7 @@ func (t *SegmentStreamInitTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentStreamInitTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4752,13 +4373,10 @@ func NewSegmentStreamInitTask(task task.Task) task.Task {
 
 // StatFileTask will stat a remote object by request headObject.
 type StatFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -4773,17 +4391,8 @@ type StatFileTask struct {
 // NewStatFile will create a StatFileTask struct and fetch inherited data from parent task.
 func NewStatFile(task task.Task) *StatFileTask {
 	t := &StatFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4816,18 +4425,18 @@ func (t *StatFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *StatFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *StatFileTask) Await() {
-	t.wg.Wait()
+func (t *StatFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4840,17 +4449,15 @@ func (t *StatFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "StatFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4863,7 +4470,7 @@ func (t *StatFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *StatFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4878,13 +4485,10 @@ func NewStatFileTask(task task.Task) task.Task {
 
 // StatStorageTask will stat a remote storage by Statistical.
 type StatStorageTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Storage
@@ -4898,17 +4502,8 @@ type StatStorageTask struct {
 // NewStatStorage will create a StatStorageTask struct and fetch inherited data from parent task.
 func NewStatStorage(task task.Task) *StatStorageTask {
 	t := &StatStorageTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -4937,18 +4532,18 @@ func (t *StatStorageTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *StatStorageTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *StatStorageTask) Await() {
-	t.wg.Wait()
+func (t *StatStorageTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -4961,17 +4556,15 @@ func (t *StatStorageTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "StatStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4984,7 +4577,7 @@ func (t *StatStorageTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *StatStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4999,13 +4592,10 @@ func NewStatStorageTask(task task.Task) task.Task {
 
 // SyncTask will sync directory between two storage.
 type SyncTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.DestinationPath
@@ -5028,17 +4618,8 @@ type SyncTask struct {
 // NewSync will create a SyncTask struct and fetch inherited data from parent task.
 func NewSync(task task.Task) *SyncTask {
 	t := &SyncTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -5086,18 +4667,18 @@ func (t *SyncTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *SyncTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *SyncTask) Await() {
-	t.wg.Wait()
+func (t *SyncTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -5110,17 +4691,15 @@ func (t *SyncTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SyncTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -5133,7 +4712,7 @@ func (t *SyncTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SyncTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -5148,13 +4727,10 @@ func NewSyncTask(task task.Task) task.Task {
 
 // WriteFileTask will write file to storage.
 type WriteFileTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Path
@@ -5172,17 +4748,8 @@ type WriteFileTask struct {
 // NewWriteFile will create a WriteFileTask struct and fetch inherited data from parent task.
 func NewWriteFile(task task.Task) *WriteFileTask {
 	t := &WriteFileTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -5222,18 +4789,18 @@ func (t *WriteFileTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *WriteFileTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *WriteFileTask) Await() {
-	t.wg.Wait()
+func (t *WriteFileTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -5246,17 +4813,15 @@ func (t *WriteFileTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "WriteFileTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -5269,7 +4834,7 @@ func (t *WriteFileTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *WriteFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -5284,13 +4849,10 @@ func NewWriteFileTask(task task.Task) task.Task {
 
 // WriteSegmentTask will write segment to storage.
 type WriteSegmentTask struct {
-	wg *sync.WaitGroup
-
 	// Predefined value
-	types.Fault
+	types.Scheduler
 	types.ID
 	types.CallbackFunc
-	types.FaultSyncer
 
 	// Required Input value
 	types.Index
@@ -5309,17 +4871,8 @@ type WriteSegmentTask struct {
 // NewWriteSegment will create a WriteSegmentTask struct and fetch inherited data from parent task.
 func NewWriteSegment(task task.Task) *WriteSegmentTask {
 	t := &WriteSegmentTask{}
-	t.wg = new(sync.WaitGroup)
+	t.SetScheduler(schedule.NewScheduler())
 	t.SetID(uuid.New().String())
-	t.SetFault(fault.New())
-	t.SetFaultSyncer(fault.NewSyncer())
-
-	go func() {
-		for err := range t.GetFaultSyncer().GetErrChan() {
-			t.GetFault().Append(err)
-		}
-		t.GetFaultSyncer().Wait()
-	}()
 
 	t.loadInput(task)
 
@@ -5366,18 +4919,18 @@ func (t *WriteSegmentTask) Sync(ctx context.Context, st task.Task) error {
 
 // Async run sub task asynchronously
 func (t *WriteSegmentTask) Async(ctx context.Context, st task.Task) {
-	t.wg.Add(1)
+	t.GetScheduler().Add(1)
 	go func() {
-		defer t.wg.Done()
+		defer t.GetScheduler().Done()
 		if err := st.Run(ctx); err != nil {
-			t.GetFaultSyncer().GetErrChan() <- err
+			t.TriggerFault(err)
 		}
 	}()
 }
 
 // Await wait sub task done
-func (t *WriteSegmentTask) Await() {
-	t.wg.Wait()
+func (t *WriteSegmentTask) Await() error {
+	return t.GetScheduler().Await()
 }
 
 // Run implement task.Task
@@ -5390,17 +4943,15 @@ func (t *WriteSegmentTask) Run(ctx context.Context) error {
 	)
 	err := t.run(ctx)
 	if err != nil {
-		t.GetFaultSyncer().GetErrChan() <- err
+		t.TriggerFault(err)
 	}
 
-	t.Await()
-	t.GetFaultSyncer().Finish()
-	if t.GetFault().HasError() {
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "WriteSegmentTask"),
+			log.String("err", err.Error()),
 		)
-		return t.GetFault()
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -5413,7 +4964,7 @@ func (t *WriteSegmentTask) Run(ctx context.Context) error {
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *WriteSegmentTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.

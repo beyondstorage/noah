@@ -5,8 +5,6 @@
 package mock
 
 import (
-	context "context"
-	navvy "github.com/Xuanwo/navvy"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,38 +32,52 @@ func (m *MockScheduler) EXPECT() *MockSchedulerMockRecorder {
 	return m.recorder
 }
 
-// Async mocks base method
-func (m *MockScheduler) Async(arg0 context.Context, arg1 navvy.Task) {
+// Add mocks base method
+func (m *MockScheduler) Add(arg0 int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Async", arg0, arg1)
+	m.ctrl.Call(m, "Add", arg0)
 }
 
-// Async indicates an expected call of Async
-func (mr *MockSchedulerMockRecorder) Async(arg0, arg1 interface{}) *gomock.Call {
+// Add indicates an expected call of Add
+func (mr *MockSchedulerMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Async", reflect.TypeOf((*MockScheduler)(nil).Async), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockScheduler)(nil).Add), arg0)
 }
 
-// Sync mocks base method
-func (m *MockScheduler) Sync(arg0 context.Context, arg1 navvy.Task) {
+// AppendFault mocks base method
+func (m *MockScheduler) AppendFault(arg0 error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Sync", arg0, arg1)
+	m.ctrl.Call(m, "AppendFault", arg0)
 }
 
-// Sync indicates an expected call of Sync
-func (mr *MockSchedulerMockRecorder) Sync(arg0, arg1 interface{}) *gomock.Call {
+// AppendFault indicates an expected call of AppendFault
+func (mr *MockSchedulerMockRecorder) AppendFault(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockScheduler)(nil).Sync), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppendFault", reflect.TypeOf((*MockScheduler)(nil).AppendFault), arg0)
 }
 
-// Wait mocks base method
-func (m *MockScheduler) Wait() {
+// Await mocks base method
+func (m *MockScheduler) Await() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Wait")
+	ret := m.ctrl.Call(m, "Await")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Wait indicates an expected call of Wait
-func (mr *MockSchedulerMockRecorder) Wait() *gomock.Call {
+// Await indicates an expected call of Await
+func (mr *MockSchedulerMockRecorder) Await() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockScheduler)(nil).Wait))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Await", reflect.TypeOf((*MockScheduler)(nil).Await))
+}
+
+// Done mocks base method
+func (m *MockScheduler) Done() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Done")
+}
+
+// Done indicates an expected call of Done
+func (mr *MockSchedulerMockRecorder) Done() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Done", reflect.TypeOf((*MockScheduler)(nil).Done))
 }

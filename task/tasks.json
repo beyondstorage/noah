@@ -218,9 +218,22 @@
     }
   },
   "DeleteSegment": {
+    "description": "delete segments with a given path",
+    "input": {
+      "required": [
+        "PrefixSegmentsLister",
+        "Segment"
+      ],
+      "optional": [
+        "HandleSegmentCallbackFunc"
+      ]
+    }
+  },
+  "DeleteSegmentsByPrefix": {
     "description": "delete all segments with a given path",
     "input": {
       "required": [
+        "Prefix",
         "PrefixSegmentsLister",
         "Segment"
       ],
@@ -233,14 +246,14 @@
     "description": "delete a storage",
     "input": {
       "required": [
-        "Force",
         "Service",
-        "StorageName",
-        "Zone"
+        "StorageName"
       ],
       "optional": [
+        "Force",
         "HandleObjCallbackFunc",
-        "HandleSegmentCallbackFunc"
+        "HandleSegmentCallbackFunc",
+        "Zone"
       ]
     }
   },

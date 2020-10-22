@@ -1,7 +1,7 @@
+bou.ke/monkey v1.0.2 h1:kWcnsrCNUatbxncxR/ThdYqbytgOIArtYWqcQLQzKLI=
+bou.ke/monkey v1.0.2/go.mod h1:OqickVX3tNx6t33n1xvtTtu85YN5s6cKwVug+oHMaIA=
 github.com/Xuanwo/go-bufferpool v0.0.0-20200622083641-bc954721ce54 h1:wA7f87ODtF2oA7FCmeGHrPvyG+vVDxSP9ZRsltXB2Gc=
 github.com/Xuanwo/go-bufferpool v0.0.0-20200622083641-bc954721ce54/go.mod h1:Mle++9GGouhOwGj52i9PJLNAPmW2nb8PWBP7JJzNCzk=
-github.com/Xuanwo/navvy v0.0.0-20200811093125-d2896821f0d2 h1:oGya5YgvunubJ+JFAQkTpwAmGo6E55bykXxFu1NT2Bo=
-github.com/Xuanwo/navvy v0.0.0-20200811093125-d2896821f0d2/go.mod h1:FfMsXg0w9OrzdLvhDHGzdBx35cw1qTpKLcGNC8RtgQA=
 github.com/aos-dev/go-storage/v2 v2.0.0-20201014090157-eaa542995c9c h1:V0HJg9rVG6yM8xFOO7IQ/aAuRMXlTeV4ykbpf+JEv2E=
 github.com/aos-dev/go-storage/v2 v2.0.0-20201014090157-eaa542995c9c/go.mod h1:fdonF870IKNAqZMHnHr3gs/RImEqx9kjyJ33k4LtBEI=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=

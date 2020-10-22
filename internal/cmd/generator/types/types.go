@@ -124,7 +124,6 @@ import (
 	"github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/task"
 )
 

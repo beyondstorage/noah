@@ -6,245 +6,334 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/schedule"
+	"github.com/qingstor/noah/pkg/types"
 )
 
 func TestBetweenStorageCheckTask_TriggerFault(t *testing.T) {
 	task := &BetweenStorageCheckTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyDirTask_TriggerFault(t *testing.T) {
 	task := &CopyDirTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyFileTask_TriggerFault(t *testing.T) {
 	task := &CopyFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyLargeFileTask_TriggerFault(t *testing.T) {
 	task := &CopyLargeFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyPartialFileTask_TriggerFault(t *testing.T) {
 	task := &CopyPartialFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyPartialStreamTask_TriggerFault(t *testing.T) {
 	task := &CopyPartialStreamTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopySingleFileTask_TriggerFault(t *testing.T) {
 	task := &CopySingleFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopySmallFileTask_TriggerFault(t *testing.T) {
 	task := &CopySmallFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCopyStreamTask_TriggerFault(t *testing.T) {
 	task := &CopyStreamTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestCreateStorageTask_TriggerFault(t *testing.T) {
 	task := &CreateStorageTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestDeleteDirTask_TriggerFault(t *testing.T) {
 	task := &DeleteDirTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestDeleteFileTask_TriggerFault(t *testing.T) {
 	task := &DeleteFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestDeletePrefixTask_TriggerFault(t *testing.T) {
 	task := &DeletePrefixTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestDeleteSegmentTask_TriggerFault(t *testing.T) {
 	task := &DeleteSegmentTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
+func TestDeleteSegmentsByPrefixTask_TriggerFault(t *testing.T) {
+	task := &DeleteSegmentsByPrefixTask{}
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestDeleteStorageTask_TriggerFault(t *testing.T) {
 	task := &DeleteStorageTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestIsDestinationObjectExistTask_TriggerFault(t *testing.T) {
 	task := &IsDestinationObjectExistTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestIsDestinationObjectNotExistTask_TriggerFault(t *testing.T) {
 	task := &IsDestinationObjectNotExistTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestIsSizeEqualTask_TriggerFault(t *testing.T) {
 	task := &IsSizeEqualTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestIsSourcePathExcludeIncludeTask_TriggerFault(t *testing.T) {
 	task := &IsSourcePathExcludeIncludeTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestIsUpdateAtGreaterTask_TriggerFault(t *testing.T) {
 	task := &IsUpdateAtGreaterTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestListDirTask_TriggerFault(t *testing.T) {
 	task := &ListDirTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestListPrefixTask_TriggerFault(t *testing.T) {
 	task := &ListPrefixTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestListSegmentTask_TriggerFault(t *testing.T) {
 	task := &ListSegmentTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestListStorageTask_TriggerFault(t *testing.T) {
 	task := &ListStorageTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestMD5SumFileTask_TriggerFault(t *testing.T) {
 	task := &MD5SumFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestMD5SumStreamTask_TriggerFault(t *testing.T) {
 	task := &MD5SumStreamTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestMoveDirTask_TriggerFault(t *testing.T) {
 	task := &MoveDirTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestMoveFileTask_TriggerFault(t *testing.T) {
 	task := &MoveFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestReachFileTask_TriggerFault(t *testing.T) {
 	task := &ReachFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestReadFileTask_TriggerFault(t *testing.T) {
 	task := &ReadFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSegmentCompleteTask_TriggerFault(t *testing.T) {
 	task := &SegmentCompleteTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSegmentFileCopyTask_TriggerFault(t *testing.T) {
 	task := &SegmentFileCopyTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSegmentInitTask_TriggerFault(t *testing.T) {
 	task := &SegmentInitTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSegmentStreamCopyTask_TriggerFault(t *testing.T) {
 	task := &SegmentStreamCopyTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSegmentStreamInitTask_TriggerFault(t *testing.T) {
 	task := &SegmentStreamInitTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestStatFileTask_TriggerFault(t *testing.T) {
 	task := &StatFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestStatStorageTask_TriggerFault(t *testing.T) {
 	task := &StatStorageTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestSyncTask_TriggerFault(t *testing.T) {
 	task := &SyncTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestWriteFileTask_TriggerFault(t *testing.T) {
 	task := &WriteFileTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 
 func TestWriteSegmentTask_TriggerFault(t *testing.T) {
 	task := &WriteSegmentTask{}
-	task.SetFault(fault.New())
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.NewScheduler())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }

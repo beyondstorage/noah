@@ -177,10 +177,9 @@ func (t *CopyLargeFileTask) run(ctx context.Context) error {
 	}
 
 	// Make sure all segment upload finished.
-	t.Await()
 	// if meet error, not continue run complete task
-	if t.GetFault().HasError() {
-		return nil
+	if err := t.Await(); err != nil {
+		return err
 	}
 	return t.Sync(ctx, NewSegmentCompleteTask(initTask))
 }
@@ -265,10 +264,9 @@ func (t *CopyStreamTask) run(ctx context.Context) error {
 		part++
 	}
 
-	t.Await()
 	// if meet error, not continue run complete task
-	if t.GetFault().HasError() {
-		return nil
+	if err := t.Await(); err != nil {
+		return err
 	}
 	return t.Sync(ctx, NewSegmentCompleteTask(initTask))
 }

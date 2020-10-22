@@ -11,7 +11,6 @@ import (
 
 	"github.com/aos-dev/go-storage/v2/types"
 
-	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/task"
 )
@@ -1542,138 +1541,6 @@ func (o *Expire) String() string {
 	return strconv.Itoa(o.v)
 }
 
-type Fault struct {
-	valid bool
-	v     *fault.Fault
-
-	l sync.RWMutex
-}
-
-type FaultGetter interface {
-	GetFault() *fault.Fault
-}
-
-func (o *Fault) GetFault() *fault.Fault {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("Fault value is not valid")
-	}
-	return o.v
-}
-
-type FaultSetter interface {
-	SetFault(*fault.Fault)
-}
-
-func (o *Fault) SetFault(v *fault.Fault) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type FaultValidator interface {
-	ValidateFault() bool
-}
-
-func (o *Fault) ValidateFault() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadFault(t task.Task, v FaultSetter) {
-	x, ok := t.(interface {
-		FaultGetter
-		FaultValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateFault() {
-		return
-	}
-
-	v.SetFault(x.GetFault())
-}
-
-func (o *Fault) String() string {
-	if !o.valid {
-		return ""
-	}
-	return ""
-}
-
-type FaultSyncer struct {
-	valid bool
-	v     *fault.Syncer
-
-	l sync.RWMutex
-}
-
-type FaultSyncerGetter interface {
-	GetFaultSyncer() *fault.Syncer
-}
-
-func (o *FaultSyncer) GetFaultSyncer() *fault.Syncer {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("FaultSyncer value is not valid")
-	}
-	return o.v
-}
-
-type FaultSyncerSetter interface {
-	SetFaultSyncer(*fault.Syncer)
-}
-
-func (o *FaultSyncer) SetFaultSyncer(v *fault.Syncer) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type FaultSyncerValidator interface {
-	ValidateFaultSyncer() bool
-}
-
-func (o *FaultSyncer) ValidateFaultSyncer() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadFaultSyncer(t task.Task, v FaultSyncerSetter) {
-	x, ok := t.(interface {
-		FaultSyncerGetter
-		FaultSyncerValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateFaultSyncer() {
-		return
-	}
-
-	v.SetFaultSyncer(x.GetFaultSyncer())
-}
-
-func (o *FaultSyncer) String() string {
-	if !o.valid {
-		return ""
-	}
-	return ""
-}
-
 type FileFunc struct {
 	valid bool
 	v     func(*types.Object)
@@ -3132,6 +2999,72 @@ func (o *Path) String() string {
 	return o.v
 }
 
+type Prefix struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type PrefixGetter interface {
+	GetPrefix() string
+}
+
+func (o *Prefix) GetPrefix() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("Prefix value is not valid")
+	}
+	return o.v
+}
+
+type PrefixSetter interface {
+	SetPrefix(string)
+}
+
+func (o *Prefix) SetPrefix(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type PrefixValidator interface {
+	ValidatePrefix() bool
+}
+
+func (o *Prefix) ValidatePrefix() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadPrefix(t task.Task, v PrefixSetter) {
+	x, ok := t.(interface {
+		PrefixGetter
+		PrefixValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidatePrefix() {
+		return
+	}
+
+	v.SetPrefix(x.GetPrefix())
+}
+
+func (o *Prefix) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type PrefixLister struct {
 	valid bool
 	v     types.PrefixLister
@@ -3658,72 +3591,6 @@ func (o *Result) String() string {
 		return ""
 	}
 	return strconv.FormatBool(o.v)
-}
-
-type ScheduleFunc struct {
-	valid bool
-	v     schedule.TaskFunc
-
-	l sync.RWMutex
-}
-
-type ScheduleFuncGetter interface {
-	GetScheduleFunc() schedule.TaskFunc
-}
-
-func (o *ScheduleFunc) GetScheduleFunc() schedule.TaskFunc {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	if !o.valid {
-		panic("ScheduleFunc value is not valid")
-	}
-	return o.v
-}
-
-type ScheduleFuncSetter interface {
-	SetScheduleFunc(schedule.TaskFunc)
-}
-
-func (o *ScheduleFunc) SetScheduleFunc(v schedule.TaskFunc) {
-	o.l.Lock()
-	defer o.l.Unlock()
-
-	o.v = v
-	o.valid = true
-}
-
-type ScheduleFuncValidator interface {
-	ValidateScheduleFunc() bool
-}
-
-func (o *ScheduleFunc) ValidateScheduleFunc() bool {
-	o.l.RLock()
-	defer o.l.RUnlock()
-
-	return o.valid
-}
-
-func LoadScheduleFunc(t task.Task, v ScheduleFuncSetter) {
-	x, ok := t.(interface {
-		ScheduleFuncGetter
-		ScheduleFuncValidator
-	})
-	if !ok {
-		return
-	}
-	if !x.ValidateScheduleFunc() {
-		return
-	}
-
-	v.SetScheduleFunc(x.GetScheduleFunc())
-}
-
-func (o *ScheduleFunc) String() string {
-	if !o.valid {
-		return ""
-	}
-	return ""
 }
 
 type Scheduler struct {
