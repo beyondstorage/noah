@@ -56,7 +56,7 @@ type ObjectMetaInvalid struct {
 }
 
 func (f *ObjectMetaInvalid) Error() string {
-	return fmt.Sprintf(`Object [%s] metadata [%s] is invalid`, f.GetObject(), f.GetName())
+	return fmt.Sprintf(`Object [%s] metadata [%s] is invalid`, f.GetObject().ID, f.GetName())
 }
 
 func (f *ObjectMetaInvalid) Unwrap() error {
@@ -78,7 +78,7 @@ type ObjectTypeInvalid struct {
 }
 
 func (f *ObjectTypeInvalid) Error() string {
-	return fmt.Sprintf(`Object [%s] type is invalid`, f.GetObject())
+	return fmt.Sprintf(`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type)
 }
 
 func (f *ObjectTypeInvalid) Unwrap() error {

@@ -16,13 +16,13 @@
       "Name",
       "Object"
     ],
-    "message": "`Object [%s] metadata [%s] is invalid`, f.GetObject(), f.GetName()"
+    "message": "`Object [%s] metadata [%s] is invalid`, f.GetObject().ID, f.GetName()"
   },
   "ObjectTypeInvalid": {
     "value": [
       "Object"
     ],
-    "message": "`Object [%s] type is invalid`, f.GetObject()"
+    "message": "`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type"
   },
   "ReadableSizeFormatInvalid": {
     "value": [
