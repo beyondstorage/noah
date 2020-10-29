@@ -21,6 +21,7 @@ type task struct {
 	Output      []string `json:"output,omitempty"`
 }
 
+// Input include required fields and optional fields
 type Input struct {
 	Required []string `json:"required,omitempty"`
 	Optional []string `json:"optional,omitempty"`
