@@ -78,6 +78,8 @@ func (t *CopyFileTask) run(ctx context.Context) error {
 			}
 			// If either check not pass, do not copy this file.
 			if result := ct.(types.ResultGetter); !result.GetResult() {
+				// if check not pass, clear callback func
+				t.SetCallbackFunc(func() {})
 				return nil
 			}
 			// If all check passed, we should continue do copy works.
