@@ -19,7 +19,7 @@ func TestListDirTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	testErr := errors.New("test error")
-	it := typ.NewObjectIterator(nil)
+	it := typ.NewObjectIterator(context.Background(), nil, nil)
 
 	cases := []struct {
 		name     string
@@ -52,7 +52,7 @@ func TestListDirTask_run(t *testing.T) {
 			task.SetPath(testPath)
 
 			store.EXPECT().ListDirWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.ObjectIterator, error) {
+				DoAndReturn(func(ctx context.Context, path string, opts ...typ.Pair) (*typ.ObjectIterator, error) {
 					assert.Equal(t, testPath, path)
 					if tt.hasErr {
 						return nil, testErr
@@ -78,7 +78,7 @@ func TestListPrefixTask_run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	testErr := errors.New("test error")
-	it := typ.NewObjectIterator(nil)
+	it := typ.NewObjectIterator(context.Background(), nil, nil)
 
 	cases := []struct {
 		name     string
@@ -111,7 +111,7 @@ func TestListPrefixTask_run(t *testing.T) {
 			task.SetPath(testPath)
 
 			store.EXPECT().ListPrefixWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.ObjectIterator, error) {
+				DoAndReturn(func(ctx context.Context, path string, opts ...typ.Pair) (*typ.ObjectIterator, error) {
 					assert.Equal(t, testPath, path)
 					if tt.hasErr {
 						return nil, testErr
@@ -138,7 +138,7 @@ func TestListSegmentTask_run(t *testing.T) {
 	defer ctrl.Finish()
 
 	testErr := errors.New("test error")
-	it := typ.NewSegmentIterator(nil)
+	it := typ.NewSegmentIterator(context.Background(), nil, nil)
 
 	cases := []struct {
 		name     string
@@ -170,7 +170,7 @@ func TestListSegmentTask_run(t *testing.T) {
 			task.SetPath(testPath)
 
 			segmenter.EXPECT().ListPrefixSegmentsWithContext(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(ctx context.Context, path string, opts ...*typ.Pair) (*typ.SegmentIterator, error) {
+				DoAndReturn(func(ctx context.Context, path string, opts ...typ.Pair) (*typ.SegmentIterator, error) {
 					assert.Equal(t, testPath, path)
 					if tt.hasErr {
 						return nil, testErr
@@ -197,7 +197,7 @@ func TestListStorageTask_run(t *testing.T) {
 	defer ctrl.Finish()
 
 	testErr := errors.New("test error")
-	it := typ.NewStoragerIterator(nil)
+	it := typ.NewStoragerIterator(context.Background(), nil, nil)
 
 	cases := []struct {
 		name     string
@@ -237,7 +237,7 @@ func TestListStorageTask_run(t *testing.T) {
 			}
 
 			srv.EXPECT().ListWithContext(gomock.Eq(ctx), gomock.Any()).
-				DoAndReturn(func(ctx context.Context, pairs ...*typ.Pair) (*typ.StoragerIterator, error) {
+				DoAndReturn(func(ctx context.Context, pairs ...typ.Pair) (*typ.StoragerIterator, error) {
 					if tt.zone != "" {
 						assert.Equal(t, tt.zone, pairs[0].Value.(string))
 					} else {
