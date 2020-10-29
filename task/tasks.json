@@ -234,8 +234,7 @@
     "input": {
       "required": [
         "Prefix",
-        "PrefixSegmentsLister",
-        "Segment"
+        "PrefixSegmentsLister"
       ],
       "optional": [
         "HandleSegmentCallbackFunc"

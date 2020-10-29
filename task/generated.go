@@ -1782,7 +1782,6 @@ type DeleteSegmentsByPrefixTask struct {
 	// Required Input value
 	types.Prefix
 	types.PrefixSegmentsLister
-	types.Segment
 
 	// Optional Input value
 	types.HandleSegmentCallbackFunc
@@ -1810,9 +1809,6 @@ func (t *DeleteSegmentsByPrefixTask) validateInput() {
 	if !t.ValidatePrefixSegmentsLister() {
 		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value PrefixSegmentsLister is invalid"))
 	}
-	if !t.ValidateSegment() {
-		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value Segment is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
@@ -1820,7 +1816,6 @@ func (t *DeleteSegmentsByPrefixTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPrefix(task, t)
 	types.LoadPrefixSegmentsLister(task, t)
-	types.LoadSegment(task, t)
 	// load optional fields
 	types.LoadHandleSegmentCallbackFunc(task, t)
 }
@@ -1882,7 +1877,7 @@ func (t *DeleteSegmentsByPrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteSegmentsByPrefixTask) String() string {
-	return fmt.Sprintf("DeleteSegmentsByPrefixTask {Prefix: %s, PrefixSegmentsLister: %s, Segment: %s, HandleSegmentCallbackFunc: %s}", t.Prefix.String(), t.PrefixSegmentsLister.String(), t.Segment.String(), t.HandleSegmentCallbackFunc.String())
+	return fmt.Sprintf("DeleteSegmentsByPrefixTask {Prefix: %s, PrefixSegmentsLister: %s, HandleSegmentCallbackFunc: %s}", t.Prefix.String(), t.PrefixSegmentsLister.String(), t.HandleSegmentCallbackFunc.String())
 }
 
 // NewDeleteSegmentsByPrefixTask will create a DeleteSegmentsByPrefixTask which meets task.Task.
