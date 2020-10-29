@@ -166,7 +166,7 @@ func (t *DeleteStorageTask) run(ctx context.Context) error {
 			deleteSegs.SetPrefixSegmentsLister(segmenter)
 			deleteSegs.SetPrefix("")
 
-			t.Async(ctx, deletePrefix)
+			t.Async(ctx, deleteSegs)
 		}
 
 		// if meet error, not continue to delete storage
