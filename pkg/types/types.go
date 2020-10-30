@@ -3,7 +3,9 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
+	"strconv"
 	"sync"
 
 	"github.com/Xuanwo/navvy"
@@ -15,6 +17,8 @@ import (
 	"github.com/qingstor/noah/pkg/fault"
 	"github.com/qingstor/noah/pkg/schedule"
 )
+
+var _ fmt.Stringer
 
 type ByteSize struct {
 	valid bool
@@ -73,6 +77,13 @@ func LoadByteSize(t navvy.Task, v ByteSizeSetter) {
 	}
 
 	v.SetByteSize(x.GetByteSize())
+}
+
+func (o *ByteSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type BytesPool struct {
@@ -134,6 +145,13 @@ func LoadBytesPool(t navvy.Task, v BytesPoolSetter) {
 	v.SetBytesPool(x.GetBytesPool())
 }
 
+func (o *BytesPool) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type CallbackFunc struct {
 	valid bool
 	v     func()
@@ -191,6 +209,13 @@ func LoadCallbackFunc(t navvy.Task, v CallbackFuncSetter) {
 	}
 
 	v.SetCallbackFunc(x.GetCallbackFunc())
+}
+
+func (o *CallbackFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type CheckMD5 struct {
@@ -252,6 +277,13 @@ func LoadCheckMD5(t navvy.Task, v CheckMD5Setter) {
 	v.SetCheckMD5(x.GetCheckMD5())
 }
 
+func (o *CheckMD5) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type CheckTasks struct {
 	valid bool
 	v     []func(t navvy.Task) navvy.Task
@@ -309,6 +341,13 @@ func LoadCheckTasks(t navvy.Task, v CheckTasksSetter) {
 	}
 
 	v.SetCheckTasks(x.GetCheckTasks())
+}
+
+func (o *CheckTasks) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Content struct {
@@ -370,6 +409,13 @@ func LoadContent(t navvy.Task, v ContentSetter) {
 	v.SetContent(x.GetContent())
 }
 
+func (o *Content) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type Delete struct {
 	valid bool
 	v     bool
@@ -427,6 +473,13 @@ func LoadDelete(t navvy.Task, v DeleteSetter) {
 	}
 
 	v.SetDelete(x.GetDelete())
+}
+
+func (o *Delete) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type DestinationIndexSegmenter struct {
@@ -488,6 +541,13 @@ func LoadDestinationIndexSegmenter(t navvy.Task, v DestinationIndexSegmenterSett
 	v.SetDestinationIndexSegmenter(x.GetDestinationIndexSegmenter())
 }
 
+func (o *DestinationIndexSegmenter) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
+}
+
 type DestinationObject struct {
 	valid bool
 	v     *types.Object
@@ -545,6 +605,16 @@ func LoadDestinationObject(t navvy.Task, v DestinationObjectSetter) {
 	}
 
 	v.SetDestinationObject(x.GetDestinationObject())
+}
+
+func (o *DestinationObject) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
 }
 
 type DestinationPath struct {
@@ -606,6 +676,13 @@ func LoadDestinationPath(t navvy.Task, v DestinationPathSetter) {
 	v.SetDestinationPath(x.GetDestinationPath())
 }
 
+func (o *DestinationPath) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type DestinationService struct {
 	valid bool
 	v     storage.Servicer
@@ -663,6 +740,13 @@ func LoadDestinationService(t navvy.Task, v DestinationServiceSetter) {
 	}
 
 	v.SetDestinationService(x.GetDestinationService())
+}
+
+func (o *DestinationService) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type DestinationStorage struct {
@@ -724,6 +808,13 @@ func LoadDestinationStorage(t navvy.Task, v DestinationStorageSetter) {
 	v.SetDestinationStorage(x.GetDestinationStorage())
 }
 
+func (o *DestinationStorage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
+}
+
 type DestinationType struct {
 	valid bool
 	v     types.ObjectType
@@ -781,6 +872,13 @@ func LoadDestinationType(t navvy.Task, v DestinationTypeSetter) {
 	}
 
 	v.SetDestinationType(x.GetDestinationType())
+}
+
+func (o *DestinationType) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type DirFunc struct {
@@ -842,6 +940,13 @@ func LoadDirFunc(t navvy.Task, v DirFuncSetter) {
 	v.SetDirFunc(x.GetDirFunc())
 }
 
+func (o *DirFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type DirLister struct {
 	valid bool
 	v     storage.DirLister
@@ -899,6 +1004,13 @@ func LoadDirLister(t navvy.Task, v DirListerSetter) {
 	}
 
 	v.SetDirLister(x.GetDirLister())
+}
+
+func (o *DirLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
 }
 
 type Done struct {
@@ -960,6 +1072,13 @@ func LoadDone(t navvy.Task, v DoneSetter) {
 	v.SetDone(x.GetDone())
 }
 
+func (o *Done) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type DryRun struct {
 	valid bool
 	v     bool
@@ -1017,6 +1136,13 @@ func LoadDryRun(t navvy.Task, v DryRunSetter) {
 	}
 
 	v.SetDryRun(x.GetDryRun())
+}
+
+func (o *DryRun) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type DryRunFunc struct {
@@ -1078,6 +1204,13 @@ func LoadDryRunFunc(t navvy.Task, v DryRunFuncSetter) {
 	v.SetDryRunFunc(x.GetDryRunFunc())
 }
 
+func (o *DryRunFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type EnableBenchmark struct {
 	valid bool
 	v     bool
@@ -1135,6 +1268,13 @@ func LoadEnableBenchmark(t navvy.Task, v EnableBenchmarkSetter) {
 	}
 
 	v.SetEnableBenchmark(x.GetEnableBenchmark())
+}
+
+func (o *EnableBenchmark) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ExcludeRegexp struct {
@@ -1196,6 +1336,16 @@ func LoadExcludeRegexp(t navvy.Task, v ExcludeRegexpSetter) {
 	v.SetExcludeRegexp(x.GetExcludeRegexp())
 }
 
+func (o *ExcludeRegexp) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return o.v.String()
+}
+
 type Existing struct {
 	valid bool
 	v     bool
@@ -1253,6 +1403,13 @@ func LoadExisting(t navvy.Task, v ExistingSetter) {
 	}
 
 	v.SetExisting(x.GetExisting())
+}
+
+func (o *Existing) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ExpectSize struct {
@@ -1314,6 +1471,13 @@ func LoadExpectSize(t navvy.Task, v ExpectSizeSetter) {
 	v.SetExpectSize(x.GetExpectSize())
 }
 
+func (o *ExpectSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
+}
+
 type Expire struct {
 	valid bool
 	v     int
@@ -1371,6 +1535,13 @@ func LoadExpire(t navvy.Task, v ExpireSetter) {
 	}
 
 	v.SetExpire(x.GetExpire())
+}
+
+func (o *Expire) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type Fault struct {
@@ -1432,6 +1603,13 @@ func LoadFault(t navvy.Task, v FaultSetter) {
 	v.SetFault(x.GetFault())
 }
 
+func (o *Fault) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type FileFunc struct {
 	valid bool
 	v     func(*types.Object)
@@ -1489,6 +1667,13 @@ func LoadFileFunc(t navvy.Task, v FileFuncSetter) {
 	}
 
 	v.SetFileFunc(x.GetFileFunc())
+}
+
+func (o *FileFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Force struct {
@@ -1550,6 +1735,13 @@ func LoadForce(t navvy.Task, v ForceSetter) {
 	v.SetForce(x.GetForce())
 }
 
+func (o *Force) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type HandleObjCallback struct {
 	valid bool
 	v     func(*types.Object)
@@ -1607,6 +1799,13 @@ func LoadHandleObjCallback(t navvy.Task, v HandleObjCallbackSetter) {
 	}
 
 	v.SetHandleObjCallback(x.GetHandleObjCallback())
+}
+
+func (o *HandleObjCallback) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type HandleSegmentCallback struct {
@@ -1668,6 +1867,13 @@ func LoadHandleSegmentCallback(t navvy.Task, v HandleSegmentCallbackSetter) {
 	v.SetHandleSegmentCallback(x.GetHandleSegmentCallback())
 }
 
+func (o *HandleSegmentCallback) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type HumanReadable struct {
 	valid bool
 	v     bool
@@ -1725,6 +1931,13 @@ func LoadHumanReadable(t navvy.Task, v HumanReadableSetter) {
 	}
 
 	v.SetHumanReadable(x.GetHumanReadable())
+}
+
+func (o *HumanReadable) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type ID struct {
@@ -1786,6 +1999,13 @@ func LoadID(t navvy.Task, v IDSetter) {
 	v.SetID(x.GetID())
 }
 
+func (o *ID) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type IgnoreExisting struct {
 	valid bool
 	v     bool
@@ -1843,6 +2063,13 @@ func LoadIgnoreExisting(t navvy.Task, v IgnoreExistingSetter) {
 	}
 
 	v.SetIgnoreExisting(x.GetIgnoreExisting())
+}
+
+func (o *IgnoreExisting) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type IncludeRegexp struct {
@@ -1904,6 +2131,16 @@ func LoadIncludeRegexp(t navvy.Task, v IncludeRegexpSetter) {
 	v.SetIncludeRegexp(x.GetIncludeRegexp())
 }
 
+func (o *IncludeRegexp) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return o.v.String()
+}
+
 type Index struct {
 	valid bool
 	v     int
@@ -1961,6 +2198,13 @@ func LoadIndex(t navvy.Task, v IndexSetter) {
 	}
 
 	v.SetIndex(x.GetIndex())
+}
+
+func (o *Index) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type IndexSegmenter struct {
@@ -2022,6 +2266,13 @@ func LoadIndexSegmenter(t navvy.Task, v IndexSegmenterSetter) {
 	v.SetIndexSegmenter(x.GetIndexSegmenter())
 }
 
+func (o *IndexSegmenter) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.(storage.Storager).String()
+}
+
 type LongFormat struct {
 	valid bool
 	v     bool
@@ -2079,6 +2330,13 @@ func LoadLongFormat(t navvy.Task, v LongFormatSetter) {
 	}
 
 	v.SetLongFormat(x.GetLongFormat())
+}
+
+func (o *LongFormat) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type MD5Sum struct {
@@ -2140,6 +2398,13 @@ func LoadMD5Sum(t navvy.Task, v MD5SumSetter) {
 	v.SetMD5Sum(x.GetMD5Sum())
 }
 
+func (o *MD5Sum) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type Name struct {
 	valid bool
 	v     string
@@ -2197,6 +2462,13 @@ func LoadName(t navvy.Task, v NameSetter) {
 	}
 
 	v.SetName(x.GetName())
+}
+
+func (o *Name) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type Object struct {
@@ -2258,6 +2530,16 @@ func LoadObject(t navvy.Task, v ObjectSetter) {
 	v.SetObject(x.GetObject())
 }
 
+func (o *Object) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
+}
+
 type ObjectFunc struct {
 	valid bool
 	v     func(*types.Object)
@@ -2315,6 +2597,13 @@ func LoadObjectFunc(t navvy.Task, v ObjectFuncSetter) {
 	}
 
 	v.SetObjectFunc(x.GetObjectFunc())
+}
+
+func (o *ObjectFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Offset struct {
@@ -2376,6 +2665,13 @@ func LoadOffset(t navvy.Task, v OffsetSetter) {
 	v.SetOffset(x.GetOffset())
 }
 
+func (o *Offset) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
+}
+
 type PartNumber struct {
 	valid bool
 	v     int
@@ -2433,6 +2729,13 @@ func LoadPartNumber(t navvy.Task, v PartNumberSetter) {
 	}
 
 	v.SetPartNumber(x.GetPartNumber())
+}
+
+func (o *PartNumber) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.Itoa(o.v)
 }
 
 type PartSize struct {
@@ -2494,6 +2797,13 @@ func LoadPartSize(t navvy.Task, v PartSizeSetter) {
 	v.SetPartSize(x.GetPartSize())
 }
 
+func (o *PartSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
+}
+
 type PartThreshold struct {
 	valid bool
 	v     int64
@@ -2551,6 +2861,13 @@ func LoadPartThreshold(t navvy.Task, v PartThresholdSetter) {
 	}
 
 	v.SetPartThreshold(x.GetPartThreshold())
+}
+
+func (o *PartThreshold) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
 }
 
 type Passed struct {
@@ -2612,6 +2929,13 @@ func LoadPassed(t navvy.Task, v PassedSetter) {
 	v.SetPassed(x.GetPassed())
 }
 
+func (o *Passed) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type Path struct {
 	valid bool
 	v     string
@@ -2669,6 +2993,13 @@ func LoadPath(t navvy.Task, v PathSetter) {
 	}
 
 	v.SetPath(x.GetPath())
+}
+
+func (o *Path) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }
 
 type Pool struct {
@@ -2730,6 +3061,13 @@ func LoadPool(t navvy.Task, v PoolSetter) {
 	v.SetPool(x.GetPool())
 }
 
+func (o *Pool) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type PrefixLister struct {
 	valid bool
 	v     storage.PrefixLister
@@ -2787,6 +3125,13 @@ func LoadPrefixLister(t navvy.Task, v PrefixListerSetter) {
 	}
 
 	v.SetPrefixLister(x.GetPrefixLister())
+}
+
+func (o *PrefixLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type PrefixSegmentsLister struct {
@@ -2848,6 +3193,13 @@ func LoadPrefixSegmentsLister(t navvy.Task, v PrefixSegmentsListerSetter) {
 	v.SetPrefixSegmentsLister(x.GetPrefixSegmentsLister())
 }
 
+func (o *PrefixSegmentsLister) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type Reacher struct {
 	valid bool
 	v     storage.Reacher
@@ -2905,6 +3257,13 @@ func LoadReacher(t navvy.Task, v ReacherSetter) {
 	}
 
 	v.SetReacher(x.GetReacher())
+}
+
+func (o *Reacher) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type ReadableSize struct {
@@ -2966,6 +3325,13 @@ func LoadReadableSize(t navvy.Task, v ReadableSizeSetter) {
 	v.SetReadableSize(x.GetReadableSize())
 }
 
+func (o *ReadableSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type Recursive struct {
 	valid bool
 	v     bool
@@ -3023,6 +3389,13 @@ func LoadRecursive(t navvy.Task, v RecursiveSetter) {
 	}
 
 	v.SetRecursive(x.GetRecursive())
+}
+
+func (o *Recursive) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type Result struct {
@@ -3084,6 +3457,13 @@ func LoadResult(t navvy.Task, v ResultSetter) {
 	v.SetResult(x.GetResult())
 }
 
+func (o *Result) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type ScheduleFunc struct {
 	valid bool
 	v     schedule.TaskFunc
@@ -3141,6 +3521,13 @@ func LoadScheduleFunc(t navvy.Task, v ScheduleFuncSetter) {
 	}
 
 	v.SetScheduleFunc(x.GetScheduleFunc())
+}
+
+func (o *ScheduleFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type Scheduler struct {
@@ -3202,6 +3589,13 @@ func LoadScheduler(t navvy.Task, v SchedulerSetter) {
 	v.SetScheduler(x.GetScheduler())
 }
 
+func (o *Scheduler) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type Segment struct {
 	valid bool
 	v     segment.Segment
@@ -3259,6 +3653,13 @@ func LoadSegment(t navvy.Task, v SegmentSetter) {
 	}
 
 	v.SetSegment(x.GetSegment())
+}
+
+func (o *Segment) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type SegmentFunc struct {
@@ -3320,6 +3721,13 @@ func LoadSegmentFunc(t navvy.Task, v SegmentFuncSetter) {
 	v.SetSegmentFunc(x.GetSegmentFunc())
 }
 
+func (o *SegmentFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type Service struct {
 	valid bool
 	v     storage.Servicer
@@ -3377,6 +3785,13 @@ func LoadService(t navvy.Task, v ServiceSetter) {
 	}
 
 	v.SetService(x.GetService())
+}
+
+func (o *Service) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type Size struct {
@@ -3438,6 +3853,13 @@ func LoadSize(t navvy.Task, v SizeSetter) {
 	v.SetSize(x.GetSize())
 }
 
+func (o *Size) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
+}
+
 type SourceObject struct {
 	valid bool
 	v     *types.Object
@@ -3495,6 +3917,16 @@ func LoadSourceObject(t navvy.Task, v SourceObjectSetter) {
 	}
 
 	v.SetSourceObject(x.GetSourceObject())
+}
+
+func (o *SourceObject) String() string {
+	if !o.valid {
+		return ""
+	}
+	if o.v == nil {
+		return ""
+	}
+	return fmt.Sprint(o.v)
 }
 
 type SourcePath struct {
@@ -3556,6 +3988,13 @@ func LoadSourcePath(t navvy.Task, v SourcePathSetter) {
 	v.SetSourcePath(x.GetSourcePath())
 }
 
+func (o *SourcePath) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type SourceService struct {
 	valid bool
 	v     storage.Servicer
@@ -3613,6 +4052,13 @@ func LoadSourceService(t navvy.Task, v SourceServiceSetter) {
 	}
 
 	v.SetSourceService(x.GetSourceService())
+}
+
+func (o *SourceService) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
 }
 
 type SourceStorage struct {
@@ -3674,6 +4120,13 @@ func LoadSourceStorage(t navvy.Task, v SourceStorageSetter) {
 	v.SetSourceStorage(x.GetSourceStorage())
 }
 
+func (o *SourceStorage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
+}
+
 type SourceType struct {
 	valid bool
 	v     types.ObjectType
@@ -3731,6 +4184,13 @@ func LoadSourceType(t navvy.Task, v SourceTypeSetter) {
 	}
 
 	v.SetSourceType(x.GetSourceType())
+}
+
+func (o *SourceType) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type Storage struct {
@@ -3792,6 +4252,13 @@ func LoadStorage(t navvy.Task, v StorageSetter) {
 	v.SetStorage(x.GetStorage())
 }
 
+func (o *Storage) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v.String()
+}
+
 type StorageInfo struct {
 	valid bool
 	v     info.StorageStatistic
@@ -3849,6 +4316,13 @@ func LoadStorageInfo(t navvy.Task, v StorageInfoSetter) {
 	}
 
 	v.SetStorageInfo(x.GetStorageInfo())
+}
+
+func (o *StorageInfo) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type StorageName struct {
@@ -3910,6 +4384,13 @@ func LoadStorageName(t navvy.Task, v StorageNameSetter) {
 	v.SetStorageName(x.GetStorageName())
 }
 
+func (o *StorageName) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type StoragerFunc struct {
 	valid bool
 	v     storage.StoragerFunc
@@ -3967,6 +4448,13 @@ func LoadStoragerFunc(t navvy.Task, v StoragerFuncSetter) {
 	}
 
 	v.SetStoragerFunc(x.GetStoragerFunc())
+}
+
+func (o *StoragerFunc) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
 }
 
 type TotalSize struct {
@@ -4028,6 +4516,13 @@ func LoadTotalSize(t navvy.Task, v TotalSizeSetter) {
 	v.SetTotalSize(x.GetTotalSize())
 }
 
+func (o *TotalSize) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatInt(o.v, 10)
+}
+
 type Type struct {
 	valid bool
 	v     types.ObjectType
@@ -4085,6 +4580,13 @@ func LoadType(t navvy.Task, v TypeSetter) {
 	}
 
 	v.SetType(x.GetType())
+}
+
+func (o *Type) String() string {
+	if !o.valid {
+		return ""
+	}
+	return string(o.v)
 }
 
 type URL struct {
@@ -4146,6 +4648,13 @@ func LoadURL(t navvy.Task, v URLSetter) {
 	v.SetURL(x.GetURL())
 }
 
+func (o *URL) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type Update struct {
 	valid bool
 	v     bool
@@ -4203,6 +4712,13 @@ func LoadUpdate(t navvy.Task, v UpdateSetter) {
 	}
 
 	v.SetUpdate(x.GetUpdate())
+}
+
+func (o *Update) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
 }
 
 type WholeFile struct {
@@ -4264,6 +4780,13 @@ func LoadWholeFile(t navvy.Task, v WholeFileSetter) {
 	v.SetWholeFile(x.GetWholeFile())
 }
 
+func (o *WholeFile) String() string {
+	if !o.valid {
+		return ""
+	}
+	return strconv.FormatBool(o.v)
+}
+
 type Zone struct {
 	valid bool
 	v     string
@@ -4321,4 +4844,11 @@ func LoadZone(t navvy.Task, v ZoneSetter) {
 	}
 
 	v.SetZone(x.GetZone())
+}
+
+func (o *Zone) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
 }

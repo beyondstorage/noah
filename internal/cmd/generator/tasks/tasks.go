@@ -229,7 +229,7 @@ func (t *{{ .Name }}Task) String() string {
 {{- $called := false -}}
 {{- range $k, $v := .Input -}}
 {{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}{{$v}}: %v
+	{{ if $called }}, {{end}}{{$v}}: %s
 	{{- $called = true -}}
 {{- end -}}
 {{- end -}}
@@ -237,7 +237,7 @@ func (t *{{ .Name }}Task) String() string {
 {{- $called := false -}}
 {{- range $k, $v := .Input -}}
 {{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}t.Get{{$v}}()
+	{{ if $called }}, {{end}}t.{{$v}}.String()
 	{{- $called = true -}}
 {{- end -}}
 {{- end -}})

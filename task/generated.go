@@ -112,7 +112,7 @@ func (t *BetweenStorageCheckTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *BetweenStorageCheckTask) String() string {
-	return fmt.Sprintf("BetweenStorageCheckTask {DestinationPath: %v, DestinationStorage: %v, SourcePath: %v, SourceStorage: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("BetweenStorageCheckTask {DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewBetweenStorageCheckTask will create a BetweenStorageCheckTask which meets navvy.Task.
@@ -230,7 +230,7 @@ func (t *CopyDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyDirTask) String() string {
-	return fmt.Sprintf("CopyDirTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopyDirTask {CheckMD5: %s, CheckTasks: %s, DestinationPath: %s, DestinationStorage: %s, PartThreshold: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.CheckTasks.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.PartThreshold.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopyDirTask will create a CopyDirTask which meets navvy.Task.
@@ -348,7 +348,7 @@ func (t *CopyFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyFileTask) String() string {
-	return fmt.Sprintf("CopyFileTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopyFileTask {CheckMD5: %s, CheckTasks: %s, DestinationPath: %s, DestinationStorage: %s, PartThreshold: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.CheckTasks.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.PartThreshold.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopyFileTask will create a CopyFileTask which meets navvy.Task.
@@ -462,7 +462,7 @@ func (t *CopyLargeFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyLargeFileTask) String() string {
-	return fmt.Sprintf("CopyLargeFileTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, SourcePath: %v, SourceStorage: %v, TotalSize: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetSourcePath(), t.GetSourceStorage(), t.GetTotalSize())
+	return fmt.Sprintf("CopyLargeFileTask {CheckMD5: %s, DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s}", t.CheckMD5.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String(), t.TotalSize.String())
 }
 
 // NewCopyLargeFileTask will create a CopyLargeFileTask which meets navvy.Task.
@@ -595,7 +595,7 @@ func (t *CopyPartialFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialFileTask) String() string {
-	return fmt.Sprintf("CopyPartialFileTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, Index: %v, Offset: %v, PartSize: %v, Segment: %v, SourcePath: %v, SourceStorage: %v, TotalSize: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetIndex(), t.GetOffset(), t.GetPartSize(), t.GetSegment(), t.GetSourcePath(), t.GetSourceStorage(), t.GetTotalSize())
+	return fmt.Sprintf("CopyPartialFileTask {CheckMD5: %s, DestinationPath: %s, DestinationStorage: %s, Index: %s, Offset: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s, TotalSize: %s}", t.CheckMD5.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.Index.String(), t.Offset.String(), t.PartSize.String(), t.Segment.String(), t.SourcePath.String(), t.SourceStorage.String(), t.TotalSize.String())
 }
 
 // NewCopyPartialFileTask will create a CopyPartialFileTask which meets navvy.Task.
@@ -720,7 +720,7 @@ func (t *CopyPartialStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialStreamTask) String() string {
-	return fmt.Sprintf("CopyPartialStreamTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, Index: %v, PartSize: %v, Segment: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetIndex(), t.GetPartSize(), t.GetSegment(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopyPartialStreamTask {CheckMD5: %s, DestinationPath: %s, DestinationStorage: %s, Index: %s, PartSize: %s, Segment: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.Index.String(), t.PartSize.String(), t.Segment.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopyPartialStreamTask will create a CopyPartialStreamTask which meets navvy.Task.
@@ -831,7 +831,7 @@ func (t *CopySingleFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySingleFileTask) String() string {
-	return fmt.Sprintf("CopySingleFileTask {DestinationPath: %v, DestinationStorage: %v, MD5Sum: %v, Size: %v, SourcePath: %v, SourceStorage: %v}", t.GetDestinationPath(), t.GetDestinationStorage(), t.GetMD5Sum(), t.GetSize(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopySingleFileTask {DestinationPath: %s, DestinationStorage: %s, MD5Sum: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationPath.String(), t.DestinationStorage.String(), t.MD5Sum.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopySingleFileTask will create a CopySingleFileTask which meets navvy.Task.
@@ -943,7 +943,7 @@ func (t *CopySmallFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySmallFileTask) String() string {
-	return fmt.Sprintf("CopySmallFileTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, Size: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetSize(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopySmallFileTask {CheckMD5: %s, DestinationPath: %s, DestinationStorage: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopySmallFileTask will create a CopySmallFileTask which meets navvy.Task.
@@ -1052,7 +1052,7 @@ func (t *CopyStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyStreamTask) String() string {
-	return fmt.Sprintf("CopyStreamTask {CheckMD5: %v, DestinationPath: %v, DestinationStorage: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("CopyStreamTask {CheckMD5: %s, DestinationPath: %s, DestinationStorage: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewCopyStreamTask will create a CopyStreamTask which meets navvy.Task.
@@ -1140,7 +1140,7 @@ func (t *CreateStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CreateStorageTask) String() string {
-	return fmt.Sprintf("CreateStorageTask {Service: %v}", t.GetService())
+	return fmt.Sprintf("CreateStorageTask {Service: %s}", t.Service.String())
 }
 
 // NewCreateStorageTask will create a CreateStorageTask which meets navvy.Task.
@@ -1232,7 +1232,7 @@ func (t *DeleteDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteDirTask) String() string {
-	return fmt.Sprintf("DeleteDirTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
+	return fmt.Sprintf("DeleteDirTask {Path: %s, Storage: %s}", t.Path.String(), t.Storage.String())
 }
 
 // NewDeleteDirTask will create a DeleteDirTask which meets navvy.Task.
@@ -1324,7 +1324,7 @@ func (t *DeleteFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteFileTask) String() string {
-	return fmt.Sprintf("DeleteFileTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
+	return fmt.Sprintf("DeleteFileTask {Path: %s, Storage: %s}", t.Path.String(), t.Storage.String())
 }
 
 // NewDeleteFileTask will create a DeleteFileTask which meets navvy.Task.
@@ -1416,7 +1416,7 @@ func (t *DeletePrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeletePrefixTask) String() string {
-	return fmt.Sprintf("DeletePrefixTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
+	return fmt.Sprintf("DeletePrefixTask {Path: %s, Storage: %s}", t.Path.String(), t.Storage.String())
 }
 
 // NewDeletePrefixTask will create a DeletePrefixTask which meets navvy.Task.
@@ -1508,7 +1508,7 @@ func (t *DeleteSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteSegmentTask) String() string {
-	return fmt.Sprintf("DeleteSegmentTask {PrefixSegmentsLister: %v, Segment: %v}", t.GetPrefixSegmentsLister(), t.GetSegment())
+	return fmt.Sprintf("DeleteSegmentTask {PrefixSegmentsLister: %s, Segment: %s}", t.PrefixSegmentsLister.String(), t.Segment.String())
 }
 
 // NewDeleteSegmentTask will create a DeleteSegmentTask which meets navvy.Task.
@@ -1611,7 +1611,7 @@ func (t *DeleteStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteStorageTask) String() string {
-	return fmt.Sprintf("DeleteStorageTask {Force: %v, Service: %v, StorageName: %v, Zone: %v}", t.GetForce(), t.GetService(), t.GetStorageName(), t.GetZone())
+	return fmt.Sprintf("DeleteStorageTask {Force: %s, Service: %s, StorageName: %s, Zone: %s}", t.Force.String(), t.Service.String(), t.StorageName.String(), t.Zone.String())
 }
 
 // NewDeleteStorageTask will create a DeleteStorageTask which meets navvy.Task.
@@ -1715,7 +1715,7 @@ func (t *InitSegmentStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *InitSegmentStreamTask) String() string {
-	return fmt.Sprintf("InitSegmentStreamTask {BytesPool: %v, PartSize: %v, SourcePath: %v, SourceStorage: %v}", t.GetBytesPool(), t.GetPartSize(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("InitSegmentStreamTask {BytesPool: %s, PartSize: %s, SourcePath: %s, SourceStorage: %s}", t.BytesPool.String(), t.PartSize.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewInitSegmentStreamTask will create a InitSegmentStreamTask which meets navvy.Task.
@@ -1802,7 +1802,7 @@ func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsDestinationObjectExistTask) String() string {
-	return fmt.Sprintf("IsDestinationObjectExistTask {DestinationObject: %v}", t.GetDestinationObject())
+	return fmt.Sprintf("IsDestinationObjectExistTask {DestinationObject: %s}", t.DestinationObject.String())
 }
 
 // NewIsDestinationObjectExistTask will create a IsDestinationObjectExistTask which meets navvy.Task.
@@ -1889,7 +1889,7 @@ func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsDestinationObjectNotExistTask) String() string {
-	return fmt.Sprintf("IsDestinationObjectNotExistTask {DestinationObject: %v}", t.GetDestinationObject())
+	return fmt.Sprintf("IsDestinationObjectNotExistTask {DestinationObject: %s}", t.DestinationObject.String())
 }
 
 // NewIsDestinationObjectNotExistTask will create a IsDestinationObjectNotExistTask which meets navvy.Task.
@@ -1981,7 +1981,7 @@ func (t *IsSizeEqualTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsSizeEqualTask) String() string {
-	return fmt.Sprintf("IsSizeEqualTask {DestinationObject: %v, SourceObject: %v}", t.GetDestinationObject(), t.GetSourceObject())
+	return fmt.Sprintf("IsSizeEqualTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject.String(), t.SourceObject.String())
 }
 
 // NewIsSizeEqualTask will create a IsSizeEqualTask which meets navvy.Task.
@@ -2078,7 +2078,7 @@ func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsSourcePathExcludeIncludeTask) String() string {
-	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {ExcludeRegexp: %v, IncludeRegexp: %v, SourcePath: %v}", t.GetExcludeRegexp(), t.GetIncludeRegexp(), t.GetSourcePath())
+	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {ExcludeRegexp: %s, IncludeRegexp: %s, SourcePath: %s}", t.ExcludeRegexp.String(), t.IncludeRegexp.String(), t.SourcePath.String())
 }
 
 // NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets navvy.Task.
@@ -2170,7 +2170,7 @@ func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *IsUpdateAtGreaterTask) String() string {
-	return fmt.Sprintf("IsUpdateAtGreaterTask {DestinationObject: %v, SourceObject: %v}", t.GetDestinationObject(), t.GetSourceObject())
+	return fmt.Sprintf("IsUpdateAtGreaterTask {DestinationObject: %s, SourceObject: %s}", t.DestinationObject.String(), t.SourceObject.String())
 }
 
 // NewIsUpdateAtGreaterTask will create a IsUpdateAtGreaterTask which meets navvy.Task.
@@ -2271,7 +2271,7 @@ func (t *ListDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListDirTask) String() string {
-	return fmt.Sprintf("ListDirTask {DirLister: %v, Path: %v}", t.GetDirLister(), t.GetPath())
+	return fmt.Sprintf("ListDirTask {DirLister: %s, Path: %s}", t.DirLister.String(), t.Path.String())
 }
 
 // NewListDirTask will create a ListDirTask which meets navvy.Task.
@@ -2367,7 +2367,7 @@ func (t *ListPrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListPrefixTask) String() string {
-	return fmt.Sprintf("ListPrefixTask {Path: %v, PrefixLister: %v}", t.GetPath(), t.GetPrefixLister())
+	return fmt.Sprintf("ListPrefixTask {Path: %s, PrefixLister: %s}", t.Path.String(), t.PrefixLister.String())
 }
 
 // NewListPrefixTask will create a ListPrefixTask which meets navvy.Task.
@@ -2463,7 +2463,7 @@ func (t *ListSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListSegmentTask) String() string {
-	return fmt.Sprintf("ListSegmentTask {Path: %v, PrefixSegmentsLister: %v}", t.GetPath(), t.GetPrefixSegmentsLister())
+	return fmt.Sprintf("ListSegmentTask {Path: %s, PrefixSegmentsLister: %s}", t.Path.String(), t.PrefixSegmentsLister.String())
 }
 
 // NewListSegmentTask will create a ListSegmentTask which meets navvy.Task.
@@ -2559,7 +2559,7 @@ func (t *ListStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListStorageTask) String() string {
-	return fmt.Sprintf("ListStorageTask {Service: %v, Zone: %v}", t.GetService(), t.GetZone())
+	return fmt.Sprintf("ListStorageTask {Service: %s, Zone: %s}", t.Service.String(), t.Zone.String())
 }
 
 // NewListStorageTask will create a ListStorageTask which meets navvy.Task.
@@ -2661,7 +2661,7 @@ func (t *MD5SumFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MD5SumFileTask) String() string {
-	return fmt.Sprintf("MD5SumFileTask {Offset: %v, Path: %v, Size: %v, Storage: %v}", t.GetOffset(), t.GetPath(), t.GetSize(), t.GetStorage())
+	return fmt.Sprintf("MD5SumFileTask {Offset: %s, Path: %s, Size: %s, Storage: %s}", t.Offset.String(), t.Path.String(), t.Size.String(), t.Storage.String())
 }
 
 // NewMD5SumFileTask will create a MD5SumFileTask which meets navvy.Task.
@@ -2748,7 +2748,7 @@ func (t *MD5SumStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MD5SumStreamTask) String() string {
-	return fmt.Sprintf("MD5SumStreamTask {Content: %v}", t.GetContent())
+	return fmt.Sprintf("MD5SumStreamTask {Content: %s}", t.Content.String())
 }
 
 // NewMD5SumStreamTask will create a MD5SumStreamTask which meets navvy.Task.
@@ -2866,7 +2866,7 @@ func (t *MoveDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveDirTask) String() string {
-	return fmt.Sprintf("MoveDirTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("MoveDirTask {CheckMD5: %s, CheckTasks: %s, DestinationPath: %s, DestinationStorage: %s, PartThreshold: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.CheckTasks.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.PartThreshold.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewMoveDirTask will create a MoveDirTask which meets navvy.Task.
@@ -2984,7 +2984,7 @@ func (t *MoveFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveFileTask) String() string {
-	return fmt.Sprintf("MoveFileTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("MoveFileTask {CheckMD5: %s, CheckTasks: %s, DestinationPath: %s, DestinationStorage: %s, PartThreshold: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.CheckTasks.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.PartThreshold.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewMoveFileTask will create a MoveFileTask which meets navvy.Task.
@@ -3081,7 +3081,7 @@ func (t *ReachFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ReachFileTask) String() string {
-	return fmt.Sprintf("ReachFileTask {Expire: %v, Path: %v, Reacher: %v}", t.GetExpire(), t.GetPath(), t.GetReacher())
+	return fmt.Sprintf("ReachFileTask {Expire: %s, Path: %s, Reacher: %s}", t.Expire.String(), t.Path.String(), t.Reacher.String())
 }
 
 // NewReachFileTask will create a ReachFileTask which meets navvy.Task.
@@ -3177,7 +3177,7 @@ func (t *SegmentCompleteTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentCompleteTask) String() string {
-	return fmt.Sprintf("SegmentCompleteTask {IndexSegmenter: %v, Path: %v, Segment: %v}", t.GetIndexSegmenter(), t.GetPath(), t.GetSegment())
+	return fmt.Sprintf("SegmentCompleteTask {IndexSegmenter: %s, Path: %s, Segment: %s}", t.IndexSegmenter.String(), t.Path.String(), t.Segment.String())
 }
 
 // NewSegmentCompleteTask will create a SegmentCompleteTask which meets navvy.Task.
@@ -3303,7 +3303,7 @@ func (t *SegmentFileCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentFileCopyTask) String() string {
-	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %v, DestinationPath: %v, Index: %v, MD5Sum: %v, Offset: %v, Segment: %v, Size: %v, SourcePath: %v, SourceStorage: %v}", t.GetDestinationIndexSegmenter(), t.GetDestinationPath(), t.GetIndex(), t.GetMD5Sum(), t.GetOffset(), t.GetSegment(), t.GetSize(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("SegmentFileCopyTask {DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s, SourcePath: %s, SourceStorage: %s}", t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewSegmentFileCopyTask will create a SegmentFileCopyTask which meets navvy.Task.
@@ -3400,7 +3400,7 @@ func (t *SegmentInitTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentInitTask) String() string {
-	return fmt.Sprintf("SegmentInitTask {IndexSegmenter: %v, PartSize: %v, Path: %v}", t.GetIndexSegmenter(), t.GetPartSize(), t.GetPath())
+	return fmt.Sprintf("SegmentInitTask {IndexSegmenter: %s, PartSize: %s, Path: %s}", t.IndexSegmenter.String(), t.PartSize.String(), t.Path.String())
 }
 
 // NewSegmentInitTask will create a SegmentInitTask which meets navvy.Task.
@@ -3521,7 +3521,7 @@ func (t *SegmentStreamCopyTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SegmentStreamCopyTask) String() string {
-	return fmt.Sprintf("SegmentStreamCopyTask {Content: %v, DestinationIndexSegmenter: %v, DestinationPath: %v, Index: %v, MD5Sum: %v, Offset: %v, Segment: %v, Size: %v}", t.GetContent(), t.GetDestinationIndexSegmenter(), t.GetDestinationPath(), t.GetIndex(), t.GetMD5Sum(), t.GetOffset(), t.GetSegment(), t.GetSize())
+	return fmt.Sprintf("SegmentStreamCopyTask {Content: %s, DestinationIndexSegmenter: %s, DestinationPath: %s, Index: %s, MD5Sum: %s, Offset: %s, Segment: %s, Size: %s}", t.Content.String(), t.DestinationIndexSegmenter.String(), t.DestinationPath.String(), t.Index.String(), t.MD5Sum.String(), t.Offset.String(), t.Segment.String(), t.Size.String())
 }
 
 // NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets navvy.Task.
@@ -3613,7 +3613,7 @@ func (t *StatFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *StatFileTask) String() string {
-	return fmt.Sprintf("StatFileTask {Path: %v, Storage: %v}", t.GetPath(), t.GetStorage())
+	return fmt.Sprintf("StatFileTask {Path: %s, Storage: %s}", t.Path.String(), t.Storage.String())
 }
 
 // NewStatFileTask will create a StatFileTask which meets navvy.Task.
@@ -3700,7 +3700,7 @@ func (t *StatStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *StatStorageTask) String() string {
-	return fmt.Sprintf("StatStorageTask {Storage: %v}", t.GetStorage())
+	return fmt.Sprintf("StatStorageTask {Storage: %s}", t.Storage.String())
 }
 
 // NewStatStorageTask will create a StatStorageTask which meets navvy.Task.
@@ -3828,7 +3828,7 @@ func (t *SyncTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SyncTask) String() string {
-	return fmt.Sprintf("SyncTask {CheckMD5: %v, CheckTasks: %v, DestinationPath: %v, DestinationStorage: %v, PartThreshold: %v, Recursive: %v, SourcePath: %v, SourceStorage: %v}", t.GetCheckMD5(), t.GetCheckTasks(), t.GetDestinationPath(), t.GetDestinationStorage(), t.GetPartThreshold(), t.GetRecursive(), t.GetSourcePath(), t.GetSourceStorage())
+	return fmt.Sprintf("SyncTask {CheckMD5: %s, CheckTasks: %s, DestinationPath: %s, DestinationStorage: %s, PartThreshold: %s, Recursive: %s, SourcePath: %s, SourceStorage: %s}", t.CheckMD5.String(), t.CheckTasks.String(), t.DestinationPath.String(), t.DestinationStorage.String(), t.PartThreshold.String(), t.Recursive.String(), t.SourcePath.String(), t.SourceStorage.String())
 }
 
 // NewSyncTask will create a SyncTask which meets navvy.Task.
