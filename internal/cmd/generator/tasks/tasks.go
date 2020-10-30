@@ -122,6 +122,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
@@ -225,22 +226,16 @@ func (t *{{ .Name }}Task) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *{{ .Name }}Task) String() string {
-	return fmt.Sprintf("{{ .Name }}Task {
-{{- $called := false -}}
+{{- $length := len .Input }}
+	s := make([]string, 0, {{$length}})
 {{- range $k, $v := .Input -}}
-{{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}{{$v}}: %s
-	{{- $called = true -}}
+{{- if not (endwith $v "Func") }}
+	if t.Validate{{$v}}() {
+		s = append(s, fmt.Sprintf("{{$v}}: %s", t.{{$v}}.String()))
+	}
 {{- end -}}
-{{- end -}}
-}",
-{{- $called := false -}}
-{{- range $k, $v := .Input -}}
-{{- if not (endwith $v "Func") -}}
-	{{ if $called }}, {{end}}t.{{$v}}.String()
-	{{- $called = true -}}
-{{- end -}}
-{{- end -}})
+{{- end }}
+	return fmt.Sprintf("{{ .Name }}Task {%s}", strings.Join(s, ", "))
 }
 
 
