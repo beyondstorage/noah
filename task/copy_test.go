@@ -494,7 +494,7 @@ func TestCopyStreamTask_run(t *testing.T) {
 			case *SegmentCompleteTask:
 				assert.Equal(t, dstPath, v.GetPath())
 				assert.Equal(t, seg, v.GetSegment())
-			case *InitSegmentStreamTask:
+			case *SegmentStreamInitTask:
 				v.SetSize(1024)
 				v.SetContent(bytes.NewBuffer(nil))
 				v.SetDone(func() bool {
@@ -540,7 +540,7 @@ func TestCopyStreamTask_run(t *testing.T) {
 			case *SegmentInitTask:
 				assert.Equal(t, dstPath, v.GetPath())
 				v.SetSegment(seg)
-			case *InitSegmentStreamTask:
+			case *SegmentStreamInitTask:
 				assert.Equal(t, int64(constants.DefaultPartSize), v.GetPartSize())
 				v.SetSize(v.GetPartSize())
 				v.SetContent(bytes.NewBuffer(nil))

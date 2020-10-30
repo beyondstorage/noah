@@ -32,9 +32,9 @@ func (t *DeleteDirTask) run(ctx context.Context) {
 	x.SetFileFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
 		t.GetScheduler().Async(ctx, sf)
@@ -42,8 +42,8 @@ func (t *DeleteDirTask) run(ctx context.Context) {
 	x.SetDirFunc(func(o *typ.Object) {
 		sf := NewDeleteDir(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
-			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		if t.ValidateHandleObjCallbackFunc() {
+			sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
 		}
 		t.GetScheduler().Sync(ctx, sf)
 	})
@@ -54,8 +54,8 @@ func (t *DeleteDirTask) run(ctx context.Context) {
 
 	// after delete all files in this dir, delete dir itself as a file, see issue #43
 	dr := NewDeleteFile(t)
-	if t.ValidateHandleObjCallback() {
-		dr.SetHandleObjCallback(t.GetHandleObjCallback())
+	if t.ValidateHandleObjCallbackFunc() {
+		dr.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
 	}
 	t.GetScheduler().Sync(ctx, dr)
 }
@@ -72,9 +72,9 @@ func (t *DeletePrefixTask) run(ctx context.Context) {
 	x.SetObjectFunc(func(o *typ.Object) {
 		sf := NewDeleteFile(t)
 		sf.SetPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
 		t.GetScheduler().Async(ctx, sf)
@@ -107,8 +107,8 @@ func (t *DeleteStorageTask) run(ctx context.Context) {
 		deletePrefix := NewDeletePrefix(t)
 		deletePrefix.SetPath("")
 		deletePrefix.SetStorage(store)
-		if t.ValidateHandleObjCallback() {
-			deletePrefix.SetHandleObjCallback(t.GetHandleObjCallback())
+		if t.ValidateHandleObjCallbackFunc() {
+			deletePrefix.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
 		}
 
 		t.GetScheduler().Async(ctx, deletePrefix)
@@ -122,9 +122,9 @@ func (t *DeleteStorageTask) run(ctx context.Context) {
 				sf := NewDeleteSegment(t)
 				sf.SetPrefixSegmentsLister(segmenter)
 				sf.SetSegment(s)
-				if t.ValidateHandleSegmentCallback() {
+				if t.ValidateHandleSegmentCallbackFunc() {
 					sf.SetCallbackFunc(func() {
-						t.GetHandleSegmentCallback()(s)
+						t.GetHandleSegmentCallbackFunc()(s)
 					})
 				}
 				t.GetScheduler().Async(ctx, sf)

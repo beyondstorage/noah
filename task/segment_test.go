@@ -182,7 +182,7 @@ func TestInitSegmentStreamTask_run(t *testing.T) {
 	srcStore := mock.NewMockStorager(ctrl)
 	srcReader := mock.NewMockReadCloser(ctrl)
 
-	task := InitSegmentStreamTask{}
+	task := SegmentStreamInitTask{}
 	task.SetPartSize(1024)
 	task.SetSourceStorage(srcStore)
 	task.SetSourcePath(srcPath)

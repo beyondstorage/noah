@@ -1,12 +1,14 @@
 {
   "BetweenStorageCheck": {
     "description": "Do check for between storage task",
-    "input": [
-      "DestinationPath",
-      "DestinationStorage",
-      "SourcePath",
-      "SourceStorage"
-    ],
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ]
+    },
     "output": [
       "DestinationObject",
       "SourceObject"
@@ -14,66 +16,79 @@
   },
   "CopyDir": {
     "description": "copy a directory recursively between two storager",
-    "input": [
-      "CheckMD5",
-      "CheckTasks",
-      "DestinationPath",
-      "DestinationStorage",
-      "PartThreshold",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "PartSize"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "CheckTasks",
+        "HandleObjCallbackFunc",
+        "PartSize",
+        "PartThreshold"
+      ]
+    }
   },
   "CopyFile": {
     "description": "copy a file between two storager",
-    "input": [
-      "CheckMD5",
-      "CheckTasks",
-      "DestinationPath",
-      "DestinationStorage",
-      "PartThreshold",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "PartSize"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "CheckTasks",
+        "DryRunFunc",
+        "HandleObjCallbackFunc",
+        "PartSize",
+        "PartThreshold"
+      ]
+    }
   },
   "CopyLargeFile": {
     "description": "copy a large file between two storager",
-    "input": [
-      "CheckMD5",
-      "DestinationPath",
-      "DestinationStorage",
-      "SourcePath",
-      "SourceStorage",
-      "TotalSize"
-    ],
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage",
+        "TotalSize"
+      ],
+      "optional": [
+        "CheckMD5",
+        "PartSize"
+      ]
+    },
     "output": [
       "Offset",
-      "PartSize",
       "Segment"
     ]
   },
   "CopyPartialFile": {
     "description": "copy a partial file to between two storager",
-    "input": [
-      "CheckMD5",
-      "DestinationPath",
-      "DestinationStorage",
-      "Index",
-      "Offset",
-      "PartSize",
-      "Segment",
-      "SourcePath",
-      "SourceStorage",
-      "TotalSize"
-    ],
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "Index",
+        "Offset",
+        "PartSize",
+        "Segment",
+        "SourcePath",
+        "SourceStorage",
+        "TotalSize"
+      ],
+      "optional": [
+        "CheckMD5"
+      ]
+    },
     "output": [
       "Done",
       "Size"
@@ -81,16 +96,20 @@
   },
   "CopyPartialStream": {
     "description": "copy a partial stream between two storager",
-    "input": [
-      "CheckMD5",
-      "DestinationPath",
-      "DestinationStorage",
-      "Index",
-      "PartSize",
-      "Segment",
-      "SourcePath",
-      "SourceStorage"
-    ],
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "Index",
+        "PartSize",
+        "Segment",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5"
+      ]
+    },
     "output": [
       "Content",
       "Done",
@@ -100,348 +119,424 @@
   },
   "CopySingleFile": {
     "description": "execute a file copy operation between two storager",
-    "input": [
-      "DestinationPath",
-      "DestinationStorage",
-      "MD5Sum",
-      "Size",
-      "SourcePath",
-      "SourceStorage"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "Size",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "MD5Sum"
+      ]
+    }
   },
   "CopySmallFile": {
     "description": "copy a small file between two storager",
-    "input": [
-      "CheckMD5",
-      "DestinationPath",
-      "DestinationStorage",
-      "Size",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "MD5Sum"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "Size",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "MD5Sum"
+      ]
+    }
   },
   "CopyStream": {
     "description": "copy a stream between two storager",
-    "input": [
-      "CheckMD5",
-      "DestinationPath",
-      "DestinationStorage",
-      "SourcePath",
-      "SourceStorage"
-    ],
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "PartSize"
+      ]
+    },
     "output": [
       "BytesPool",
-      "PartSize",
       "Segment"
     ]
   },
   "CreateStorage": {
     "description": "create a storage",
-    "input": [
-      "Service"
-    ],
+    "input": {
+      "required": [
+        "Service"
+      ],
+      "optional": [
+        "Zone"
+      ]
+    },
     "output": [
-      "StorageName",
-      "Zone"
+      "StorageName"
     ]
   },
   "DeleteDir": {
     "description": "will delete a dir recursively",
-    "input": [
-      "Path",
-      "Storage"
-    ],
-    "output": [
-      "HandleObjCallback"
-    ]
+    "input": {
+      "required": [
+        "Path",
+        "Storage"
+      ],
+      "optional": [
+        "HandleObjCallbackFunc"
+      ]
+    }
   },
   "DeleteFile": {
     "description": "will delete a file from storage",
-    "input": [
-      "Path",
-      "Storage"
-    ],
-    "output": [
-      "HandleObjCallback"
-    ]
+    "input": {
+      "required": [
+        "Path",
+        "Storage"
+      ],
+      "optional": [
+        "HandleObjCallbackFunc"
+      ]
+    }
   },
   "DeletePrefix": {
     "description": "will delete objects with given prefix from storage",
-    "input": [
-      "Path",
-      "Storage"
-    ],
-    "output": [
-      "HandleObjCallback"
-    ]
+    "input": {
+      "required": [
+        "Path",
+        "Storage"
+      ],
+      "optional": [
+        "HandleObjCallbackFunc"
+      ]
+    }
   },
   "DeleteSegment": {
-    "description": "delete all segments with a given path",
-    "input": [
-      "PrefixSegmentsLister",
-      "Segment"
-    ],
-    "output": [
-      "HandleSegmentCallback"
-    ]
+    "description": "delete segments with a given path",
+    "input": {
+      "required": [
+        "PrefixSegmentsLister",
+        "Segment"
+      ],
+      "optional": [
+        "HandleSegmentCallbackFunc"
+      ]
+    }
   },
   "DeleteStorage": {
     "description": "delete a storage",
-    "input": [
-      "Force",
-      "Service",
-      "StorageName",
-      "Zone"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "HandleSegmentCallback"
-    ]
-  },
-  "InitSegmentStream": {
-    "description": "init a partial stream between two storager",
-    "input": [
-      "BytesPool",
-      "PartSize",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "Content",
-      "Done",
-      "Size"
-    ]
+    "input": {
+      "required": [
+        "Service",
+        "StorageName"
+      ],
+      "optional": [
+        "Force",
+        "HandleObjCallbackFunc",
+        "HandleSegmentCallbackFunc",
+        "Zone"
+      ]
+    }
   },
   "IsDestinationObjectExist": {
-    "description": "",
-    "input": [
-      "DestinationObject"
-    ],
+    "description": "check if destination object exist",
+    "input": {
+      "required": [
+        "DestinationObject"
+      ]
+    },
     "output": [
       "Result"
     ]
   },
   "IsDestinationObjectNotExist": {
-    "description": "",
-    "input": [
-      "DestinationObject"
-    ],
+    "description": "check if destination object not exist",
+    "input": {
+      "required": [
+        "DestinationObject"
+      ]
+    },
     "output": [
       "Result"
     ]
   },
   "IsSizeEqual": {
-    "description": "",
-    "input": [
-      "DestinationObject",
-      "SourceObject"
-    ],
+    "description": "check if source object and destination object size equal",
+    "input": {
+      "required": [
+        "DestinationObject",
+        "SourceObject"
+      ]
+    },
     "output": [
       "Result"
     ]
   },
   "IsSourcePathExcludeInclude": {
-    "description": "check whether source path is excluded or included",
-    "input": [
-      "ExcludeRegexp",
-      "IncludeRegexp",
-      "SourcePath"
-    ],
+    "description": "check if source path is excluded or included",
+    "input": {
+      "required": [
+        "SourcePath"
+      ],
+      "optional": [
+        "ExcludeRegexp",
+        "IncludeRegexp"
+      ]
+    },
     "output": [
       "Result"
     ]
   },
   "IsUpdateAtGreater": {
-    "description": "",
-    "input": [
-      "DestinationObject",
-      "SourceObject"
-    ],
+    "description": "check if source object's mtime is greater (newer) than destination object's",
+    "input": {
+      "required": [
+        "DestinationObject",
+        "SourceObject"
+      ]
+    },
     "output": [
       "Result"
     ]
   },
   "ListDir": {
     "description": "list dirs",
-    "input": [
-      "DirFunc",
-      "DirLister",
-      "FileFunc",
-      "Path"
-    ]
+    "input": {
+      "required": [
+        "DirFunc",
+        "DirLister",
+        "FileFunc",
+        "Path"
+      ]
+    }
   },
   "ListPrefix": {
     "description": "list prefix",
-    "input": [
-      "ObjectFunc",
-      "Path",
-      "PrefixLister"
-    ]
+    "input": {
+      "required": [
+        "ObjectFunc",
+        "Path",
+        "PrefixLister"
+      ]
+    }
   },
   "ListSegment": {
     "description": "list segments",
-    "input": [
-      "Path",
-      "PrefixSegmentsLister",
-      "SegmentFunc"
-    ]
+    "input": {
+      "required": [
+        "Path",
+        "PrefixSegmentsLister",
+        "SegmentFunc"
+      ]
+    }
   },
   "ListStorage": {
     "description": "send get request to get bucket list",
-    "input": [
-      "Service",
-      "StoragerFunc",
-      "Zone"
-    ]
+    "input": {
+      "required": [
+        "Service",
+        "StoragerFunc"
+      ],
+      "optional": [
+        "Zone"
+      ]
+    }
   },
   "MD5SumFile": {
     "description": "get file's md5 sum",
-    "input": [
-      "Offset",
-      "Path",
-      "Size",
-      "Storage"
-    ],
+    "input": {
+      "required": [
+        "Offset",
+        "Path",
+        "Size",
+        "Storage"
+      ]
+    },
     "output": [
       "MD5Sum"
     ]
   },
   "MD5SumStream": {
     "description": "get stream's md5 sum",
-    "input": [
-      "Content"
-    ],
+    "input": {
+      "required": [
+        "Content"
+      ]
+    },
     "output": [
       "MD5Sum"
     ]
   },
   "MoveDir": {
     "description": "move a directory recursively between two storager",
-    "input": [
-      "CheckMD5",
-      "CheckTasks",
-      "DestinationPath",
-      "DestinationStorage",
-      "PartThreshold",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "PartSize"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "CheckTasks",
+        "HandleObjCallbackFunc",
+        "PartSize",
+        "PartThreshold"
+      ]
+    }
   },
   "MoveFile": {
     "description": "move a file between two storager",
-    "input": [
-      "CheckMD5",
-      "CheckTasks",
-      "DestinationPath",
-      "DestinationStorage",
-      "PartThreshold",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "PartSize"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "CheckTasks",
+        "HandleObjCallbackFunc",
+        "PartSize",
+        "PartThreshold"
+      ]
+    }
   },
   "ReachFile": {
     "description": "will reach a remote object and return the signed url",
-    "input": [
-      "Expire",
-      "Path",
-      "Reacher"
-    ],
+    "input": {
+      "required": [
+        "Expire",
+        "Path",
+        "Reacher"
+      ]
+    },
     "output": [
       "URL"
     ]
   },
   "SegmentComplete": {
     "description": "complete a segment",
-    "input": [
-      "IndexSegmenter",
-      "Path",
-      "Segment"
-    ]
+    "input": {
+      "required": [
+        "IndexSegmenter",
+        "Path",
+        "Segment"
+      ]
+    }
   },
   "SegmentFileCopy": {
     "description": "copy a segment file",
-    "input": [
-      "DestinationIndexSegmenter",
-      "DestinationPath",
-      "Index",
-      "MD5Sum",
-      "Offset",
-      "Segment",
-      "Size",
-      "SourcePath",
-      "SourceStorage"
-    ]
+    "input": {
+      "required": [
+        "DestinationIndexSegmenter",
+        "DestinationPath",
+        "Index",
+        "Offset",
+        "Segment",
+        "Size",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "MD5Sum"
+      ]
+    }
   },
   "SegmentInit": {
     "description": "init a segment upload",
-    "input": [
-      "IndexSegmenter",
-      "PartSize",
-      "Path"
-    ],
+    "input": {
+      "required": [
+        "IndexSegmenter",
+        "PartSize",
+        "Path"
+      ]
+    },
     "output": [
       "Segment"
     ]
   },
   "SegmentStreamCopy": {
     "description": "copy a segment stream",
-    "input": [
+    "input": {
+      "required": [
+        "Content",
+        "DestinationIndexSegmenter",
+        "DestinationPath",
+        "Index",
+        "Offset",
+        "Segment",
+        "Size"
+      ],
+      "optional": [
+        "MD5Sum"
+      ]
+    }
+  },
+  "SegmentStreamInit": {
+    "description": "init a partial stream between two storager",
+    "input": {
+      "required": [
+        "BytesPool",
+        "PartSize",
+        "SourcePath",
+        "SourceStorage"
+      ]
+    },
+    "output": [
       "Content",
-      "DestinationIndexSegmenter",
-      "DestinationPath",
-      "Index",
-      "MD5Sum",
-      "Offset",
-      "Segment",
+      "Done",
       "Size"
     ]
   },
   "StatFile": {
     "description": "stat a remote object by request headObject",
-    "input": [
-      "Path",
-      "Storage"
-    ],
+    "input": {
+      "required": [
+        "Path",
+        "Storage"
+      ]
+    },
     "output": [
       "Object"
     ]
   },
   "StatStorage": {
     "description": "stat a remote storage by Statistical",
-    "input": [
-      "Storage"
-    ],
+    "input": {
+      "required": [
+        "Storage"
+      ]
+    },
     "output": [
       "StorageInfo"
     ]
   },
   "Sync": {
     "description": "sync directory between two storage",
-    "input": [
-      "CheckMD5",
-      "CheckTasks",
-      "DestinationPath",
-      "DestinationStorage",
-      "DryRunFunc",
-      "PartThreshold",
-      "Recursive",
-      "SourcePath",
-      "SourceStorage"
-    ],
-    "output": [
-      "HandleObjCallback",
-      "PartSize"
-    ]
+    "input": {
+      "required": [
+        "DestinationPath",
+        "DestinationStorage",
+        "SourcePath",
+        "SourceStorage"
+      ],
+      "optional": [
+        "CheckMD5",
+        "CheckTasks",
+        "DryRunFunc",
+        "HandleObjCallbackFunc",
+        "PartSize",
+        "PartThreshold",
+        "Recursive"
+      ]
+    }
   }
 }
