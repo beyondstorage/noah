@@ -28,9 +28,9 @@ func (t *CopyDirTask) run(ctx context.Context) {
 		sf := NewCopyFile(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
 		if t.ValidatePartSize() {
@@ -42,8 +42,8 @@ func (t *CopyDirTask) run(ctx context.Context) {
 		sf := NewCopyDir(t)
 		sf.SetSourcePath(o.Name)
 		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallback() {
-			sf.SetHandleObjCallback(t.GetHandleObjCallback())
+		if t.ValidateHandleObjCallbackFunc() {
+			sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
 		}
 		if t.ValidatePartSize() {
 			sf.SetPartSize(t.GetPartSize())
@@ -239,7 +239,7 @@ func (t *CopyStreamTask) run(ctx context.Context) {
 
 	offset, part := int64(0), 0
 	for {
-		it := NewInitSegmentStream(t)
+		it := NewSegmentStreamInit(t)
 		t.GetScheduler().Sync(ctx, it)
 		if t.GetFault().HasError() {
 			return

@@ -27,11 +27,13 @@ type BetweenStorageCheckTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.SourcePath
 	types.SourceStorage
+
+	// Optional Input value
 
 	// Output value
 	types.DestinationObject
@@ -70,10 +72,13 @@ func (t *BetweenStorageCheckTask) validateInput() {
 func (t *BetweenStorageCheckTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -114,18 +119,11 @@ func (t *BetweenStorageCheckTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *BetweenStorageCheckTask) String() string {
 	s := make([]string, 0, 4)
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	return fmt.Sprintf("BetweenStorageCheckTask {%s}", strings.Join(s, ", "))
 }
 
@@ -143,18 +141,20 @@ type CopyDirTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
-	types.CheckTasks
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.PartThreshold
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
-	types.HandleObjCallback
+	// Optional Input value
+	types.CheckMD5
+	types.CheckTasks
+	types.HandleObjCallbackFunc
 	types.PartSize
+	types.PartThreshold
+
+	// Output value
 }
 
 // NewCopyDir will create a CopyDirTask struct and fetch inherited data from parent task.
@@ -171,20 +171,11 @@ func NewCopyDir(task navvy.Task) *CopyDirTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyDirTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyDir value CheckMD5 is invalid"))
-	}
-	if !t.ValidateCheckTasks() {
-		panic(fmt.Errorf("Task CopyDir value CheckTasks is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyDir value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task CopyDir value DestinationStorage is invalid"))
-	}
-	if !t.ValidatePartThreshold() {
-		panic(fmt.Errorf("Task CopyDir value PartThreshold is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task CopyDir value SourcePath is invalid"))
@@ -198,13 +189,18 @@ func (t *CopyDirTask) validateInput() {
 func (t *CopyDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
-	types.LoadCheckTasks(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadPartThreshold(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadPartThreshold(task, t)
 }
 
 // Run implement navvy.Task
@@ -244,27 +240,23 @@ func (t *CopyDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyDirTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 9)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
 	if t.ValidateCheckTasks() {
 		s = append(s, fmt.Sprintf("CheckTasks: %s", t.CheckTasks.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("CopyDirTask {%s}", strings.Join(s, ", "))
 }
@@ -283,18 +275,21 @@ type CopyFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
-	types.CheckTasks
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.PartThreshold
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
-	types.HandleObjCallback
+	// Optional Input value
+	types.CheckMD5
+	types.CheckTasks
+	types.DryRunFunc
+	types.HandleObjCallbackFunc
 	types.PartSize
+	types.PartThreshold
+
+	// Output value
 }
 
 // NewCopyFile will create a CopyFileTask struct and fetch inherited data from parent task.
@@ -311,20 +306,11 @@ func NewCopyFile(task navvy.Task) *CopyFileTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyFileTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyFile value CheckMD5 is invalid"))
-	}
-	if !t.ValidateCheckTasks() {
-		panic(fmt.Errorf("Task CopyFile value CheckTasks is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyFile value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task CopyFile value DestinationStorage is invalid"))
-	}
-	if !t.ValidatePartThreshold() {
-		panic(fmt.Errorf("Task CopyFile value PartThreshold is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task CopyFile value SourcePath is invalid"))
@@ -338,13 +324,19 @@ func (t *CopyFileTask) validateInput() {
 func (t *CopyFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
-	types.LoadCheckTasks(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadPartThreshold(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
+	types.LoadDryRunFunc(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadPartThreshold(task, t)
 }
 
 // Run implement navvy.Task
@@ -384,27 +376,23 @@ func (t *CopyFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyFileTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 10)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
 	if t.ValidateCheckTasks() {
 		s = append(s, fmt.Sprintf("CheckTasks: %s", t.CheckTasks.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("CopyFileTask {%s}", strings.Join(s, ", "))
 }
@@ -423,17 +411,19 @@ type CopyLargeFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.SourcePath
 	types.SourceStorage
 	types.TotalSize
 
+	// Optional Input value
+	types.CheckMD5
+	types.PartSize
+
 	// Output value
 	types.Offset
-	types.PartSize
 	types.Segment
 }
 
@@ -451,9 +441,6 @@ func NewCopyLargeFile(task navvy.Task) *CopyLargeFileTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyLargeFileTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyLargeFile value CheckMD5 is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyLargeFile value DestinationPath is invalid"))
 	}
@@ -475,12 +462,16 @@ func (t *CopyLargeFileTask) validateInput() {
 func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
 	types.LoadTotalSize(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadPartSize(task, t)
 }
 
 // Run implement navvy.Task
@@ -520,24 +511,18 @@ func (t *CopyLargeFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyLargeFileTask) String() string {
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
+	s = append(s, fmt.Sprintf("TotalSize: %s", t.TotalSize.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
-	}
-	if t.ValidateTotalSize() {
-		s = append(s, fmt.Sprintf("TotalSize: %s", t.TotalSize.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	return fmt.Sprintf("CopyLargeFileTask {%s}", strings.Join(s, ", "))
 }
@@ -556,8 +541,7 @@ type CopyPartialFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.Index
@@ -567,6 +551,9 @@ type CopyPartialFileTask struct {
 	types.SourcePath
 	types.SourceStorage
 	types.TotalSize
+
+	// Optional Input value
+	types.CheckMD5
 
 	// Output value
 	types.Done
@@ -587,9 +574,6 @@ func NewCopyPartialFile(task navvy.Task) *CopyPartialFileTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyPartialFileTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyPartialFile value CheckMD5 is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyPartialFile value DestinationPath is invalid"))
 	}
@@ -623,7 +607,8 @@ func (t *CopyPartialFileTask) validateInput() {
 func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadIndex(task, t)
@@ -633,6 +618,8 @@ func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
 	types.LoadTotalSize(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
 }
 
 // Run implement navvy.Task
@@ -673,35 +660,18 @@ func (t *CopyPartialFileTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *CopyPartialFileTask) String() string {
 	s := make([]string, 0, 10)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
+	s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
+	s = append(s, fmt.Sprintf("TotalSize: %s", t.TotalSize.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
-	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateIndex() {
-		s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
-	}
-	if t.ValidateOffset() {
-		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
-	}
-	if t.ValidatePartSize() {
-		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
-	}
-	if t.ValidateTotalSize() {
-		s = append(s, fmt.Sprintf("TotalSize: %s", t.TotalSize.String()))
 	}
 	return fmt.Sprintf("CopyPartialFileTask {%s}", strings.Join(s, ", "))
 }
@@ -720,8 +690,7 @@ type CopyPartialStreamTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.Index
@@ -729,6 +698,9 @@ type CopyPartialStreamTask struct {
 	types.Segment
 	types.SourcePath
 	types.SourceStorage
+
+	// Optional Input value
+	types.CheckMD5
 
 	// Output value
 	types.Content
@@ -751,9 +723,6 @@ func NewCopyPartialStream(task navvy.Task) *CopyPartialStreamTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyPartialStreamTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyPartialStream value CheckMD5 is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyPartialStream value DestinationPath is invalid"))
 	}
@@ -781,7 +750,8 @@ func (t *CopyPartialStreamTask) validateInput() {
 func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadIndex(task, t)
@@ -789,6 +759,8 @@ func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 	types.LoadSegment(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
 }
 
 // Run implement navvy.Task
@@ -829,29 +801,16 @@ func (t *CopyPartialStreamTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *CopyPartialStreamTask) String() string {
 	s := make([]string, 0, 8)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
+	s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
-	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateIndex() {
-		s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
-	}
-	if t.ValidatePartSize() {
-		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("CopyPartialStreamTask {%s}", strings.Join(s, ", "))
 }
@@ -870,13 +829,15 @@ type CopySingleFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.MD5Sum
 	types.Size
 	types.SourcePath
 	types.SourceStorage
+
+	// Optional Input value
+	types.MD5Sum
 
 	// Output value
 }
@@ -901,9 +862,6 @@ func (t *CopySingleFileTask) validateInput() {
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task CopySingleFile value DestinationStorage is invalid"))
 	}
-	if !t.ValidateMD5Sum() {
-		panic(fmt.Errorf("Task CopySingleFile value MD5Sum is invalid"))
-	}
 	if !t.ValidateSize() {
 		panic(fmt.Errorf("Task CopySingleFile value Size is invalid"))
 	}
@@ -919,12 +877,15 @@ func (t *CopySingleFileTask) validateInput() {
 func (t *CopySingleFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadMD5Sum(task, t)
 	types.LoadSize(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadMD5Sum(task, t)
 }
 
 // Run implement navvy.Task
@@ -965,23 +926,14 @@ func (t *CopySingleFileTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *CopySingleFileTask) String() string {
 	s := make([]string, 0, 6)
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateMD5Sum() {
 		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
-	}
-	if t.ValidateSize() {
-		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("CopySingleFileTask {%s}", strings.Join(s, ", "))
 }
@@ -1000,16 +952,18 @@ type CopySmallFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.Size
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
+	// Optional Input value
+	types.CheckMD5
 	types.MD5Sum
+
+	// Output value
 }
 
 // NewCopySmallFile will create a CopySmallFileTask struct and fetch inherited data from parent task.
@@ -1026,9 +980,6 @@ func NewCopySmallFile(task navvy.Task) *CopySmallFileTask {
 
 // validateInput will validate all input before run task.
 func (t *CopySmallFileTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopySmallFile value CheckMD5 is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopySmallFile value DestinationPath is invalid"))
 	}
@@ -1050,12 +1001,16 @@ func (t *CopySmallFileTask) validateInput() {
 func (t *CopySmallFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadSize(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadMD5Sum(task, t)
 }
 
 // Run implement navvy.Task
@@ -1095,24 +1050,18 @@ func (t *CopySmallFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySmallFileTask) String() string {
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateSize() {
-		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
+	if t.ValidateMD5Sum() {
+		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
 	}
 	return fmt.Sprintf("CopySmallFileTask {%s}", strings.Join(s, ", "))
 }
@@ -1131,16 +1080,18 @@ type CopyStreamTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
 	types.SourcePath
 	types.SourceStorage
 
+	// Optional Input value
+	types.CheckMD5
+	types.PartSize
+
 	// Output value
 	types.BytesPool
-	types.PartSize
 	types.Segment
 }
 
@@ -1158,9 +1109,6 @@ func NewCopyStream(task navvy.Task) *CopyStreamTask {
 
 // validateInput will validate all input before run task.
 func (t *CopyStreamTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task CopyStream value CheckMD5 is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task CopyStream value DestinationPath is invalid"))
 	}
@@ -1179,11 +1127,15 @@ func (t *CopyStreamTask) validateInput() {
 func (t *CopyStreamTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadPartSize(task, t)
 }
 
 // Run implement navvy.Task
@@ -1223,21 +1175,17 @@ func (t *CopyStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyStreamTask) String() string {
-	s := make([]string, 0, 5)
+	s := make([]string, 0, 6)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	return fmt.Sprintf("CopyStreamTask {%s}", strings.Join(s, ", "))
 }
@@ -1256,12 +1204,14 @@ type CreateStorageTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Service
+
+	// Optional Input value
+	types.Zone
 
 	// Output value
 	types.StorageName
-	types.Zone
 }
 
 // NewCreateStorage will create a CreateStorageTask struct and fetch inherited data from parent task.
@@ -1287,7 +1237,11 @@ func (t *CreateStorageTask) validateInput() {
 func (t *CreateStorageTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadService(task, t)
+	// load optional fields
+	types.LoadZone(task, t)
 }
 
 // Run implement navvy.Task
@@ -1327,9 +1281,11 @@ func (t *CreateStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CreateStorageTask) String() string {
-	s := make([]string, 0, 1)
-	if t.ValidateService() {
-		s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
+	s := make([]string, 0, 2)
+
+	s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
+	if t.ValidateZone() {
+		s = append(s, fmt.Sprintf("Zone: %s", t.Zone.String()))
 	}
 	return fmt.Sprintf("CreateStorageTask {%s}", strings.Join(s, ", "))
 }
@@ -1348,12 +1304,14 @@ type DeleteDirTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Path
 	types.Storage
 
+	// Optional Input value
+	types.HandleObjCallbackFunc
+
 	// Output value
-	types.HandleObjCallback
 }
 
 // NewDeleteDir will create a DeleteDirTask struct and fetch inherited data from parent task.
@@ -1382,8 +1340,12 @@ func (t *DeleteDirTask) validateInput() {
 func (t *DeleteDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
+	// load optional fields
+	types.LoadHandleObjCallbackFunc(task, t)
 }
 
 // Run implement navvy.Task
@@ -1423,13 +1385,10 @@ func (t *DeleteDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteDirTask) String() string {
-	s := make([]string, 0, 2)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("DeleteDirTask {%s}", strings.Join(s, ", "))
 }
 
@@ -1447,12 +1406,14 @@ type DeleteFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Path
 	types.Storage
 
+	// Optional Input value
+	types.HandleObjCallbackFunc
+
 	// Output value
-	types.HandleObjCallback
 }
 
 // NewDeleteFile will create a DeleteFileTask struct and fetch inherited data from parent task.
@@ -1481,8 +1442,12 @@ func (t *DeleteFileTask) validateInput() {
 func (t *DeleteFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
+	// load optional fields
+	types.LoadHandleObjCallbackFunc(task, t)
 }
 
 // Run implement navvy.Task
@@ -1522,13 +1487,10 @@ func (t *DeleteFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteFileTask) String() string {
-	s := make([]string, 0, 2)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("DeleteFileTask {%s}", strings.Join(s, ", "))
 }
 
@@ -1546,12 +1508,14 @@ type DeletePrefixTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Path
 	types.Storage
 
+	// Optional Input value
+	types.HandleObjCallbackFunc
+
 	// Output value
-	types.HandleObjCallback
 }
 
 // NewDeletePrefix will create a DeletePrefixTask struct and fetch inherited data from parent task.
@@ -1580,8 +1544,12 @@ func (t *DeletePrefixTask) validateInput() {
 func (t *DeletePrefixTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
+	// load optional fields
+	types.LoadHandleObjCallbackFunc(task, t)
 }
 
 // Run implement navvy.Task
@@ -1621,13 +1589,10 @@ func (t *DeletePrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeletePrefixTask) String() string {
-	s := make([]string, 0, 2)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("DeletePrefixTask {%s}", strings.Join(s, ", "))
 }
 
@@ -1636,7 +1601,7 @@ func NewDeletePrefixTask(task navvy.Task) navvy.Task {
 	return NewDeletePrefix(task)
 }
 
-// DeleteSegmentTask will delete all segments with a given path.
+// DeleteSegmentTask will delete segments with a given path.
 type DeleteSegmentTask struct {
 	// Predefined value
 	types.Fault
@@ -1645,12 +1610,14 @@ type DeleteSegmentTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.PrefixSegmentsLister
 	types.Segment
 
+	// Optional Input value
+	types.HandleSegmentCallbackFunc
+
 	// Output value
-	types.HandleSegmentCallback
 }
 
 // NewDeleteSegment will create a DeleteSegmentTask struct and fetch inherited data from parent task.
@@ -1679,8 +1646,12 @@ func (t *DeleteSegmentTask) validateInput() {
 func (t *DeleteSegmentTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPrefixSegmentsLister(task, t)
 	types.LoadSegment(task, t)
+	// load optional fields
+	types.LoadHandleSegmentCallbackFunc(task, t)
 }
 
 // Run implement navvy.Task
@@ -1720,13 +1691,10 @@ func (t *DeleteSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteSegmentTask) String() string {
-	s := make([]string, 0, 2)
-	if t.ValidatePrefixSegmentsLister() {
-		s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
 	return fmt.Sprintf("DeleteSegmentTask {%s}", strings.Join(s, ", "))
 }
 
@@ -1744,15 +1712,17 @@ type DeleteStorageTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.Force
+	// Required Input value
 	types.Service
 	types.StorageName
+
+	// Optional Input value
+	types.Force
+	types.HandleObjCallbackFunc
+	types.HandleSegmentCallbackFunc
 	types.Zone
 
 	// Output value
-	types.HandleObjCallback
-	types.HandleSegmentCallback
 }
 
 // NewDeleteStorage will create a DeleteStorageTask struct and fetch inherited data from parent task.
@@ -1769,17 +1739,11 @@ func NewDeleteStorage(task navvy.Task) *DeleteStorageTask {
 
 // validateInput will validate all input before run task.
 func (t *DeleteStorageTask) validateInput() {
-	if !t.ValidateForce() {
-		panic(fmt.Errorf("Task DeleteStorage value Force is invalid"))
-	}
 	if !t.ValidateService() {
 		panic(fmt.Errorf("Task DeleteStorage value Service is invalid"))
 	}
 	if !t.ValidateStorageName() {
 		panic(fmt.Errorf("Task DeleteStorage value StorageName is invalid"))
-	}
-	if !t.ValidateZone() {
-		panic(fmt.Errorf("Task DeleteStorage value Zone is invalid"))
 	}
 }
 
@@ -1787,9 +1751,14 @@ func (t *DeleteStorageTask) validateInput() {
 func (t *DeleteStorageTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadForce(task, t)
+
+	// load required fields
 	types.LoadService(task, t)
 	types.LoadStorageName(task, t)
+	// load optional fields
+	types.LoadForce(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadHandleSegmentCallbackFunc(task, t)
 	types.LoadZone(task, t)
 }
 
@@ -1830,15 +1799,12 @@ func (t *DeleteStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *DeleteStorageTask) String() string {
-	s := make([]string, 0, 4)
+	s := make([]string, 0, 6)
+
+	s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
+	s = append(s, fmt.Sprintf("StorageName: %s", t.StorageName.String()))
 	if t.ValidateForce() {
 		s = append(s, fmt.Sprintf("Force: %s", t.Force.String()))
-	}
-	if t.ValidateService() {
-		s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
-	}
-	if t.ValidateStorageName() {
-		s = append(s, fmt.Sprintf("StorageName: %s", t.StorageName.String()))
 	}
 	if t.ValidateZone() {
 		s = append(s, fmt.Sprintf("Zone: %s", t.Zone.String()))
@@ -1851,124 +1817,7 @@ func NewDeleteStorageTask(task navvy.Task) navvy.Task {
 	return NewDeleteStorage(task)
 }
 
-// InitSegmentStreamTask will init a partial stream between two storager.
-type InitSegmentStreamTask struct {
-	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
-	types.Scheduler
-	types.CallbackFunc
-
-	// Input value
-	types.BytesPool
-	types.PartSize
-	types.SourcePath
-	types.SourceStorage
-
-	// Output value
-	types.Content
-	types.Done
-	types.Size
-}
-
-// NewInitSegmentStream will create a InitSegmentStreamTask struct and fetch inherited data from parent task.
-func NewInitSegmentStream(task navvy.Task) *InitSegmentStreamTask {
-	t := &InitSegmentStreamTask{}
-	t.SetID(uuid.New().String())
-
-	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
-
-	t.new()
-	return t
-}
-
-// validateInput will validate all input before run task.
-func (t *InitSegmentStreamTask) validateInput() {
-	if !t.ValidateBytesPool() {
-		panic(fmt.Errorf("Task InitSegmentStream value BytesPool is invalid"))
-	}
-	if !t.ValidatePartSize() {
-		panic(fmt.Errorf("Task InitSegmentStream value PartSize is invalid"))
-	}
-	if !t.ValidateSourcePath() {
-		panic(fmt.Errorf("Task InitSegmentStream value SourcePath is invalid"))
-	}
-	if !t.ValidateSourceStorage() {
-		panic(fmt.Errorf("Task InitSegmentStream value SourceStorage is invalid"))
-	}
-}
-
-// loadInput will check and load all input before new task.
-func (t *InitSegmentStreamTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-	types.LoadBytesPool(task, t)
-	types.LoadPartSize(task, t)
-	types.LoadSourcePath(task, t)
-	types.LoadSourceStorage(task, t)
-}
-
-// Run implement navvy.Task
-func (t *InitSegmentStreamTask) Run(ctx context.Context) {
-	logger := log.FromContext(ctx)
-	t.validateInput()
-
-	logger.Debug(
-		log.String("task_started", t.String()),
-	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
-		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
-		)
-		return
-	}
-	if t.ValidateCallbackFunc() {
-		t.GetCallbackFunc()()
-	}
-	logger.Debug(
-		log.String("task_finished", t.String()),
-	)
-}
-
-// Context implement navvy.Task
-func (t *InitSegmentStreamTask) Context() context.Context {
-	return context.TODO()
-}
-
-// TriggerFault will be used to trigger a task related fault.
-func (t *InitSegmentStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
-}
-
-// String will implement Stringer interface.
-func (t *InitSegmentStreamTask) String() string {
-	s := make([]string, 0, 4)
-	if t.ValidateBytesPool() {
-		s = append(s, fmt.Sprintf("BytesPool: %s", t.BytesPool.String()))
-	}
-	if t.ValidatePartSize() {
-		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
-	}
-	return fmt.Sprintf("InitSegmentStreamTask {%s}", strings.Join(s, ", "))
-}
-
-// NewInitSegmentStreamTask will create a InitSegmentStreamTask which meets navvy.Task.
-func NewInitSegmentStreamTask(task navvy.Task) navvy.Task {
-	return NewInitSegmentStream(task)
-}
-
-// IsDestinationObjectExistTask will .
+// IsDestinationObjectExistTask will check if destination object exist.
 type IsDestinationObjectExistTask struct {
 	// Predefined value
 	types.Fault
@@ -1977,8 +1826,10 @@ type IsDestinationObjectExistTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationObject
+
+	// Optional Input value
 
 	// Output value
 	types.Result
@@ -2007,7 +1858,10 @@ func (t *IsDestinationObjectExistTask) validateInput() {
 func (t *IsDestinationObjectExistTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationObject(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2048,9 +1902,8 @@ func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *IsDestinationObjectExistTask) String() string {
 	s := make([]string, 0, 1)
-	if t.ValidateDestinationObject() {
-		s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
 	return fmt.Sprintf("IsDestinationObjectExistTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2059,7 +1912,7 @@ func NewIsDestinationObjectExistTask(task navvy.Task) navvy.Task {
 	return NewIsDestinationObjectExist(task)
 }
 
-// IsDestinationObjectNotExistTask will .
+// IsDestinationObjectNotExistTask will check if destination object not exist.
 type IsDestinationObjectNotExistTask struct {
 	// Predefined value
 	types.Fault
@@ -2068,8 +1921,10 @@ type IsDestinationObjectNotExistTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationObject
+
+	// Optional Input value
 
 	// Output value
 	types.Result
@@ -2098,7 +1953,10 @@ func (t *IsDestinationObjectNotExistTask) validateInput() {
 func (t *IsDestinationObjectNotExistTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationObject(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2139,9 +1997,8 @@ func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *IsDestinationObjectNotExistTask) String() string {
 	s := make([]string, 0, 1)
-	if t.ValidateDestinationObject() {
-		s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
 	return fmt.Sprintf("IsDestinationObjectNotExistTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2150,7 +2007,7 @@ func NewIsDestinationObjectNotExistTask(task navvy.Task) navvy.Task {
 	return NewIsDestinationObjectNotExist(task)
 }
 
-// IsSizeEqualTask will .
+// IsSizeEqualTask will check if source object and destination object size equal.
 type IsSizeEqualTask struct {
 	// Predefined value
 	types.Fault
@@ -2159,9 +2016,11 @@ type IsSizeEqualTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationObject
 	types.SourceObject
+
+	// Optional Input value
 
 	// Output value
 	types.Result
@@ -2193,8 +2052,11 @@ func (t *IsSizeEqualTask) validateInput() {
 func (t *IsSizeEqualTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationObject(task, t)
 	types.LoadSourceObject(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2235,12 +2097,9 @@ func (t *IsSizeEqualTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *IsSizeEqualTask) String() string {
 	s := make([]string, 0, 2)
-	if t.ValidateDestinationObject() {
-		s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
-	}
-	if t.ValidateSourceObject() {
-		s = append(s, fmt.Sprintf("SourceObject: %s", t.SourceObject.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
+	s = append(s, fmt.Sprintf("SourceObject: %s", t.SourceObject.String()))
 	return fmt.Sprintf("IsSizeEqualTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2249,7 +2108,7 @@ func NewIsSizeEqualTask(task navvy.Task) navvy.Task {
 	return NewIsSizeEqual(task)
 }
 
-// IsSourcePathExcludeIncludeTask will check whether source path is excluded or included.
+// IsSourcePathExcludeIncludeTask will check if source path is excluded or included.
 type IsSourcePathExcludeIncludeTask struct {
 	// Predefined value
 	types.Fault
@@ -2258,10 +2117,12 @@ type IsSourcePathExcludeIncludeTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
+	types.SourcePath
+
+	// Optional Input value
 	types.ExcludeRegexp
 	types.IncludeRegexp
-	types.SourcePath
 
 	// Output value
 	types.Result
@@ -2281,12 +2142,6 @@ func NewIsSourcePathExcludeInclude(task navvy.Task) *IsSourcePathExcludeIncludeT
 
 // validateInput will validate all input before run task.
 func (t *IsSourcePathExcludeIncludeTask) validateInput() {
-	if !t.ValidateExcludeRegexp() {
-		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value ExcludeRegexp is invalid"))
-	}
-	if !t.ValidateIncludeRegexp() {
-		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value IncludeRegexp is invalid"))
-	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task IsSourcePathExcludeInclude value SourcePath is invalid"))
 	}
@@ -2296,9 +2151,12 @@ func (t *IsSourcePathExcludeIncludeTask) validateInput() {
 func (t *IsSourcePathExcludeIncludeTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
+	types.LoadSourcePath(task, t)
+	// load optional fields
 	types.LoadExcludeRegexp(task, t)
 	types.LoadIncludeRegexp(task, t)
-	types.LoadSourcePath(task, t)
 }
 
 // Run implement navvy.Task
@@ -2339,14 +2197,13 @@ func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *IsSourcePathExcludeIncludeTask) String() string {
 	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
 	if t.ValidateExcludeRegexp() {
 		s = append(s, fmt.Sprintf("ExcludeRegexp: %s", t.ExcludeRegexp.String()))
 	}
 	if t.ValidateIncludeRegexp() {
 		s = append(s, fmt.Sprintf("IncludeRegexp: %s", t.IncludeRegexp.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
 	}
 	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {%s}", strings.Join(s, ", "))
 }
@@ -2356,7 +2213,7 @@ func NewIsSourcePathExcludeIncludeTask(task navvy.Task) navvy.Task {
 	return NewIsSourcePathExcludeInclude(task)
 }
 
-// IsUpdateAtGreaterTask will .
+// IsUpdateAtGreaterTask will check if source object's mtime is greater (newer) than destination object's.
 type IsUpdateAtGreaterTask struct {
 	// Predefined value
 	types.Fault
@@ -2365,9 +2222,11 @@ type IsUpdateAtGreaterTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationObject
 	types.SourceObject
+
+	// Optional Input value
 
 	// Output value
 	types.Result
@@ -2399,8 +2258,11 @@ func (t *IsUpdateAtGreaterTask) validateInput() {
 func (t *IsUpdateAtGreaterTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationObject(task, t)
 	types.LoadSourceObject(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2441,12 +2303,9 @@ func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *IsUpdateAtGreaterTask) String() string {
 	s := make([]string, 0, 2)
-	if t.ValidateDestinationObject() {
-		s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
-	}
-	if t.ValidateSourceObject() {
-		s = append(s, fmt.Sprintf("SourceObject: %s", t.SourceObject.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationObject: %s", t.DestinationObject.String()))
+	s = append(s, fmt.Sprintf("SourceObject: %s", t.SourceObject.String()))
 	return fmt.Sprintf("IsUpdateAtGreaterTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2464,11 +2323,13 @@ type ListDirTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DirFunc
 	types.DirLister
 	types.FileFunc
 	types.Path
+
+	// Optional Input value
 
 	// Output value
 }
@@ -2505,10 +2366,13 @@ func (t *ListDirTask) validateInput() {
 func (t *ListDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDirFunc(task, t)
 	types.LoadDirLister(task, t)
 	types.LoadFileFunc(task, t)
 	types.LoadPath(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2549,12 +2413,9 @@ func (t *ListDirTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *ListDirTask) String() string {
 	s := make([]string, 0, 4)
-	if t.ValidateDirLister() {
-		s = append(s, fmt.Sprintf("DirLister: %s", t.DirLister.String()))
-	}
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DirLister: %s", t.DirLister.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
 	return fmt.Sprintf("ListDirTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2572,10 +2433,12 @@ type ListPrefixTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.ObjectFunc
 	types.Path
 	types.PrefixLister
+
+	// Optional Input value
 
 	// Output value
 }
@@ -2609,9 +2472,12 @@ func (t *ListPrefixTask) validateInput() {
 func (t *ListPrefixTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadObjectFunc(task, t)
 	types.LoadPath(task, t)
 	types.LoadPrefixLister(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2652,12 +2518,9 @@ func (t *ListPrefixTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *ListPrefixTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidatePrefixLister() {
-		s = append(s, fmt.Sprintf("PrefixLister: %s", t.PrefixLister.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("PrefixLister: %s", t.PrefixLister.String()))
 	return fmt.Sprintf("ListPrefixTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2675,10 +2538,12 @@ type ListSegmentTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Path
 	types.PrefixSegmentsLister
 	types.SegmentFunc
+
+	// Optional Input value
 
 	// Output value
 }
@@ -2712,9 +2577,12 @@ func (t *ListSegmentTask) validateInput() {
 func (t *ListSegmentTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPath(task, t)
 	types.LoadPrefixSegmentsLister(task, t)
 	types.LoadSegmentFunc(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2755,12 +2623,9 @@ func (t *ListSegmentTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *ListSegmentTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidatePrefixSegmentsLister() {
-		s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
 	return fmt.Sprintf("ListSegmentTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2778,9 +2643,11 @@ type ListStorageTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Service
 	types.StoragerFunc
+
+	// Optional Input value
 	types.Zone
 
 	// Output value
@@ -2806,17 +2673,17 @@ func (t *ListStorageTask) validateInput() {
 	if !t.ValidateStoragerFunc() {
 		panic(fmt.Errorf("Task ListStorage value StoragerFunc is invalid"))
 	}
-	if !t.ValidateZone() {
-		panic(fmt.Errorf("Task ListStorage value Zone is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
 func (t *ListStorageTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadService(task, t)
 	types.LoadStoragerFunc(task, t)
+	// load optional fields
 	types.LoadZone(task, t)
 }
 
@@ -2858,9 +2725,8 @@ func (t *ListStorageTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *ListStorageTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidateService() {
-		s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
 	if t.ValidateZone() {
 		s = append(s, fmt.Sprintf("Zone: %s", t.Zone.String()))
 	}
@@ -2881,11 +2747,13 @@ type MD5SumFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Offset
 	types.Path
 	types.Size
 	types.Storage
+
+	// Optional Input value
 
 	// Output value
 	types.MD5Sum
@@ -2923,10 +2791,13 @@ func (t *MD5SumFileTask) validateInput() {
 func (t *MD5SumFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadOffset(task, t)
 	types.LoadPath(task, t)
 	types.LoadSize(task, t)
 	types.LoadStorage(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -2967,18 +2838,11 @@ func (t *MD5SumFileTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *MD5SumFileTask) String() string {
 	s := make([]string, 0, 4)
-	if t.ValidateOffset() {
-		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
-	}
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateSize() {
-		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
-	}
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("MD5SumFileTask {%s}", strings.Join(s, ", "))
 }
 
@@ -2996,8 +2860,10 @@ type MD5SumStreamTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Content
+
+	// Optional Input value
 
 	// Output value
 	types.MD5Sum
@@ -3026,7 +2892,10 @@ func (t *MD5SumStreamTask) validateInput() {
 func (t *MD5SumStreamTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadContent(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -3067,9 +2936,8 @@ func (t *MD5SumStreamTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *MD5SumStreamTask) String() string {
 	s := make([]string, 0, 1)
-	if t.ValidateContent() {
-		s = append(s, fmt.Sprintf("Content: %s", t.Content.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Content: %s", t.Content.String()))
 	return fmt.Sprintf("MD5SumStreamTask {%s}", strings.Join(s, ", "))
 }
 
@@ -3087,18 +2955,20 @@ type MoveDirTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
-	types.CheckTasks
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.PartThreshold
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
-	types.HandleObjCallback
+	// Optional Input value
+	types.CheckMD5
+	types.CheckTasks
+	types.HandleObjCallbackFunc
 	types.PartSize
+	types.PartThreshold
+
+	// Output value
 }
 
 // NewMoveDir will create a MoveDirTask struct and fetch inherited data from parent task.
@@ -3115,20 +2985,11 @@ func NewMoveDir(task navvy.Task) *MoveDirTask {
 
 // validateInput will validate all input before run task.
 func (t *MoveDirTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task MoveDir value CheckMD5 is invalid"))
-	}
-	if !t.ValidateCheckTasks() {
-		panic(fmt.Errorf("Task MoveDir value CheckTasks is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task MoveDir value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task MoveDir value DestinationStorage is invalid"))
-	}
-	if !t.ValidatePartThreshold() {
-		panic(fmt.Errorf("Task MoveDir value PartThreshold is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task MoveDir value SourcePath is invalid"))
@@ -3142,13 +3003,18 @@ func (t *MoveDirTask) validateInput() {
 func (t *MoveDirTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
-	types.LoadCheckTasks(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadPartThreshold(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadPartThreshold(task, t)
 }
 
 // Run implement navvy.Task
@@ -3188,27 +3054,23 @@ func (t *MoveDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveDirTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 9)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
 	if t.ValidateCheckTasks() {
 		s = append(s, fmt.Sprintf("CheckTasks: %s", t.CheckTasks.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("MoveDirTask {%s}", strings.Join(s, ", "))
 }
@@ -3227,18 +3089,20 @@ type MoveFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
-	types.CheckTasks
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.PartThreshold
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
-	types.HandleObjCallback
+	// Optional Input value
+	types.CheckMD5
+	types.CheckTasks
+	types.HandleObjCallbackFunc
 	types.PartSize
+	types.PartThreshold
+
+	// Output value
 }
 
 // NewMoveFile will create a MoveFileTask struct and fetch inherited data from parent task.
@@ -3255,20 +3119,11 @@ func NewMoveFile(task navvy.Task) *MoveFileTask {
 
 // validateInput will validate all input before run task.
 func (t *MoveFileTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task MoveFile value CheckMD5 is invalid"))
-	}
-	if !t.ValidateCheckTasks() {
-		panic(fmt.Errorf("Task MoveFile value CheckTasks is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task MoveFile value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task MoveFile value DestinationStorage is invalid"))
-	}
-	if !t.ValidatePartThreshold() {
-		panic(fmt.Errorf("Task MoveFile value PartThreshold is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task MoveFile value SourcePath is invalid"))
@@ -3282,13 +3137,18 @@ func (t *MoveFileTask) validateInput() {
 func (t *MoveFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
-	types.LoadCheckTasks(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadPartThreshold(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadPartThreshold(task, t)
 }
 
 // Run implement navvy.Task
@@ -3328,27 +3188,23 @@ func (t *MoveFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *MoveFileTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 9)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
 	if t.ValidateCheckTasks() {
 		s = append(s, fmt.Sprintf("CheckTasks: %s", t.CheckTasks.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("MoveFileTask {%s}", strings.Join(s, ", "))
 }
@@ -3367,10 +3223,12 @@ type ReachFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Expire
 	types.Path
 	types.Reacher
+
+	// Optional Input value
 
 	// Output value
 	types.URL
@@ -3405,9 +3263,12 @@ func (t *ReachFileTask) validateInput() {
 func (t *ReachFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadExpire(task, t)
 	types.LoadPath(task, t)
 	types.LoadReacher(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -3448,15 +3309,10 @@ func (t *ReachFileTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *ReachFileTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidateExpire() {
-		s = append(s, fmt.Sprintf("Expire: %s", t.Expire.String()))
-	}
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateReacher() {
-		s = append(s, fmt.Sprintf("Reacher: %s", t.Reacher.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Expire: %s", t.Expire.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Reacher: %s", t.Reacher.String()))
 	return fmt.Sprintf("ReachFileTask {%s}", strings.Join(s, ", "))
 }
 
@@ -3474,10 +3330,12 @@ type SegmentCompleteTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.IndexSegmenter
 	types.Path
 	types.Segment
+
+	// Optional Input value
 
 	// Output value
 }
@@ -3511,9 +3369,12 @@ func (t *SegmentCompleteTask) validateInput() {
 func (t *SegmentCompleteTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadIndexSegmenter(task, t)
 	types.LoadPath(task, t)
 	types.LoadSegment(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -3554,15 +3415,10 @@ func (t *SegmentCompleteTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *SegmentCompleteTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidateIndexSegmenter() {
-		s = append(s, fmt.Sprintf("IndexSegmenter: %s", t.IndexSegmenter.String()))
-	}
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
+
+	s = append(s, fmt.Sprintf("IndexSegmenter: %s", t.IndexSegmenter.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
 	return fmt.Sprintf("SegmentCompleteTask {%s}", strings.Join(s, ", "))
 }
 
@@ -3580,16 +3436,18 @@ type SegmentFileCopyTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.DestinationIndexSegmenter
 	types.DestinationPath
 	types.Index
-	types.MD5Sum
 	types.Offset
 	types.Segment
 	types.Size
 	types.SourcePath
 	types.SourceStorage
+
+	// Optional Input value
+	types.MD5Sum
 
 	// Output value
 }
@@ -3617,9 +3475,6 @@ func (t *SegmentFileCopyTask) validateInput() {
 	if !t.ValidateIndex() {
 		panic(fmt.Errorf("Task SegmentFileCopy value Index is invalid"))
 	}
-	if !t.ValidateMD5Sum() {
-		panic(fmt.Errorf("Task SegmentFileCopy value MD5Sum is invalid"))
-	}
 	if !t.ValidateOffset() {
 		panic(fmt.Errorf("Task SegmentFileCopy value Offset is invalid"))
 	}
@@ -3641,15 +3496,18 @@ func (t *SegmentFileCopyTask) validateInput() {
 func (t *SegmentFileCopyTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadDestinationIndexSegmenter(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadIndex(task, t)
-	types.LoadMD5Sum(task, t)
 	types.LoadOffset(task, t)
 	types.LoadSegment(task, t)
 	types.LoadSize(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadMD5Sum(task, t)
 }
 
 // Run implement navvy.Task
@@ -3690,32 +3548,17 @@ func (t *SegmentFileCopyTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *SegmentFileCopyTask) String() string {
 	s := make([]string, 0, 9)
-	if t.ValidateDestinationIndexSegmenter() {
-		s = append(s, fmt.Sprintf("DestinationIndexSegmenter: %s", t.DestinationIndexSegmenter.String()))
-	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateIndex() {
-		s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
-	}
+
+	s = append(s, fmt.Sprintf("DestinationIndexSegmenter: %s", t.DestinationIndexSegmenter.String()))
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
+	s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateMD5Sum() {
 		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
-	}
-	if t.ValidateOffset() {
-		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
-	if t.ValidateSize() {
-		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("SegmentFileCopyTask {%s}", strings.Join(s, ", "))
 }
@@ -3734,10 +3577,12 @@ type SegmentInitTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.IndexSegmenter
 	types.PartSize
 	types.Path
+
+	// Optional Input value
 
 	// Output value
 	types.Segment
@@ -3772,9 +3617,12 @@ func (t *SegmentInitTask) validateInput() {
 func (t *SegmentInitTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadIndexSegmenter(task, t)
 	types.LoadPartSize(task, t)
 	types.LoadPath(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -3815,15 +3663,10 @@ func (t *SegmentInitTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *SegmentInitTask) String() string {
 	s := make([]string, 0, 3)
-	if t.ValidateIndexSegmenter() {
-		s = append(s, fmt.Sprintf("IndexSegmenter: %s", t.IndexSegmenter.String()))
-	}
-	if t.ValidatePartSize() {
-		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
-	}
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
+
+	s = append(s, fmt.Sprintf("IndexSegmenter: %s", t.IndexSegmenter.String()))
+	s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
 	return fmt.Sprintf("SegmentInitTask {%s}", strings.Join(s, ", "))
 }
 
@@ -3841,15 +3684,17 @@ type SegmentStreamCopyTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Content
 	types.DestinationIndexSegmenter
 	types.DestinationPath
 	types.Index
-	types.MD5Sum
 	types.Offset
 	types.Segment
 	types.Size
+
+	// Optional Input value
+	types.MD5Sum
 
 	// Output value
 }
@@ -3880,9 +3725,6 @@ func (t *SegmentStreamCopyTask) validateInput() {
 	if !t.ValidateIndex() {
 		panic(fmt.Errorf("Task SegmentStreamCopy value Index is invalid"))
 	}
-	if !t.ValidateMD5Sum() {
-		panic(fmt.Errorf("Task SegmentStreamCopy value MD5Sum is invalid"))
-	}
 	if !t.ValidateOffset() {
 		panic(fmt.Errorf("Task SegmentStreamCopy value Offset is invalid"))
 	}
@@ -3898,14 +3740,17 @@ func (t *SegmentStreamCopyTask) validateInput() {
 func (t *SegmentStreamCopyTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadContent(task, t)
 	types.LoadDestinationIndexSegmenter(task, t)
 	types.LoadDestinationPath(task, t)
 	types.LoadIndex(task, t)
-	types.LoadMD5Sum(task, t)
 	types.LoadOffset(task, t)
 	types.LoadSegment(task, t)
 	types.LoadSize(task, t)
+	// load optional fields
+	types.LoadMD5Sum(task, t)
 }
 
 // Run implement navvy.Task
@@ -3946,29 +3791,16 @@ func (t *SegmentStreamCopyTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *SegmentStreamCopyTask) String() string {
 	s := make([]string, 0, 8)
-	if t.ValidateContent() {
-		s = append(s, fmt.Sprintf("Content: %s", t.Content.String()))
-	}
-	if t.ValidateDestinationIndexSegmenter() {
-		s = append(s, fmt.Sprintf("DestinationIndexSegmenter: %s", t.DestinationIndexSegmenter.String()))
-	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateIndex() {
-		s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Content: %s", t.Content.String()))
+	s = append(s, fmt.Sprintf("DestinationIndexSegmenter: %s", t.DestinationIndexSegmenter.String()))
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
+	s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
 	if t.ValidateMD5Sum() {
 		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
-	}
-	if t.ValidateOffset() {
-		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
-	}
-	if t.ValidateSegment() {
-		s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
-	}
-	if t.ValidateSize() {
-		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
 	}
 	return fmt.Sprintf("SegmentStreamCopyTask {%s}", strings.Join(s, ", "))
 }
@@ -3976,6 +3808,121 @@ func (t *SegmentStreamCopyTask) String() string {
 // NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets navvy.Task.
 func NewSegmentStreamCopyTask(task navvy.Task) navvy.Task {
 	return NewSegmentStreamCopy(task)
+}
+
+// SegmentStreamInitTask will init a partial stream between two storager.
+type SegmentStreamInitTask struct {
+	// Predefined value
+	types.Fault
+	types.ID
+	types.Pool
+	types.Scheduler
+	types.CallbackFunc
+
+	// Required Input value
+	types.BytesPool
+	types.PartSize
+	types.SourcePath
+	types.SourceStorage
+
+	// Optional Input value
+
+	// Output value
+	types.Content
+	types.Done
+	types.Size
+}
+
+// NewSegmentStreamInit will create a SegmentStreamInitTask struct and fetch inherited data from parent task.
+func NewSegmentStreamInit(task navvy.Task) *SegmentStreamInitTask {
+	t := &SegmentStreamInitTask{}
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *SegmentStreamInitTask) validateInput() {
+	if !t.ValidateBytesPool() {
+		panic(fmt.Errorf("Task SegmentStreamInit value BytesPool is invalid"))
+	}
+	if !t.ValidatePartSize() {
+		panic(fmt.Errorf("Task SegmentStreamInit value PartSize is invalid"))
+	}
+	if !t.ValidateSourcePath() {
+		panic(fmt.Errorf("Task SegmentStreamInit value SourcePath is invalid"))
+	}
+	if !t.ValidateSourceStorage() {
+		panic(fmt.Errorf("Task SegmentStreamInit value SourceStorage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *SegmentStreamInitTask) loadInput(task navvy.Task) {
+	types.LoadFault(task, t)
+	types.LoadPool(task, t)
+
+	// load required fields
+	types.LoadBytesPool(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadSourcePath(task, t)
+	types.LoadSourceStorage(task, t)
+	// load optional fields
+}
+
+// Run implement navvy.Task
+func (t *SegmentStreamInitTask) Run(ctx context.Context) {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	t.run(ctx)
+	t.GetScheduler().Wait()
+	if t.GetFault().HasError() {
+		logger.Debug(
+			log.String("task_failed", t.String()),
+			log.String("err", t.GetFault().Error()),
+		)
+		return
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+}
+
+// Context implement navvy.Task
+func (t *SegmentStreamInitTask) Context() context.Context {
+	return context.TODO()
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *SegmentStreamInitTask) TriggerFault(err error) {
+	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *SegmentStreamInitTask) String() string {
+	s := make([]string, 0, 4)
+
+	s = append(s, fmt.Sprintf("BytesPool: %s", t.BytesPool.String()))
+	s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
+	return fmt.Sprintf("SegmentStreamInitTask {%s}", strings.Join(s, ", "))
+}
+
+// NewSegmentStreamInitTask will create a SegmentStreamInitTask which meets navvy.Task.
+func NewSegmentStreamInitTask(task navvy.Task) navvy.Task {
+	return NewSegmentStreamInit(task)
 }
 
 // StatFileTask will stat a remote object by request headObject.
@@ -3987,9 +3934,11 @@ type StatFileTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Path
 	types.Storage
+
+	// Optional Input value
 
 	// Output value
 	types.Object
@@ -4021,8 +3970,11 @@ func (t *StatFileTask) validateInput() {
 func (t *StatFileTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -4063,12 +4015,9 @@ func (t *StatFileTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *StatFileTask) String() string {
 	s := make([]string, 0, 2)
-	if t.ValidatePath() {
-		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
-	}
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("StatFileTask {%s}", strings.Join(s, ", "))
 }
 
@@ -4086,8 +4035,10 @@ type StatStorageTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
+	// Required Input value
 	types.Storage
+
+	// Optional Input value
 
 	// Output value
 	types.StorageInfo
@@ -4116,7 +4067,10 @@ func (t *StatStorageTask) validateInput() {
 func (t *StatStorageTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
+
+	// load required fields
 	types.LoadStorage(task, t)
+	// load optional fields
 }
 
 // Run implement navvy.Task
@@ -4157,9 +4111,8 @@ func (t *StatStorageTask) TriggerFault(err error) {
 // String will implement Stringer interface.
 func (t *StatStorageTask) String() string {
 	s := make([]string, 0, 1)
-	if t.ValidateStorage() {
-		s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
-	}
+
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
 	return fmt.Sprintf("StatStorageTask {%s}", strings.Join(s, ", "))
 }
 
@@ -4177,20 +4130,22 @@ type SyncTask struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-	types.CheckMD5
-	types.CheckTasks
+	// Required Input value
 	types.DestinationPath
 	types.DestinationStorage
-	types.DryRunFunc
-	types.PartThreshold
-	types.Recursive
 	types.SourcePath
 	types.SourceStorage
 
-	// Output value
-	types.HandleObjCallback
+	// Optional Input value
+	types.CheckMD5
+	types.CheckTasks
+	types.DryRunFunc
+	types.HandleObjCallbackFunc
 	types.PartSize
+	types.PartThreshold
+	types.Recursive
+
+	// Output value
 }
 
 // NewSync will create a SyncTask struct and fetch inherited data from parent task.
@@ -4207,26 +4162,11 @@ func NewSync(task navvy.Task) *SyncTask {
 
 // validateInput will validate all input before run task.
 func (t *SyncTask) validateInput() {
-	if !t.ValidateCheckMD5() {
-		panic(fmt.Errorf("Task Sync value CheckMD5 is invalid"))
-	}
-	if !t.ValidateCheckTasks() {
-		panic(fmt.Errorf("Task Sync value CheckTasks is invalid"))
-	}
 	if !t.ValidateDestinationPath() {
 		panic(fmt.Errorf("Task Sync value DestinationPath is invalid"))
 	}
 	if !t.ValidateDestinationStorage() {
 		panic(fmt.Errorf("Task Sync value DestinationStorage is invalid"))
-	}
-	if !t.ValidateDryRunFunc() {
-		panic(fmt.Errorf("Task Sync value DryRunFunc is invalid"))
-	}
-	if !t.ValidatePartThreshold() {
-		panic(fmt.Errorf("Task Sync value PartThreshold is invalid"))
-	}
-	if !t.ValidateRecursive() {
-		panic(fmt.Errorf("Task Sync value Recursive is invalid"))
 	}
 	if !t.ValidateSourcePath() {
 		panic(fmt.Errorf("Task Sync value SourcePath is invalid"))
@@ -4240,15 +4180,20 @@ func (t *SyncTask) validateInput() {
 func (t *SyncTask) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
-	types.LoadCheckMD5(task, t)
-	types.LoadCheckTasks(task, t)
+
+	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
-	types.LoadDryRunFunc(task, t)
-	types.LoadPartThreshold(task, t)
-	types.LoadRecursive(task, t)
 	types.LoadSourcePath(task, t)
 	types.LoadSourceStorage(task, t)
+	// load optional fields
+	types.LoadCheckMD5(task, t)
+	types.LoadCheckTasks(task, t)
+	types.LoadDryRunFunc(task, t)
+	types.LoadHandleObjCallbackFunc(task, t)
+	types.LoadPartSize(task, t)
+	types.LoadPartThreshold(task, t)
+	types.LoadRecursive(task, t)
 }
 
 // Run implement navvy.Task
@@ -4288,30 +4233,26 @@ func (t *SyncTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *SyncTask) String() string {
-	s := make([]string, 0, 9)
+	s := make([]string, 0, 11)
+
+	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
+	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
+	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
 	}
 	if t.ValidateCheckTasks() {
 		s = append(s, fmt.Sprintf("CheckTasks: %s", t.CheckTasks.String()))
 	}
-	if t.ValidateDestinationPath() {
-		s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
-	}
-	if t.ValidateDestinationStorage() {
-		s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
+	if t.ValidatePartSize() {
+		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
 	}
 	if t.ValidateRecursive() {
 		s = append(s, fmt.Sprintf("Recursive: %s", t.Recursive.String()))
-	}
-	if t.ValidateSourcePath() {
-		s = append(s, fmt.Sprintf("SourcePath: %s", t.SourcePath.String()))
-	}
-	if t.ValidateSourceStorage() {
-		s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	}
 	return fmt.Sprintf("SyncTask {%s}", strings.Join(s, ", "))
 }

@@ -17,8 +17,14 @@ import (
 type task struct {
 	Name        string   `json:"-"`
 	Description string   `json:"description"`
-	Input       []string `json:"input,omitempty"`
+	Input       Input    `json:"input,omitempty"`
 	Output      []string `json:"output,omitempty"`
+}
+
+// Input include required fields and optional fields
+type Input struct {
+	Required []string `json:"required,omitempty"`
+	Optional []string `json:"optional,omitempty"`
 }
 
 var funcs = template.FuncMap{
@@ -50,6 +56,9 @@ var funcs = template.FuncMap{
 		sort.Strings(o)
 		return o
 	},
+	"add": func(x, y int) int {
+		return x + y
+	},
 }
 
 func executeTemplate(tmpl *template.Template, w io.Writer, v interface{}) {
@@ -74,7 +83,8 @@ func main() {
 	// Do sort to all tasks via name.
 	taskNames := make([]string, 0)
 	for k := range tasks {
-		sort.Strings(tasks[k].Input)
+		sort.Strings(tasks[k].Input.Required)
+		sort.Strings(tasks[k].Input.Optional)
 		sort.Strings(tasks[k].Output)
 
 		taskNames = append(taskNames, k)
@@ -147,8 +157,13 @@ type {{ .Name }}Task struct {
 	types.Scheduler
 	types.CallbackFunc
 
-	// Input value
-{{- range $k, $v := .Input }}
+	// Required Input value
+{{- range $k, $v := .Input.Required }}
+	types.{{$v}}
+{{- end }}
+
+	// Optional Input value
+{{- range $k, $v := .Input.Optional }}
 	types.{{$v}}
 {{- end }}
 
@@ -172,7 +187,7 @@ func New{{ .Name }}(task navvy.Task) *{{ .Name }}Task {
 
 // validateInput will validate all input before run task.
 func (t *{{ .Name }}Task) validateInput() {
-{{- range $k, $v := .Input }}
+{{- range $k, $v := .Input.Required }}
 	if !t.Validate{{$v}}() {
 		panic(fmt.Errorf("Task {{ $.Name }} value {{$v}} is invalid"))
 	}
@@ -184,7 +199,12 @@ func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
 	types.LoadFault(task, t)
 	types.LoadPool(task, t)
 
-{{- range $k, $v := .Input }}
+	// load required fields
+{{- range $k, $v := .Input.Required }}
+	types.Load{{$v}}(task, t)
+{{- end }}
+	// load optional fields
+{{- range $k, $v := .Input.Optional }}
 	types.Load{{$v}}(task, t)
 {{- end }}
 }
@@ -226,9 +246,14 @@ func (t *{{ .Name }}Task) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *{{ .Name }}Task) String() string {
-{{- $length := len .Input }}
+{{- $length := add (len .Input.Required) (len .Input.Optional) }}
 	s := make([]string, 0, {{$length}})
-{{- range $k, $v := .Input -}}
+{{ range $k, $v := .Input.Required -}}
+{{- if not (endwith $v "Func") }}
+	s = append(s, fmt.Sprintf("{{$v}}: %s", t.{{$v}}.String()))
+{{- end -}}
+{{ end }}
+{{- range $k, $v := .Input.Optional -}}
 {{- if not (endwith $v "Func") }}
 	if t.Validate{{$v}}() {
 		s = append(s, fmt.Sprintf("{{$v}}: %s", t.{{$v}}.String()))
@@ -237,8 +262,6 @@ func (t *{{ .Name }}Task) String() string {
 {{- end }}
 	return fmt.Sprintf("{{ .Name }}Task {%s}", strings.Join(s, ", "))
 }
-
-
 
 // New{{ .Name }}Task will create a {{ .Name }}Task which meets navvy.Task.
 func New{{ .Name }}Task(task navvy.Task) navvy.Task {

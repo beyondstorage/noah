@@ -23,8 +23,8 @@ func (t *SyncTask) run(ctx context.Context) {
 			sf := NewSync(t)
 			sf.SetSourcePath(o.Name)
 			sf.SetDestinationPath(o.Name)
-			if t.ValidateHandleObjCallback() {
-				sf.SetHandleObjCallback(t.GetHandleObjCallback())
+			if t.ValidateHandleObjCallbackFunc() {
+				sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
 			}
 			if t.ValidatePartSize() {
 				sf.SetPartSize(t.GetPartSize())
@@ -68,9 +68,9 @@ func (t *SyncTask) run(ctx context.Context) {
 			return
 		}
 
-		if t.ValidateHandleObjCallback() {
+		if t.ValidateHandleObjCallbackFunc() {
 			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallback()(o)
+				t.GetHandleObjCallbackFunc()(o)
 			})
 		}
 		if t.ValidatePartSize() {

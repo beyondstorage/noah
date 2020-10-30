@@ -1742,32 +1742,32 @@ func (o *Force) String() string {
 	return strconv.FormatBool(o.v)
 }
 
-type HandleObjCallback struct {
+type HandleObjCallbackFunc struct {
 	valid bool
 	v     func(*types.Object)
 
 	l sync.RWMutex
 }
 
-type HandleObjCallbackGetter interface {
-	GetHandleObjCallback() func(*types.Object)
+type HandleObjCallbackFuncGetter interface {
+	GetHandleObjCallbackFunc() func(*types.Object)
 }
 
-func (o *HandleObjCallback) GetHandleObjCallback() func(*types.Object) {
+func (o *HandleObjCallbackFunc) GetHandleObjCallbackFunc() func(*types.Object) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("HandleObjCallback value is not valid")
+		panic("HandleObjCallbackFunc value is not valid")
 	}
 	return o.v
 }
 
-type HandleObjCallbackSetter interface {
-	SetHandleObjCallback(func(*types.Object))
+type HandleObjCallbackFuncSetter interface {
+	SetHandleObjCallbackFunc(func(*types.Object))
 }
 
-func (o *HandleObjCallback) SetHandleObjCallback(v func(*types.Object)) {
+func (o *HandleObjCallbackFunc) SetHandleObjCallbackFunc(v func(*types.Object)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1775,65 +1775,65 @@ func (o *HandleObjCallback) SetHandleObjCallback(v func(*types.Object)) {
 	o.valid = true
 }
 
-type HandleObjCallbackValidator interface {
-	ValidateHandleObjCallback() bool
+type HandleObjCallbackFuncValidator interface {
+	ValidateHandleObjCallbackFunc() bool
 }
 
-func (o *HandleObjCallback) ValidateHandleObjCallback() bool {
+func (o *HandleObjCallbackFunc) ValidateHandleObjCallbackFunc() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadHandleObjCallback(t navvy.Task, v HandleObjCallbackSetter) {
+func LoadHandleObjCallbackFunc(t navvy.Task, v HandleObjCallbackFuncSetter) {
 	x, ok := t.(interface {
-		HandleObjCallbackGetter
-		HandleObjCallbackValidator
+		HandleObjCallbackFuncGetter
+		HandleObjCallbackFuncValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateHandleObjCallback() {
+	if !x.ValidateHandleObjCallbackFunc() {
 		return
 	}
 
-	v.SetHandleObjCallback(x.GetHandleObjCallback())
+	v.SetHandleObjCallbackFunc(x.GetHandleObjCallbackFunc())
 }
 
-func (o *HandleObjCallback) String() string {
+func (o *HandleObjCallbackFunc) String() string {
 	if !o.valid {
 		return ""
 	}
 	return ""
 }
 
-type HandleSegmentCallback struct {
+type HandleSegmentCallbackFunc struct {
 	valid bool
 	v     func(segment.Segment)
 
 	l sync.RWMutex
 }
 
-type HandleSegmentCallbackGetter interface {
-	GetHandleSegmentCallback() func(segment.Segment)
+type HandleSegmentCallbackFuncGetter interface {
+	GetHandleSegmentCallbackFunc() func(segment.Segment)
 }
 
-func (o *HandleSegmentCallback) GetHandleSegmentCallback() func(segment.Segment) {
+func (o *HandleSegmentCallbackFunc) GetHandleSegmentCallbackFunc() func(segment.Segment) {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	if !o.valid {
-		panic("HandleSegmentCallback value is not valid")
+		panic("HandleSegmentCallbackFunc value is not valid")
 	}
 	return o.v
 }
 
-type HandleSegmentCallbackSetter interface {
-	SetHandleSegmentCallback(func(segment.Segment))
+type HandleSegmentCallbackFuncSetter interface {
+	SetHandleSegmentCallbackFunc(func(segment.Segment))
 }
 
-func (o *HandleSegmentCallback) SetHandleSegmentCallback(v func(segment.Segment)) {
+func (o *HandleSegmentCallbackFunc) SetHandleSegmentCallbackFunc(v func(segment.Segment)) {
 	o.l.Lock()
 	defer o.l.Unlock()
 
@@ -1841,33 +1841,33 @@ func (o *HandleSegmentCallback) SetHandleSegmentCallback(v func(segment.Segment)
 	o.valid = true
 }
 
-type HandleSegmentCallbackValidator interface {
-	ValidateHandleSegmentCallback() bool
+type HandleSegmentCallbackFuncValidator interface {
+	ValidateHandleSegmentCallbackFunc() bool
 }
 
-func (o *HandleSegmentCallback) ValidateHandleSegmentCallback() bool {
+func (o *HandleSegmentCallbackFunc) ValidateHandleSegmentCallbackFunc() bool {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
 	return o.valid
 }
 
-func LoadHandleSegmentCallback(t navvy.Task, v HandleSegmentCallbackSetter) {
+func LoadHandleSegmentCallbackFunc(t navvy.Task, v HandleSegmentCallbackFuncSetter) {
 	x, ok := t.(interface {
-		HandleSegmentCallbackGetter
-		HandleSegmentCallbackValidator
+		HandleSegmentCallbackFuncGetter
+		HandleSegmentCallbackFuncValidator
 	})
 	if !ok {
 		return
 	}
-	if !x.ValidateHandleSegmentCallback() {
+	if !x.ValidateHandleSegmentCallbackFunc() {
 		return
 	}
 
-	v.SetHandleSegmentCallback(x.GetHandleSegmentCallback())
+	v.SetHandleSegmentCallbackFunc(x.GetHandleSegmentCallbackFunc())
 }
 
-func (o *HandleSegmentCallback) String() string {
+func (o *HandleSegmentCallbackFunc) String() string {
 	if !o.valid {
 		return ""
 	}

@@ -48,8 +48,8 @@ func (t *SegmentFileCopyTask) run(ctx context.Context) {
 	}
 }
 
-func (t *InitSegmentStreamTask) new() {}
-func (t *InitSegmentStreamTask) run(ctx context.Context) {
+func (t *SegmentStreamInitTask) new() {}
+func (t *SegmentStreamInitTask) run(ctx context.Context) {
 	// Set size and update offset.
 	partSize := t.GetPartSize()
 
