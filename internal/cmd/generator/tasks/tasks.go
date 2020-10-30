@@ -134,16 +134,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
-	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/pkg/schedule"
+	"github.com/qingstor/noah/pkg/task"
+	"github.com/qingstor/noah/pkg/types"
 )
 
-var _ navvy.Pool
-var _ types.Pool
 var _ = uuid.New()
 `))
 
@@ -151,10 +149,8 @@ var taskTmpl = template.Must(template.New("task").Funcs(funcs).Parse(`
 // {{ .Name }}Task will {{ .Description }}.
 type {{ .Name }}Task struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -174,12 +170,12 @@ type {{ .Name }}Task struct {
 }
 
 // New{{ .Name }} will create a {{ .Name }}Task struct and fetch inherited data from parent task.
-func New{{ .Name }}(task navvy.Task) *{{ .Name }}Task {
+func New{{ .Name }}(task task.Task) *{{ .Name }}Task {
 	t := &{{ .Name }}Task{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -195,10 +191,7 @@ func (t *{{ .Name }}Task) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *{{ .Name }}Task) loadInput(task task.Task) {
 	// load required fields
 {{- range $k, $v := .Input.Required }}
 	types.Load{{$v}}(task, t)
@@ -209,22 +202,46 @@ func (t *{{ .Name }}Task) loadInput(task navvy.Task) {
 {{- end }}
 }
 
-// Run implement navvy.Task
-func (t *{{ .Name }}Task) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *{{ .Name }}Task) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *{{ .Name }}Task) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+        defer t.GetScheduler().Done()
+        if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+        }
+    }()
+}
+
+// Await wait sub task done
+func (t *{{ .Name }}Task) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *{{ .Name }}Task) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "{{ .Name }}Task"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -232,16 +249,12 @@ func (t *{{ .Name }}Task) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *{{ .Name }}Task) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *{{ .Name }}Task) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}",t , err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -263,8 +276,8 @@ func (t *{{ .Name }}Task) String() string {
 	return fmt.Sprintf("{{ .Name }}Task {%s}", strings.Join(s, ", "))
 }
 
-// New{{ .Name }}Task will create a {{ .Name }}Task which meets navvy.Task.
-func New{{ .Name }}Task(task navvy.Task) navvy.Task {
+// New{{ .Name }}Task will create a {{ .Name }}Task which meets task.Task.
+func New{{ .Name }}Task(task task.Task) task.Task {
 	return New{{ .Name }}(task)
 }
 `))
@@ -273,26 +286,22 @@ var testPageTmpl = template.Must(template.New("testPage").Parse(`// Code generat
 package task
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/qingstor/noah/pkg/schedule"
 	"github.com/qingstor/noah/pkg/types"
-	"github.com/qingstor/noah/pkg/fault"
 )
 
-var _ navvy.Pool
-var _ types.Pool
 `))
 
 var testTmpl = template.Must(template.New("test").Funcs(funcs).Parse(`
 func Test{{ .Name }}Task_TriggerFault(t *testing.T) {
 	task := &{{ .Name }}Task{}
-	task.SetFault(fault.New())
-	err := errors.New("test error")
-	task.TriggerFault(err)
-	assert.True(t, task.GetFault().HasError())
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
 }
 `))

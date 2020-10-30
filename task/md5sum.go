@@ -11,27 +11,27 @@ import (
 )
 
 func (t *MD5SumFileTask) new() {}
-func (t *MD5SumFileTask) run(ctx context.Context) {
+func (t *MD5SumFileTask) run(ctx context.Context) error {
 	r, err := t.GetStorage().ReadWithContext(
 		ctx, t.GetPath(), pairs.WithSize(t.GetSize()), pairs.WithOffset(t.GetOffset()))
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	defer r.Close()
 
 	h := md5.New()
 	_, err = io.Copy(h, r)
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 
 	t.SetMD5Sum(h.Sum(nil)[:])
+	return nil
 }
 
 func (t *MD5SumStreamTask) new() {}
-func (t *MD5SumStreamTask) run(_ context.Context) {
+func (t *MD5SumStreamTask) run(_ context.Context) error {
 	md5Sum := md5.Sum(t.GetContent().Bytes())
 	t.SetMD5Sum(md5Sum[:])
+	return nil
 }

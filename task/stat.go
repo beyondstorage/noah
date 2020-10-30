@@ -9,26 +9,25 @@ import (
 )
 
 func (t *StatFileTask) new() {}
-func (t *StatFileTask) run(ctx context.Context) {
+func (t *StatFileTask) run(ctx context.Context) error {
 	om, err := t.GetStorage().StatWithContext(ctx, t.GetPath())
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	t.SetObject(om)
+	return nil
 }
 
 func (t *StatStorageTask) new() {}
-func (t *StatStorageTask) run(ctx context.Context) {
+func (t *StatStorageTask) run(ctx context.Context) error {
 	s, ok := t.GetStorage().(storage.Statistician)
 	if !ok {
-		t.TriggerFault(types.NewErrStorageInsufficientAbility(nil))
-		return
+		return types.NewErrStorageInsufficientAbility(nil)
 	}
 	info, err := s.StatisticalWithContext(ctx)
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	t.SetStorageInfo(info)
+	return nil
 }

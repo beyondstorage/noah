@@ -10,12 +10,11 @@ import (
 )
 
 func (t *BetweenStorageCheckTask) new() {}
-func (t *BetweenStorageCheckTask) run(ctx context.Context) {
+func (t *BetweenStorageCheckTask) run(ctx context.Context) error {
 	// Source Object must be exist.
 	src, err := t.GetSourceStorage().StatWithContext(ctx, t.GetSourcePath())
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	t.SetSourceObject(src)
 
@@ -23,39 +22,44 @@ func (t *BetweenStorageCheckTask) run(ctx context.Context) {
 	// So we can check its existences later.
 	dst, err := t.GetDestinationStorage().StatWithContext(ctx, t.GetDestinationPath())
 	if err != nil && !errors.Is(err, services.ErrObjectNotExist) {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	t.SetDestinationObject(dst)
+
+	return nil
 }
 
 func (t *IsDestinationObjectExistTask) new() {}
-func (t *IsDestinationObjectExistTask) run(_ context.Context) {
+func (t *IsDestinationObjectExistTask) run(_ context.Context) error {
 	t.SetResult(t.GetDestinationObject() != nil)
+	return nil
 }
 
 func (t *IsDestinationObjectNotExistTask) new() {}
-func (t *IsDestinationObjectNotExistTask) run(_ context.Context) {
+func (t *IsDestinationObjectNotExistTask) run(_ context.Context) error {
 	t.SetResult(t.GetDestinationObject() == nil)
+	return nil
 }
 
 func (t *IsSizeEqualTask) new() {}
-func (t *IsSizeEqualTask) run(_ context.Context) {
+func (t *IsSizeEqualTask) run(_ context.Context) error {
 	t.SetResult(t.GetSourceObject().Size == t.GetDestinationObject().Size)
+	return nil
 }
 
 func (t *IsUpdateAtGreaterTask) new() {}
-func (t *IsUpdateAtGreaterTask) run(_ context.Context) {
+func (t *IsUpdateAtGreaterTask) run(_ context.Context) error {
 	// if destination object not exist, always consider src is newer
 	if t.GetDestinationObject() == nil {
 		t.SetResult(true)
 	} else {
 		t.SetResult(t.GetSourceObject().UpdatedAt.After(t.GetDestinationObject().UpdatedAt))
 	}
+	return nil
 }
 
 func (t *IsSourcePathExcludeIncludeTask) new() {}
-func (t *IsSourcePathExcludeIncludeTask) run(_ context.Context) {
+func (t *IsSourcePathExcludeIncludeTask) run(_ context.Context) error {
 	// source path is rel path based on work-dir, we check exclude and include here:
 	// 0. if exclude not set, copy
 	// 1. if exclude set but not match, copy
@@ -65,20 +69,21 @@ func (t *IsSourcePathExcludeIncludeTask) run(_ context.Context) {
 	// TODO: move exclude and include check into list (in go-storage)
 	if t.GetExcludeRegexp() == nil {
 		t.SetResult(true)
-		return
+		return nil
 	}
 
 	exMatch := t.GetExcludeRegexp().MatchString(t.GetSourcePath())
 	if !exMatch {
 		t.SetResult(true)
-		return
+		return nil
 	}
 
 	if t.GetIncludeRegexp() == nil {
 		t.SetResult(false)
-		return
+		return nil
 	}
 
 	inMatch := t.GetIncludeRegexp().MatchString(t.GetSourcePath())
 	t.SetResult(inMatch)
+	return nil
 }

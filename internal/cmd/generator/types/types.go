@@ -119,14 +119,13 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/aos-dev/go-storage/v2"
 	"github.com/aos-dev/go-storage/v2/pkg/segment"
 	"github.com/aos-dev/go-storage/v2/types"
 	"github.com/aos-dev/go-storage/v2/types/info"
 
 	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/qingstor/noah/pkg/task"
 )
 
 var _ fmt.Stringer
@@ -176,7 +175,7 @@ func (o *{{$k}}) Validate{{$k}}() bool {
 	return o.valid
 }
 
-func Load{{$k}}(t navvy.Task, v {{$k}}Setter) {
+func Load{{$k}}(t task.Task, v {{$k}}Setter) {
 	x, ok := t.(interface{
 		{{$k}}Getter
 		{{$k}}Validator

@@ -54,6 +54,18 @@ func ChooseSourceStorage(x interface {
 	x.SetStorage(y.GetSourceStorage())
 }
 
+// ChooseDestinationIndexSegmenter will choose the destination segmenter to fill.
+func ChooseDestinationIndexSegmenter(x interface {
+	types.PathSetter
+	types.IndexSegmenterSetter
+}, y interface {
+	types.DestinationPathGetter
+	types.DestinationIndexSegmenterGetter
+}) {
+	x.SetPath(y.GetDestinationPath())
+	x.SetIndexSegmenter(y.GetDestinationIndexSegmenter())
+}
+
 // ChooseSourceStorageAsDirLister will choose the source storage to fill as the dir lister.
 func ChooseSourceStorageAsDirLister(x interface {
 	types.PathSetter
@@ -126,8 +138,8 @@ func ChooseDestinationStorageAsIndexSegmenter(x interface {
 	return
 }
 
-// ChooseDestinationIndexSegmenter will choose the destination storage as a segmenter.
-func ChooseDestinationIndexSegmenter(x interface {
+// ChooseDestinationStorageAsDestinationIndexSegmenter will choose the destination storage as a segmenter.
+func ChooseDestinationStorageAsDestinationIndexSegmenter(x interface {
 	types.DestinationPathSetter
 	types.DestinationIndexSegmenterSetter
 }, y interface {
