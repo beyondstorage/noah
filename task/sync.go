@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 
 	typ "github.com/aos-dev/go-storage/v2/types"
 
@@ -17,64 +18,41 @@ func (t *SyncTask) run(ctx context.Context) error {
 		return err
 	}
 
-	if t.GetRecursive() {
-		x.SetDirFunc(func(o *typ.Object) {
-			sf := NewSync(t)
-			sf.SetSourcePath(o.Name)
-			sf.SetDestinationPath(o.Name)
-			if t.ValidateHandleObjCallbackFunc() {
-				sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
-			}
-			if t.ValidatePartSize() {
-				sf.SetPartSize(t.GetPartSize())
-			}
-			t.Sync(ctx, sf)
-		})
-	} else {
-		// if not recursive, do nothing with dir
-		x.SetDirFunc(func(_ *typ.Object) {})
+	if err := t.Sync(ctx, x); err != nil {
+		return err
 	}
 
-	x.SetFileFunc(func(o *typ.Object) {
-		sf := NewCopyFile(t)
-		sf.SetSourcePath(o.Name)
-		sf.SetDestinationPath(o.Name)
-		// set check task to nil, to skip check in copy file, because we check here, below
-		sf.SetCheckTasks(nil)
-
-		// put check tasks outside of copy, to make sure flags' priority is higher than dry-run
-		check := NewBetweenStorageCheck(sf)
-		if err := sf.Sync(ctx, check); err != nil {
-			return
-		}
-
-		for _, v := range t.GetCheckTasks() {
-			ct := v(check)
-			if err := sf.Sync(ctx, ct); err != nil {
-				return
+	it := x.GetObjectIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
 			}
-			// If any of checks not pass, do not copy this file.
-			if result := ct.(types.ResultGetter); !result.GetResult() {
-				return
+			return types.NewErrUnhandled(err)
+		}
+		switch obj.Type {
+		case typ.ObjectTypeFile:
+			sf := NewCopyFile(t)
+			sf.SetSourcePath(obj.Name)
+			sf.SetDestinationPath(obj.Name)
+			if t.ValidateHandleObjCallbackFunc() {
+				sf.SetCallbackFunc(func() {
+					t.GetHandleObjCallbackFunc()(obj)
+				})
 			}
-			// If all check passed, we should continue do copy works.
+			t.Async(ctx, sf)
+		case typ.ObjectTypeDir:
+			if t.ValidateRecursive() && t.GetRecursive() {
+				sf := NewSync(t)
+				sf.SetSourcePath(obj.Name)
+				sf.SetDestinationPath(obj.Name)
+				t.Async(ctx, sf)
+			}
+		default:
+			return types.NewErrObjectTypeInvalid(nil, obj)
 		}
+	}
 
-		// if dry-run, only check, and call dry-run func if check passed
-		if t.GetDryRunFunc() != nil {
-			t.GetDryRunFunc()(o)
-			return
-		}
-
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallbackFunc()(o)
-			})
-		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.Async(ctx, sf)
-	})
-	return t.Sync(ctx, x)
+	return nil
 }

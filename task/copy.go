@@ -3,11 +3,11 @@ package task
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"sync"
 
-	"github.com/aos-dev/go-storage/v2"
 	typ "github.com/aos-dev/go-storage/v2/types"
-	"github.com/aos-dev/go-storage/v2/types/pairs"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/progress"
@@ -23,33 +23,42 @@ func (t *CopyDirTask) run(ctx context.Context) error {
 		return err
 	}
 
-	x.SetFileFunc(func(o *typ.Object) {
-		sf := NewCopyFile(t)
-		sf.SetSourcePath(o.Name)
-		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallbackFunc()(o)
-			})
+	if err := t.Sync(ctx, x); err != nil {
+		return err
+	}
+
+	it := x.GetObjectIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
+			}
+			return types.NewErrUnhandled(err)
 		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
+
+		switch obj.Type {
+		case typ.ObjectTypeFile:
+			sf := NewCopyFile(t)
+			sf.SetSourcePath(obj.Name)
+			sf.SetDestinationPath(obj.Name)
+			if t.ValidateHandleObjCallbackFunc() {
+				sf.SetCallbackFunc(func() {
+					t.GetHandleObjCallbackFunc()(obj)
+				})
+			}
+			t.Async(ctx, sf)
+		case typ.ObjectTypeDir:
+			sf := NewCopyDir(t)
+			sf.SetSourcePath(obj.Name)
+			sf.SetDestinationPath(obj.Name)
+			t.Async(ctx, sf)
+		default:
+			return types.NewErrObjectTypeInvalid(nil, obj)
 		}
-		t.Async(ctx, sf)
-	})
-	x.SetDirFunc(func(o *typ.Object) {
-		sf := NewCopyDir(t)
-		sf.SetSourcePath(o.Name)
-		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
-		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.Sync(ctx, sf)
-	})
-	return t.Sync(ctx, x)
+	}
+
+	return nil
 }
 
 func (t *CopyFileTask) new() {}
@@ -62,7 +71,6 @@ func (t *CopyFileTask) run(ctx context.Context) error {
 
 	// Execute check tasks
 	if t.ValidateCheckTasks() {
-		// Execute check tasks
 		for _, v := range t.GetCheckTasks() {
 			ct := v(check)
 			if err := t.Sync(ctx, ct); err != nil {
@@ -84,10 +92,13 @@ func (t *CopyFileTask) run(ctx context.Context) error {
 		return nil
 	}
 
-	srcSize := check.GetSourceObject().Size
+	srcSize, ok := check.GetSourceObject().GetSize()
+	if !ok {
+		return types.NewErrObjectMetaInvalid(nil, "size", check.GetSourceObject())
+	}
 
 	// if destination not support segmenter, we do not call multipart api
-	_, ok := t.GetDestinationStorage().(storage.IndexSegmenter)
+	_, ok = t.GetDestinationStorage().(typ.IndexSegmenter)
 	if !ok {
 		x := NewCopySmallFile(t)
 		x.SetSize(srcSize)
@@ -283,26 +294,27 @@ func (t *CopyPartialStreamTask) run(ctx context.Context) error {
 
 func (t *CopySingleFileTask) new() {}
 func (t *CopySingleFileTask) run(ctx context.Context) error {
-	r, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath())
-	if err != nil {
-		return types.NewErrUnhandled(err)
-	}
-	defer r.Close()
+	r, w := io.Pipe()
+
+	rst := NewReadFile(t)
+	utils.ChooseSourceStorage(rst, t)
+	rst.SetWriteCloser(w)
+	t.Async(ctx, rst)
+
+	wst := NewWriteFile(t)
+	utils.ChooseDestinationStorage(wst, t)
+	wst.SetReadCloser(r)
 
 	// improve progress bar's performance, do not set state for small files less than 32M
 	if t.GetSize() > constants.DefaultPartSize/4 {
+		writeDone := 0
 		progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
-	}
-	// TODO: add checksum support
-	writeDone := 0
-	err = t.GetDestinationStorage().WriteWithContext(ctx, t.GetDestinationPath(), r, pairs.WithSize(t.GetSize()),
-		pairs.WithReadCallbackFunc(func(b []byte) {
+		wst.SetReadCallBackFunc(func(b []byte) {
 			writeDone += len(b)
 			progress.UpdateState(t.GetID(), int64(writeDone))
-		}))
-	if err != nil {
-		return types.NewErrUnhandled(err)
+		})
 	}
 
+	t.Async(ctx, wst)
 	return nil
 }

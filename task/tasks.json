@@ -229,6 +229,18 @@
       ]
     }
   },
+  "DeleteSegmentsByPrefix": {
+    "description": "delete all segments with a given path",
+    "input": {
+      "required": [
+        "Prefix",
+        "PrefixSegmentsLister"
+      ],
+      "optional": [
+        "HandleSegmentCallbackFunc"
+      ]
+    }
+  },
   "DeleteStorage": {
     "description": "delete a storage",
     "input": {
@@ -309,44 +321,51 @@
     "description": "list dirs",
     "input": {
       "required": [
-        "DirFunc",
         "DirLister",
-        "FileFunc",
         "Path"
       ]
-    }
+    },
+    "output": [
+      "ObjectIter"
+    ]
   },
   "ListPrefix": {
     "description": "list prefix",
     "input": {
       "required": [
-        "ObjectFunc",
         "Path",
         "PrefixLister"
       ]
-    }
+    },
+    "output": [
+      "ObjectIter"
+    ]
   },
   "ListSegment": {
     "description": "list segments",
     "input": {
       "required": [
         "Path",
-        "PrefixSegmentsLister",
-        "SegmentFunc"
+        "PrefixSegmentsLister"
       ]
-    }
+    },
+    "output": [
+      "SegmentIter"
+    ]
   },
   "ListStorage": {
     "description": "send get request to get bucket list",
     "input": {
       "required": [
-        "Service",
-        "StoragerFunc"
+        "Service"
       ],
       "optional": [
         "Zone"
       ]
-    }
+    },
+    "output": [
+      "StorageIter"
+    ]
   },
   "MD5SumFile": {
     "description": "get file's md5 sum",
@@ -421,6 +440,21 @@
     "output": [
       "URL"
     ]
+  },
+  "ReadFile": {
+    "description": "read file from storage",
+    "input": {
+      "required": [
+        "Path",
+        "Storage",
+        "WriteCloser"
+      ],
+      "optional": [
+        "Offset",
+        "ReadCallBackFunc",
+        "Size"
+      ]
+    }
   },
   "SegmentComplete": {
     "description": "complete a segment",
@@ -536,6 +570,37 @@
         "PartSize",
         "PartThreshold",
         "Recursive"
+      ]
+    }
+  },
+  "WriteFile": {
+    "description": "write file to storage",
+    "input": {
+      "required": [
+        "Path",
+        "ReadCloser",
+        "Storage"
+      ],
+      "optional": [
+        "Offset",
+        "ReadCallBackFunc",
+        "Size"
+      ]
+    }
+  },
+  "WriteSegment": {
+    "description": "write segment to storage",
+    "input": {
+      "required": [
+        "Index",
+        "IndexSegmenter",
+        "ReadCloser",
+        "Segment",
+        "Size"
+      ],
+      "optional": [
+        "Path",
+        "ReadCallBackFunc"
       ]
     }
   }

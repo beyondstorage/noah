@@ -2,9 +2,11 @@ package task
 
 import (
 	"context"
+	"errors"
 
 	typ "github.com/aos-dev/go-storage/v2/types"
 
+	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
 )
 
@@ -16,33 +18,41 @@ func (t *MoveDirTask) run(ctx context.Context) error {
 		return err
 	}
 
-	x.SetFileFunc(func(o *typ.Object) {
-		sf := NewMoveFile(t)
-		sf.SetSourcePath(o.Name)
-		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetCallbackFunc(func() {
-				t.GetHandleObjCallbackFunc()(o)
-			})
+	if err := t.Sync(ctx, x); err != nil {
+		return err
+	}
+
+	it := x.GetObjectIter()
+	for {
+		obj, err := it.Next()
+		if err != nil {
+			if errors.Is(err, typ.IterateDone) {
+				break
+			}
+			return types.NewErrUnhandled(err)
 		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
+		switch obj.Type {
+		case typ.ObjectTypeFile:
+			sf := NewMoveFile(t)
+			sf.SetSourcePath(obj.Name)
+			sf.SetDestinationPath(obj.Name)
+			if t.ValidateHandleObjCallbackFunc() {
+				sf.SetCallbackFunc(func() {
+					t.GetHandleObjCallbackFunc()(obj)
+				})
+			}
+			t.Async(ctx, sf)
+		case typ.ObjectTypeDir:
+			sf := NewMoveDir(t)
+			sf.SetSourcePath(obj.Name)
+			sf.SetDestinationPath(obj.Name)
+			t.Async(ctx, sf)
+		default:
+			return types.NewErrObjectTypeInvalid(nil, obj)
 		}
-		t.Async(ctx, sf)
-	})
-	x.SetDirFunc(func(o *typ.Object) {
-		sf := NewMoveDir(t)
-		sf.SetSourcePath(o.Name)
-		sf.SetDestinationPath(o.Name)
-		if t.ValidateHandleObjCallbackFunc() {
-			sf.SetHandleObjCallbackFunc(t.GetHandleObjCallbackFunc())
-		}
-		if t.ValidatePartSize() {
-			sf.SetPartSize(t.GetPartSize())
-		}
-		t.Sync(ctx, sf)
-	})
-	return t.Sync(ctx, x)
+	}
+
+	return nil
 }
 
 func (t *MoveFileTask) new() {}

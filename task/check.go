@@ -43,7 +43,16 @@ func (t *IsDestinationObjectNotExistTask) run(_ context.Context) error {
 
 func (t *IsSizeEqualTask) new() {}
 func (t *IsSizeEqualTask) run(_ context.Context) error {
-	t.SetResult(t.GetSourceObject().Size == t.GetDestinationObject().Size)
+	srcSize, ok := t.GetSourceObject().GetSize()
+	if !ok {
+		return types.NewErrObjectMetaInvalid(nil, "size", t.GetSourceObject())
+	}
+
+	dstSize, ok := t.GetDestinationObject().GetSize()
+	if !ok {
+		return types.NewErrObjectMetaInvalid(nil, "size", t.GetDestinationObject())
+	}
+	t.SetResult(srcSize == dstSize)
 	return nil
 }
 
@@ -52,9 +61,19 @@ func (t *IsUpdateAtGreaterTask) run(_ context.Context) error {
 	// if destination object not exist, always consider src is newer
 	if t.GetDestinationObject() == nil {
 		t.SetResult(true)
-	} else {
-		t.SetResult(t.GetSourceObject().UpdatedAt.After(t.GetDestinationObject().UpdatedAt))
+		return nil
 	}
+
+	srcUpdate, ok := t.GetSourceObject().GetUpdatedAt()
+	if !ok {
+		return types.NewErrObjectMetaInvalid(nil, "update_at", t.GetSourceObject())
+	}
+
+	dstUpdate, ok := t.GetDestinationObject().GetUpdatedAt()
+	if !ok {
+		return types.NewErrObjectMetaInvalid(nil, "update_at", t.GetDestinationObject())
+	}
+	t.SetResult(srcUpdate.After(dstUpdate))
 	return nil
 }
 

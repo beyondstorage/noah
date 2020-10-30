@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/pkg/types"
 )
@@ -20,7 +20,7 @@ func (t *StatFileTask) run(ctx context.Context) error {
 
 func (t *StatStorageTask) new() {}
 func (t *StatStorageTask) run(ctx context.Context) error {
-	s, ok := t.GetStorage().(storage.Statistician)
+	s, ok := t.GetStorage().(typ.Statistician)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
