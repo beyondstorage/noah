@@ -5,9 +5,19 @@ import (
 	"sync"
 )
 
+type errList []error
+
+func (l errList) Error() string {
+	x := make([]string, 0, len(l))
+	for _, v := range l {
+		x = append(x, v.Error())
+	}
+	return strings.Join(x, "\n")
+}
+
 // Fault will handle multi error in tasks.
 type Fault struct {
-	errs []error
+	errs errList
 	lock sync.RWMutex
 }
 
@@ -36,14 +46,10 @@ func (f *Fault) Error() string {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
-	x := make([]string, 0)
-	for _, v := range f.errs {
-		x = append(x, v.Error())
-	}
-	return strings.Join(x, "\n")
+	return f.errs.Error()
 }
 
-// Unwrap implements unwarp interface.
+// Unwrap implements unwrap interface.
 func (f *Fault) Unwrap() error {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
@@ -52,4 +58,17 @@ func (f *Fault) Unwrap() error {
 		return nil
 	}
 	return f.errs[0]
+}
+
+// Pop get all errors and clear the error list
+func (f *Fault) Pop() error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	if len(f.errs) == 0 {
+		return nil
+	}
+	res := make(errList, len(f.errs))
+	copy(res, f.errs)
+	f.errs = f.errs[:0]
+	return res
 }
