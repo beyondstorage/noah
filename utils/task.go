@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/aos-dev/go-storage/v2"
+	typ "github.com/aos-dev/go-storage/v2/types"
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/types"
@@ -76,7 +76,7 @@ func ChooseSourceStorageAsDirLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetSourcePath())
 
-	lister, ok := y.GetSourceStorage().(storage.DirLister)
+	lister, ok := y.GetSourceStorage().(typ.DirLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -94,7 +94,7 @@ func ChooseStorageAsDirLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetPath())
 
-	lister, ok := y.GetStorage().(storage.DirLister)
+	lister, ok := y.GetStorage().(typ.DirLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -112,7 +112,7 @@ func ChooseStorageAsPrefixLister(x interface {
 }) (err error) {
 	x.SetPath(y.GetPath())
 
-	lister, ok := y.GetStorage().(storage.PrefixLister)
+	lister, ok := y.GetStorage().(typ.PrefixLister)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -130,7 +130,7 @@ func ChooseDestinationStorageAsIndexSegmenter(x interface {
 }) (err error) {
 	x.SetPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
+	segmenter, ok := y.GetDestinationStorage().(typ.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}
@@ -148,7 +148,7 @@ func ChooseDestinationStorageAsDestinationIndexSegmenter(x interface {
 }) (err error) {
 	x.SetDestinationPath(y.GetDestinationPath())
 
-	segmenter, ok := y.GetDestinationStorage().(storage.IndexSegmenter)
+	segmenter, ok := y.GetDestinationStorage().(typ.IndexSegmenter)
 	if !ok {
 		return types.NewErrStorageInsufficientAbility(nil)
 	}

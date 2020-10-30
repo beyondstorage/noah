@@ -7,10 +7,11 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/aos-dev/go-storage/v2/types/pairs"
+	"github.com/aos-dev/go-storage/v2/pairs"
 
 	"github.com/qingstor/noah/pkg/progress"
 	"github.com/qingstor/noah/pkg/types"
+	"github.com/qingstor/noah/utils"
 )
 
 func (t *SegmentInitTask) new() {}
@@ -25,25 +26,26 @@ func (t *SegmentInitTask) run(ctx context.Context) error {
 
 func (t *SegmentFileCopyTask) new() {}
 func (t *SegmentFileCopyTask) run(ctx context.Context) error {
-	r, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath(), pairs.WithSize(t.GetSize()), pairs.WithOffset(t.GetOffset()))
-	if err != nil {
-		return types.NewErrUnhandled(err)
-	}
-	defer r.Close()
+	r, w := io.Pipe()
+
+	rst := NewReadFile(t)
+	utils.ChooseSourceStorage(rst, t)
+	rst.SetWriteCloser(w)
+
+	t.Async(ctx, rst)
+
+	wst := NewWriteSegment(t)
+	utils.ChooseDestinationIndexSegmenter(wst, t)
+	wst.SetReadCloser(r)
 
 	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), fmt.Sprintf("copy file part: %d", t.GetIndex()), t.GetSize()))
-	// TODO: Add checksum support.
 	writeDone := 0
-	seg := t.GetSegment()
-	err = t.GetDestinationIndexSegmenter().WriteIndexSegmentWithContext(ctx, seg, r, t.GetIndex(), t.GetSize(),
-		pairs.WithReadCallbackFunc(func(b []byte) {
-			writeDone += len(b)
-			progress.UpdateState(t.GetID(), int64(writeDone))
-		}),
-	)
-	if err != nil {
-		return types.NewErrUnhandled(err)
-	}
+	wst.SetReadCallBackFunc(func(b []byte) {
+		writeDone += len(b)
+		progress.UpdateState(t.GetID(), int64(writeDone))
+	})
+
+	t.Async(ctx, wst)
 	return nil
 }
 
@@ -51,14 +53,9 @@ func (t *SegmentStreamInitTask) new() {}
 func (t *SegmentStreamInitTask) run(ctx context.Context) error {
 	// Set size and update offset.
 	partSize := t.GetPartSize()
-
-	r, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath(), pairs.WithSize(partSize))
-	if err != nil {
-		return types.NewErrUnhandled(err)
-	}
-
 	b := t.GetBytesPool().Get().(*bytes.Buffer)
-	n, err := io.Copy(b, r)
+
+	n, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath(), b, pairs.WithSize(partSize))
 	if err != nil {
 		return types.NewErrUnhandled(err)
 	}

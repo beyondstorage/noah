@@ -1911,6 +1911,123 @@ func NewDeleteSegmentTask(task task.Task) task.Task {
 	return NewDeleteSegment(task)
 }
 
+// DeleteSegmentsByPrefixTask will delete all segments with a given path.
+type DeleteSegmentsByPrefixTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Prefix
+	types.PrefixSegmentsLister
+
+	// Optional Input value
+	types.HandleSegmentCallbackFunc
+
+	// Output value
+}
+
+// NewDeleteSegmentsByPrefix will create a DeleteSegmentsByPrefixTask struct and fetch inherited data from parent task.
+func NewDeleteSegmentsByPrefix(task task.Task) *DeleteSegmentsByPrefixTask {
+	t := &DeleteSegmentsByPrefixTask{}
+	t.SetScheduler(schedule.New())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *DeleteSegmentsByPrefixTask) validateInput() {
+	if !t.ValidatePrefix() {
+		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value Prefix is invalid"))
+	}
+	if !t.ValidatePrefixSegmentsLister() {
+		panic(fmt.Errorf("Task DeleteSegmentsByPrefix value PrefixSegmentsLister is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *DeleteSegmentsByPrefixTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPrefix(task, t)
+	types.LoadPrefixSegmentsLister(task, t)
+	// load optional fields
+	types.LoadHandleSegmentCallbackFunc(task, t)
+}
+
+// Sync run sub task directly
+func (t *DeleteSegmentsByPrefixTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteSegmentsByPrefixTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteSegmentsByPrefixTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteSegmentsByPrefixTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "DeleteSegmentsByPrefixTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *DeleteSegmentsByPrefixTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *DeleteSegmentsByPrefixTask) String() string {
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("Prefix: %s", t.Prefix.String()))
+	s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
+	return fmt.Sprintf("DeleteSegmentsByPrefixTask {%s}", strings.Join(s, ", "))
+}
+
+// NewDeleteSegmentsByPrefixTask will create a DeleteSegmentsByPrefixTask which meets task.Task.
+func NewDeleteSegmentsByPrefixTask(task task.Task) task.Task {
+	return NewDeleteSegmentsByPrefix(task)
+}
+
 // DeleteStorageTask will delete a storage.
 type DeleteStorageTask struct {
 	// Predefined value
@@ -2620,14 +2737,13 @@ type ListDirTask struct {
 	types.CallbackFunc
 
 	// Required Input value
-	types.DirFunc
 	types.DirLister
-	types.FileFunc
 	types.Path
 
 	// Optional Input value
 
 	// Output value
+	types.ObjectIter
 }
 
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
@@ -2644,14 +2760,8 @@ func NewListDir(task task.Task) *ListDirTask {
 
 // validateInput will validate all input before run task.
 func (t *ListDirTask) validateInput() {
-	if !t.ValidateDirFunc() {
-		panic(fmt.Errorf("Task ListDir value DirFunc is invalid"))
-	}
 	if !t.ValidateDirLister() {
 		panic(fmt.Errorf("Task ListDir value DirLister is invalid"))
-	}
-	if !t.ValidateFileFunc() {
-		panic(fmt.Errorf("Task ListDir value FileFunc is invalid"))
 	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListDir value Path is invalid"))
@@ -2661,9 +2771,7 @@ func (t *ListDirTask) validateInput() {
 // loadInput will check and load all input before new task.
 func (t *ListDirTask) loadInput(task task.Task) {
 	// load required fields
-	types.LoadDirFunc(task, t)
 	types.LoadDirLister(task, t)
-	types.LoadFileFunc(task, t)
 	types.LoadPath(task, t)
 	// load optional fields
 }
@@ -2725,7 +2833,7 @@ func (t *ListDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListDirTask) String() string {
-	s := make([]string, 0, 4)
+	s := make([]string, 0, 2)
 
 	s = append(s, fmt.Sprintf("DirLister: %s", t.DirLister.String()))
 	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
@@ -2745,13 +2853,13 @@ type ListPrefixTask struct {
 	types.CallbackFunc
 
 	// Required Input value
-	types.ObjectFunc
 	types.Path
 	types.PrefixLister
 
 	// Optional Input value
 
 	// Output value
+	types.ObjectIter
 }
 
 // NewListPrefix will create a ListPrefixTask struct and fetch inherited data from parent task.
@@ -2768,9 +2876,6 @@ func NewListPrefix(task task.Task) *ListPrefixTask {
 
 // validateInput will validate all input before run task.
 func (t *ListPrefixTask) validateInput() {
-	if !t.ValidateObjectFunc() {
-		panic(fmt.Errorf("Task ListPrefix value ObjectFunc is invalid"))
-	}
 	if !t.ValidatePath() {
 		panic(fmt.Errorf("Task ListPrefix value Path is invalid"))
 	}
@@ -2782,7 +2887,6 @@ func (t *ListPrefixTask) validateInput() {
 // loadInput will check and load all input before new task.
 func (t *ListPrefixTask) loadInput(task task.Task) {
 	// load required fields
-	types.LoadObjectFunc(task, t)
 	types.LoadPath(task, t)
 	types.LoadPrefixLister(task, t)
 	// load optional fields
@@ -2845,7 +2949,7 @@ func (t *ListPrefixTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListPrefixTask) String() string {
-	s := make([]string, 0, 3)
+	s := make([]string, 0, 2)
 
 	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
 	s = append(s, fmt.Sprintf("PrefixLister: %s", t.PrefixLister.String()))
@@ -2867,11 +2971,11 @@ type ListSegmentTask struct {
 	// Required Input value
 	types.Path
 	types.PrefixSegmentsLister
-	types.SegmentFunc
 
 	// Optional Input value
 
 	// Output value
+	types.SegmentIter
 }
 
 // NewListSegment will create a ListSegmentTask struct and fetch inherited data from parent task.
@@ -2894,9 +2998,6 @@ func (t *ListSegmentTask) validateInput() {
 	if !t.ValidatePrefixSegmentsLister() {
 		panic(fmt.Errorf("Task ListSegment value PrefixSegmentsLister is invalid"))
 	}
-	if !t.ValidateSegmentFunc() {
-		panic(fmt.Errorf("Task ListSegment value SegmentFunc is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
@@ -2904,7 +3005,6 @@ func (t *ListSegmentTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadPrefixSegmentsLister(task, t)
-	types.LoadSegmentFunc(task, t)
 	// load optional fields
 }
 
@@ -2965,7 +3065,7 @@ func (t *ListSegmentTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListSegmentTask) String() string {
-	s := make([]string, 0, 3)
+	s := make([]string, 0, 2)
 
 	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
 	s = append(s, fmt.Sprintf("PrefixSegmentsLister: %s", t.PrefixSegmentsLister.String()))
@@ -2986,12 +3086,12 @@ type ListStorageTask struct {
 
 	// Required Input value
 	types.Service
-	types.StoragerFunc
 
 	// Optional Input value
 	types.Zone
 
 	// Output value
+	types.StorageIter
 }
 
 // NewListStorage will create a ListStorageTask struct and fetch inherited data from parent task.
@@ -3011,16 +3111,12 @@ func (t *ListStorageTask) validateInput() {
 	if !t.ValidateService() {
 		panic(fmt.Errorf("Task ListStorage value Service is invalid"))
 	}
-	if !t.ValidateStoragerFunc() {
-		panic(fmt.Errorf("Task ListStorage value StoragerFunc is invalid"))
-	}
 }
 
 // loadInput will check and load all input before new task.
 func (t *ListStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadService(task, t)
-	types.LoadStoragerFunc(task, t)
 	// load optional fields
 	types.LoadZone(task, t)
 }
@@ -3082,7 +3178,7 @@ func (t *ListStorageTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *ListStorageTask) String() string {
-	s := make([]string, 0, 3)
+	s := make([]string, 0, 2)
 
 	s = append(s, fmt.Sprintf("Service: %s", t.Service.String()))
 	if t.ValidateZone() {
@@ -3752,6 +3848,139 @@ func (t *ReachFileTask) String() string {
 // NewReachFileTask will create a ReachFileTask which meets task.Task.
 func NewReachFileTask(task task.Task) task.Task {
 	return NewReachFile(task)
+}
+
+// ReadFileTask will read file from storage.
+type ReadFileTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Path
+	types.Storage
+	types.WriteCloser
+
+	// Optional Input value
+	types.Offset
+	types.ReadCallBackFunc
+	types.Size
+
+	// Output value
+}
+
+// NewReadFile will create a ReadFileTask struct and fetch inherited data from parent task.
+func NewReadFile(task task.Task) *ReadFileTask {
+	t := &ReadFileTask{}
+	t.SetScheduler(schedule.New())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *ReadFileTask) validateInput() {
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task ReadFile value Path is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task ReadFile value Storage is invalid"))
+	}
+	if !t.ValidateWriteCloser() {
+		panic(fmt.Errorf("Task ReadFile value WriteCloser is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *ReadFileTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPath(task, t)
+	types.LoadStorage(task, t)
+	types.LoadWriteCloser(task, t)
+	// load optional fields
+	types.LoadOffset(task, t)
+	types.LoadReadCallBackFunc(task, t)
+	types.LoadSize(task, t)
+}
+
+// Sync run sub task directly
+func (t *ReadFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ReadFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ReadFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ReadFileTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "ReadFileTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *ReadFileTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *ReadFileTask) String() string {
+	s := make([]string, 0, 6)
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
+	s = append(s, fmt.Sprintf("WriteCloser: %s", t.WriteCloser.String()))
+	if t.ValidateOffset() {
+		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	}
+	if t.ValidateSize() {
+		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	}
+	return fmt.Sprintf("ReadFileTask {%s}", strings.Join(s, ", "))
+}
+
+// NewReadFileTask will create a ReadFileTask which meets task.Task.
+func NewReadFileTask(task task.Task) task.Task {
+	return NewReadFile(task)
 }
 
 // SegmentCompleteTask will complete a segment.
@@ -4813,4 +5042,277 @@ func (t *SyncTask) String() string {
 // NewSyncTask will create a SyncTask which meets task.Task.
 func NewSyncTask(task task.Task) task.Task {
 	return NewSync(task)
+}
+
+// WriteFileTask will write file to storage.
+type WriteFileTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Path
+	types.ReadCloser
+	types.Storage
+
+	// Optional Input value
+	types.Offset
+	types.ReadCallBackFunc
+	types.Size
+
+	// Output value
+}
+
+// NewWriteFile will create a WriteFileTask struct and fetch inherited data from parent task.
+func NewWriteFile(task task.Task) *WriteFileTask {
+	t := &WriteFileTask{}
+	t.SetScheduler(schedule.New())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *WriteFileTask) validateInput() {
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task WriteFile value Path is invalid"))
+	}
+	if !t.ValidateReadCloser() {
+		panic(fmt.Errorf("Task WriteFile value ReadCloser is invalid"))
+	}
+	if !t.ValidateStorage() {
+		panic(fmt.Errorf("Task WriteFile value Storage is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *WriteFileTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadPath(task, t)
+	types.LoadReadCloser(task, t)
+	types.LoadStorage(task, t)
+	// load optional fields
+	types.LoadOffset(task, t)
+	types.LoadReadCallBackFunc(task, t)
+	types.LoadSize(task, t)
+}
+
+// Sync run sub task directly
+func (t *WriteFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *WriteFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *WriteFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *WriteFileTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "WriteFileTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *WriteFileTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *WriteFileTask) String() string {
+	s := make([]string, 0, 6)
+
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("ReadCloser: %s", t.ReadCloser.String()))
+	s = append(s, fmt.Sprintf("Storage: %s", t.Storage.String()))
+	if t.ValidateOffset() {
+		s = append(s, fmt.Sprintf("Offset: %s", t.Offset.String()))
+	}
+	if t.ValidateSize() {
+		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	}
+	return fmt.Sprintf("WriteFileTask {%s}", strings.Join(s, ", "))
+}
+
+// NewWriteFileTask will create a WriteFileTask which meets task.Task.
+func NewWriteFileTask(task task.Task) task.Task {
+	return NewWriteFile(task)
+}
+
+// WriteSegmentTask will write segment to storage.
+type WriteSegmentTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Index
+	types.IndexSegmenter
+	types.ReadCloser
+	types.Segment
+	types.Size
+
+	// Optional Input value
+	types.Path
+	types.ReadCallBackFunc
+
+	// Output value
+}
+
+// NewWriteSegment will create a WriteSegmentTask struct and fetch inherited data from parent task.
+func NewWriteSegment(task task.Task) *WriteSegmentTask {
+	t := &WriteSegmentTask{}
+	t.SetScheduler(schedule.New())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *WriteSegmentTask) validateInput() {
+	if !t.ValidateIndex() {
+		panic(fmt.Errorf("Task WriteSegment value Index is invalid"))
+	}
+	if !t.ValidateIndexSegmenter() {
+		panic(fmt.Errorf("Task WriteSegment value IndexSegmenter is invalid"))
+	}
+	if !t.ValidateReadCloser() {
+		panic(fmt.Errorf("Task WriteSegment value ReadCloser is invalid"))
+	}
+	if !t.ValidateSegment() {
+		panic(fmt.Errorf("Task WriteSegment value Segment is invalid"))
+	}
+	if !t.ValidateSize() {
+		panic(fmt.Errorf("Task WriteSegment value Size is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *WriteSegmentTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadIndex(task, t)
+	types.LoadIndexSegmenter(task, t)
+	types.LoadReadCloser(task, t)
+	types.LoadSegment(task, t)
+	types.LoadSize(task, t)
+	// load optional fields
+	types.LoadPath(task, t)
+	types.LoadReadCallBackFunc(task, t)
+}
+
+// Sync run sub task directly
+func (t *WriteSegmentTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *WriteSegmentTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *WriteSegmentTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *WriteSegmentTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "WriteSegmentTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *WriteSegmentTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *WriteSegmentTask) String() string {
+	s := make([]string, 0, 7)
+
+	s = append(s, fmt.Sprintf("Index: %s", t.Index.String()))
+	s = append(s, fmt.Sprintf("IndexSegmenter: %s", t.IndexSegmenter.String()))
+	s = append(s, fmt.Sprintf("ReadCloser: %s", t.ReadCloser.String()))
+	s = append(s, fmt.Sprintf("Segment: %s", t.Segment.String()))
+	s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	if t.ValidatePath() {
+		s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	}
+	return fmt.Sprintf("WriteSegmentTask {%s}", strings.Join(s, ", "))
+}
+
+// NewWriteSegmentTask will create a WriteSegmentTask which meets task.Task.
+func NewWriteSegmentTask(task task.Task) task.Task {
+	return NewWriteSegment(task)
 }

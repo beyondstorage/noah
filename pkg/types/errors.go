@@ -3,6 +3,8 @@ package types
 
 import (
 	"fmt"
+
+	"github.com/aos-dev/go-storage/v2/types"
 )
 
 type LocalFileNotExist struct {
@@ -43,6 +45,50 @@ func NewErrLocalFileTooLarge(err error, size int64) error {
 	f := &LocalFileTooLarge{}
 	f.err = err
 	f.SetSize(size)
+
+	return f
+}
+
+type ObjectMetaInvalid struct {
+	err error
+	Name
+	Object
+}
+
+func (f *ObjectMetaInvalid) Error() string {
+	return fmt.Sprintf(`Object [%s] metadata [%s] is invalid`, f.GetObject().ID, f.GetName())
+}
+
+func (f *ObjectMetaInvalid) Unwrap() error {
+	return f.err
+}
+
+func NewErrObjectMetaInvalid(err error, name string, object *types.Object) error {
+	f := &ObjectMetaInvalid{}
+	f.err = err
+	f.SetName(name)
+	f.SetObject(object)
+
+	return f
+}
+
+type ObjectTypeInvalid struct {
+	err error
+	Object
+}
+
+func (f *ObjectTypeInvalid) Error() string {
+	return fmt.Sprintf(`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type)
+}
+
+func (f *ObjectTypeInvalid) Unwrap() error {
+	return f.err
+}
+
+func NewErrObjectTypeInvalid(err error, object *types.Object) error {
+	f := &ObjectTypeInvalid{}
+	f.err = err
+	f.SetObject(object)
 
 	return f
 }

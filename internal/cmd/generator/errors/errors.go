@@ -89,6 +89,8 @@ package types
 
 import (
 	"fmt"
+
+	"github.com/aos-dev/go-storage/v2/types"
 )
 
 {{- range $_, $fault := . }}

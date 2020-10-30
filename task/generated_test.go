@@ -122,6 +122,14 @@ func TestDeleteSegmentTask_TriggerFault(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestDeleteSegmentsByPrefixTask_TriggerFault(t *testing.T) {
+	task := &DeleteSegmentsByPrefixTask{}
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
 func TestDeleteStorageTask_TriggerFault(t *testing.T) {
 	task := &DeleteStorageTask{}
 	task.SetScheduler(schedule.New())
@@ -242,6 +250,14 @@ func TestReachFileTask_TriggerFault(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestReadFileTask_TriggerFault(t *testing.T) {
+	task := &ReadFileTask{}
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
 func TestSegmentCompleteTask_TriggerFault(t *testing.T) {
 	task := &SegmentCompleteTask{}
 	task.SetScheduler(schedule.New())
@@ -300,6 +316,22 @@ func TestStatStorageTask_TriggerFault(t *testing.T) {
 
 func TestSyncTask_TriggerFault(t *testing.T) {
 	task := &SyncTask{}
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
+func TestWriteFileTask_TriggerFault(t *testing.T) {
+	task := &WriteFileTask{}
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
+func TestWriteSegmentTask_TriggerFault(t *testing.T) {
+	task := &WriteSegmentTask{}
 	task.SetScheduler(schedule.New())
 	task.TriggerFault(types.NewErrUnhandled(nil))
 	err := task.Await()

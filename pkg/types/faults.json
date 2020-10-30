@@ -11,6 +11,19 @@
     ],
     "message": "`Local file size [%d] is too large`, f.GetSize()"
   },
+  "ObjectMetaInvalid": {
+    "value": [
+      "Name",
+      "Object"
+    ],
+    "message": "`Object [%s] metadata [%s] is invalid`, f.GetObject().ID, f.GetName()"
+  },
+  "ObjectTypeInvalid": {
+    "value": [
+      "Object"
+    ],
+    "message": "`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type"
+  },
   "ReadableSizeFormatInvalid": {
     "value": [
       "ByteSize"
