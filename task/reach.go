@@ -9,11 +9,11 @@ import (
 )
 
 func (t *ReachFileTask) new() {}
-func (t *ReachFileTask) run(ctx context.Context) {
+func (t *ReachFileTask) run(ctx context.Context) error {
 	url, err := t.GetReacher().ReachWithContext(ctx, t.GetPath(), pairs.WithExpire(t.GetExpire()))
 	if err != nil {
-		t.TriggerFault(types.NewErrUnhandled(err))
-		return
+		return types.NewErrUnhandled(err)
 	}
 	t.SetURL(url)
+	return nil
 }

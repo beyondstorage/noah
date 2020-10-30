@@ -6,25 +6,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Xuanwo/navvy"
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
 	"github.com/qingstor/noah/pkg/schedule"
+	"github.com/qingstor/noah/pkg/task"
 	"github.com/qingstor/noah/pkg/types"
 )
 
-var _ navvy.Pool
-var _ types.Pool
 var _ = uuid.New()
 
 // BetweenStorageCheckTask will Do check for between storage task.
 type BetweenStorageCheckTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -41,12 +37,12 @@ type BetweenStorageCheckTask struct {
 }
 
 // NewBetweenStorageCheck will create a BetweenStorageCheckTask struct and fetch inherited data from parent task.
-func NewBetweenStorageCheck(task navvy.Task) *BetweenStorageCheckTask {
+func NewBetweenStorageCheck(task task.Task) *BetweenStorageCheckTask {
 	t := &BetweenStorageCheckTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -69,10 +65,7 @@ func (t *BetweenStorageCheckTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *BetweenStorageCheckTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *BetweenStorageCheckTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -81,22 +74,46 @@ func (t *BetweenStorageCheckTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *BetweenStorageCheckTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *BetweenStorageCheckTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *BetweenStorageCheckTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *BetweenStorageCheckTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *BetweenStorageCheckTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "BetweenStorageCheckTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -104,16 +121,12 @@ func (t *BetweenStorageCheckTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *BetweenStorageCheckTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *BetweenStorageCheckTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -127,18 +140,16 @@ func (t *BetweenStorageCheckTask) String() string {
 	return fmt.Sprintf("BetweenStorageCheckTask {%s}", strings.Join(s, ", "))
 }
 
-// NewBetweenStorageCheckTask will create a BetweenStorageCheckTask which meets navvy.Task.
-func NewBetweenStorageCheckTask(task navvy.Task) navvy.Task {
+// NewBetweenStorageCheckTask will create a BetweenStorageCheckTask which meets task.Task.
+func NewBetweenStorageCheckTask(task task.Task) task.Task {
 	return NewBetweenStorageCheck(task)
 }
 
 // CopyDirTask will copy a directory recursively between two storager.
 type CopyDirTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -158,12 +169,12 @@ type CopyDirTask struct {
 }
 
 // NewCopyDir will create a CopyDirTask struct and fetch inherited data from parent task.
-func NewCopyDir(task navvy.Task) *CopyDirTask {
+func NewCopyDir(task task.Task) *CopyDirTask {
 	t := &CopyDirTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -186,10 +197,7 @@ func (t *CopyDirTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyDirTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyDirTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -203,22 +211,46 @@ func (t *CopyDirTask) loadInput(task navvy.Task) {
 	types.LoadPartThreshold(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyDirTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyDirTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyDirTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyDirTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyDirTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyDirTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -226,16 +258,12 @@ func (t *CopyDirTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyDirTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -261,18 +289,16 @@ func (t *CopyDirTask) String() string {
 	return fmt.Sprintf("CopyDirTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyDirTask will create a CopyDirTask which meets navvy.Task.
-func NewCopyDirTask(task navvy.Task) navvy.Task {
+// NewCopyDirTask will create a CopyDirTask which meets task.Task.
+func NewCopyDirTask(task task.Task) task.Task {
 	return NewCopyDir(task)
 }
 
 // CopyFileTask will copy a file between two storager.
 type CopyFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -293,12 +319,12 @@ type CopyFileTask struct {
 }
 
 // NewCopyFile will create a CopyFileTask struct and fetch inherited data from parent task.
-func NewCopyFile(task navvy.Task) *CopyFileTask {
+func NewCopyFile(task task.Task) *CopyFileTask {
 	t := &CopyFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -321,10 +347,7 @@ func (t *CopyFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -339,22 +362,46 @@ func (t *CopyFileTask) loadInput(task navvy.Task) {
 	types.LoadPartThreshold(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -362,16 +409,12 @@ func (t *CopyFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -397,18 +440,16 @@ func (t *CopyFileTask) String() string {
 	return fmt.Sprintf("CopyFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyFileTask will create a CopyFileTask which meets navvy.Task.
-func NewCopyFileTask(task navvy.Task) navvy.Task {
+// NewCopyFileTask will create a CopyFileTask which meets task.Task.
+func NewCopyFileTask(task task.Task) task.Task {
 	return NewCopyFile(task)
 }
 
 // CopyLargeFileTask will copy a large file between two storager.
 type CopyLargeFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -428,12 +469,12 @@ type CopyLargeFileTask struct {
 }
 
 // NewCopyLargeFile will create a CopyLargeFileTask struct and fetch inherited data from parent task.
-func NewCopyLargeFile(task navvy.Task) *CopyLargeFileTask {
+func NewCopyLargeFile(task task.Task) *CopyLargeFileTask {
 	t := &CopyLargeFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -459,10 +500,7 @@ func (t *CopyLargeFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyLargeFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -474,22 +512,46 @@ func (t *CopyLargeFileTask) loadInput(task navvy.Task) {
 	types.LoadPartSize(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyLargeFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyLargeFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyLargeFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyLargeFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyLargeFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyLargeFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -497,16 +559,12 @@ func (t *CopyLargeFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyLargeFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyLargeFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -527,18 +585,16 @@ func (t *CopyLargeFileTask) String() string {
 	return fmt.Sprintf("CopyLargeFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyLargeFileTask will create a CopyLargeFileTask which meets navvy.Task.
-func NewCopyLargeFileTask(task navvy.Task) navvy.Task {
+// NewCopyLargeFileTask will create a CopyLargeFileTask which meets task.Task.
+func NewCopyLargeFileTask(task task.Task) task.Task {
 	return NewCopyLargeFile(task)
 }
 
 // CopyPartialFileTask will copy a partial file to between two storager.
 type CopyPartialFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -561,12 +617,12 @@ type CopyPartialFileTask struct {
 }
 
 // NewCopyPartialFile will create a CopyPartialFileTask struct and fetch inherited data from parent task.
-func NewCopyPartialFile(task navvy.Task) *CopyPartialFileTask {
+func NewCopyPartialFile(task task.Task) *CopyPartialFileTask {
 	t := &CopyPartialFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -604,10 +660,7 @@ func (t *CopyPartialFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyPartialFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -622,22 +675,46 @@ func (t *CopyPartialFileTask) loadInput(task navvy.Task) {
 	types.LoadCheckMD5(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyPartialFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyPartialFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyPartialFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyPartialFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyPartialFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyPartialFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -645,16 +722,12 @@ func (t *CopyPartialFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyPartialFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -676,18 +749,16 @@ func (t *CopyPartialFileTask) String() string {
 	return fmt.Sprintf("CopyPartialFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyPartialFileTask will create a CopyPartialFileTask which meets navvy.Task.
-func NewCopyPartialFileTask(task navvy.Task) navvy.Task {
+// NewCopyPartialFileTask will create a CopyPartialFileTask which meets task.Task.
+func NewCopyPartialFileTask(task task.Task) task.Task {
 	return NewCopyPartialFile(task)
 }
 
 // CopyPartialStreamTask will copy a partial stream between two storager.
 type CopyPartialStreamTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -710,12 +781,12 @@ type CopyPartialStreamTask struct {
 }
 
 // NewCopyPartialStream will create a CopyPartialStreamTask struct and fetch inherited data from parent task.
-func NewCopyPartialStream(task navvy.Task) *CopyPartialStreamTask {
+func NewCopyPartialStream(task task.Task) *CopyPartialStreamTask {
 	t := &CopyPartialStreamTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -747,10 +818,7 @@ func (t *CopyPartialStreamTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyPartialStreamTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -763,22 +831,46 @@ func (t *CopyPartialStreamTask) loadInput(task navvy.Task) {
 	types.LoadCheckMD5(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyPartialStreamTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyPartialStreamTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyPartialStreamTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyPartialStreamTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyPartialStreamTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyPartialStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -786,16 +878,12 @@ func (t *CopyPartialStreamTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyPartialStreamTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyPartialStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -815,18 +903,16 @@ func (t *CopyPartialStreamTask) String() string {
 	return fmt.Sprintf("CopyPartialStreamTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyPartialStreamTask will create a CopyPartialStreamTask which meets navvy.Task.
-func NewCopyPartialStreamTask(task navvy.Task) navvy.Task {
+// NewCopyPartialStreamTask will create a CopyPartialStreamTask which meets task.Task.
+func NewCopyPartialStreamTask(task task.Task) task.Task {
 	return NewCopyPartialStream(task)
 }
 
 // CopySingleFileTask will execute a file copy operation between two storager.
 type CopySingleFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -843,12 +929,12 @@ type CopySingleFileTask struct {
 }
 
 // NewCopySingleFile will create a CopySingleFileTask struct and fetch inherited data from parent task.
-func NewCopySingleFile(task navvy.Task) *CopySingleFileTask {
+func NewCopySingleFile(task task.Task) *CopySingleFileTask {
 	t := &CopySingleFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -874,10 +960,7 @@ func (t *CopySingleFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopySingleFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopySingleFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -888,22 +971,46 @@ func (t *CopySingleFileTask) loadInput(task navvy.Task) {
 	types.LoadMD5Sum(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopySingleFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopySingleFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopySingleFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopySingleFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopySingleFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopySingleFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -911,16 +1018,12 @@ func (t *CopySingleFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopySingleFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySingleFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -938,18 +1041,16 @@ func (t *CopySingleFileTask) String() string {
 	return fmt.Sprintf("CopySingleFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopySingleFileTask will create a CopySingleFileTask which meets navvy.Task.
-func NewCopySingleFileTask(task navvy.Task) navvy.Task {
+// NewCopySingleFileTask will create a CopySingleFileTask which meets task.Task.
+func NewCopySingleFileTask(task task.Task) task.Task {
 	return NewCopySingleFile(task)
 }
 
 // CopySmallFileTask will copy a small file between two storager.
 type CopySmallFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -967,12 +1068,12 @@ type CopySmallFileTask struct {
 }
 
 // NewCopySmallFile will create a CopySmallFileTask struct and fetch inherited data from parent task.
-func NewCopySmallFile(task navvy.Task) *CopySmallFileTask {
+func NewCopySmallFile(task task.Task) *CopySmallFileTask {
 	t := &CopySmallFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -998,10 +1099,7 @@ func (t *CopySmallFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopySmallFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopySmallFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -1013,22 +1111,46 @@ func (t *CopySmallFileTask) loadInput(task navvy.Task) {
 	types.LoadMD5Sum(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopySmallFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopySmallFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopySmallFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopySmallFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopySmallFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopySmallFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1036,16 +1158,12 @@ func (t *CopySmallFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopySmallFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopySmallFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1066,18 +1184,16 @@ func (t *CopySmallFileTask) String() string {
 	return fmt.Sprintf("CopySmallFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopySmallFileTask will create a CopySmallFileTask which meets navvy.Task.
-func NewCopySmallFileTask(task navvy.Task) navvy.Task {
+// NewCopySmallFileTask will create a CopySmallFileTask which meets task.Task.
+func NewCopySmallFileTask(task task.Task) task.Task {
 	return NewCopySmallFile(task)
 }
 
 // CopyStreamTask will copy a stream between two storager.
 type CopyStreamTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1096,12 +1212,12 @@ type CopyStreamTask struct {
 }
 
 // NewCopyStream will create a CopyStreamTask struct and fetch inherited data from parent task.
-func NewCopyStream(task navvy.Task) *CopyStreamTask {
+func NewCopyStream(task task.Task) *CopyStreamTask {
 	t := &CopyStreamTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1124,10 +1240,7 @@ func (t *CopyStreamTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CopyStreamTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CopyStreamTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -1138,22 +1251,46 @@ func (t *CopyStreamTask) loadInput(task navvy.Task) {
 	types.LoadPartSize(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CopyStreamTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CopyStreamTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CopyStreamTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CopyStreamTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CopyStreamTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CopyStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1161,16 +1298,12 @@ func (t *CopyStreamTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CopyStreamTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CopyStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1190,18 +1323,16 @@ func (t *CopyStreamTask) String() string {
 	return fmt.Sprintf("CopyStreamTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCopyStreamTask will create a CopyStreamTask which meets navvy.Task.
-func NewCopyStreamTask(task navvy.Task) navvy.Task {
+// NewCopyStreamTask will create a CopyStreamTask which meets task.Task.
+func NewCopyStreamTask(task task.Task) task.Task {
 	return NewCopyStream(task)
 }
 
 // CreateStorageTask will create a storage.
 type CreateStorageTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1215,12 +1346,12 @@ type CreateStorageTask struct {
 }
 
 // NewCreateStorage will create a CreateStorageTask struct and fetch inherited data from parent task.
-func NewCreateStorage(task navvy.Task) *CreateStorageTask {
+func NewCreateStorage(task task.Task) *CreateStorageTask {
 	t := &CreateStorageTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1234,32 +1365,53 @@ func (t *CreateStorageTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *CreateStorageTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *CreateStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadService(task, t)
 	// load optional fields
 	types.LoadZone(task, t)
 }
 
-// Run implement navvy.Task
-func (t *CreateStorageTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *CreateStorageTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *CreateStorageTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *CreateStorageTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *CreateStorageTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "CreateStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1267,16 +1419,12 @@ func (t *CreateStorageTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *CreateStorageTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *CreateStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1290,18 +1438,16 @@ func (t *CreateStorageTask) String() string {
 	return fmt.Sprintf("CreateStorageTask {%s}", strings.Join(s, ", "))
 }
 
-// NewCreateStorageTask will create a CreateStorageTask which meets navvy.Task.
-func NewCreateStorageTask(task navvy.Task) navvy.Task {
+// NewCreateStorageTask will create a CreateStorageTask which meets task.Task.
+func NewCreateStorageTask(task task.Task) task.Task {
 	return NewCreateStorage(task)
 }
 
 // DeleteDirTask will will delete a dir recursively.
 type DeleteDirTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1315,12 +1461,12 @@ type DeleteDirTask struct {
 }
 
 // NewDeleteDir will create a DeleteDirTask struct and fetch inherited data from parent task.
-func NewDeleteDir(task navvy.Task) *DeleteDirTask {
+func NewDeleteDir(task task.Task) *DeleteDirTask {
 	t := &DeleteDirTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1337,10 +1483,7 @@ func (t *DeleteDirTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *DeleteDirTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *DeleteDirTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
@@ -1348,22 +1491,46 @@ func (t *DeleteDirTask) loadInput(task navvy.Task) {
 	types.LoadHandleObjCallbackFunc(task, t)
 }
 
-// Run implement navvy.Task
-func (t *DeleteDirTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *DeleteDirTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteDirTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteDirTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteDirTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteDirTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1371,16 +1538,12 @@ func (t *DeleteDirTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *DeleteDirTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1392,18 +1555,16 @@ func (t *DeleteDirTask) String() string {
 	return fmt.Sprintf("DeleteDirTask {%s}", strings.Join(s, ", "))
 }
 
-// NewDeleteDirTask will create a DeleteDirTask which meets navvy.Task.
-func NewDeleteDirTask(task navvy.Task) navvy.Task {
+// NewDeleteDirTask will create a DeleteDirTask which meets task.Task.
+func NewDeleteDirTask(task task.Task) task.Task {
 	return NewDeleteDir(task)
 }
 
 // DeleteFileTask will will delete a file from storage.
 type DeleteFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1417,12 +1578,12 @@ type DeleteFileTask struct {
 }
 
 // NewDeleteFile will create a DeleteFileTask struct and fetch inherited data from parent task.
-func NewDeleteFile(task navvy.Task) *DeleteFileTask {
+func NewDeleteFile(task task.Task) *DeleteFileTask {
 	t := &DeleteFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1439,10 +1600,7 @@ func (t *DeleteFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *DeleteFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *DeleteFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
@@ -1450,22 +1608,46 @@ func (t *DeleteFileTask) loadInput(task navvy.Task) {
 	types.LoadHandleObjCallbackFunc(task, t)
 }
 
-// Run implement navvy.Task
-func (t *DeleteFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *DeleteFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1473,16 +1655,12 @@ func (t *DeleteFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *DeleteFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1494,18 +1672,16 @@ func (t *DeleteFileTask) String() string {
 	return fmt.Sprintf("DeleteFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewDeleteFileTask will create a DeleteFileTask which meets navvy.Task.
-func NewDeleteFileTask(task navvy.Task) navvy.Task {
+// NewDeleteFileTask will create a DeleteFileTask which meets task.Task.
+func NewDeleteFileTask(task task.Task) task.Task {
 	return NewDeleteFile(task)
 }
 
 // DeletePrefixTask will will delete objects with given prefix from storage.
 type DeletePrefixTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1519,12 +1695,12 @@ type DeletePrefixTask struct {
 }
 
 // NewDeletePrefix will create a DeletePrefixTask struct and fetch inherited data from parent task.
-func NewDeletePrefix(task navvy.Task) *DeletePrefixTask {
+func NewDeletePrefix(task task.Task) *DeletePrefixTask {
 	t := &DeletePrefixTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1541,10 +1717,7 @@ func (t *DeletePrefixTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *DeletePrefixTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *DeletePrefixTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
@@ -1552,22 +1725,46 @@ func (t *DeletePrefixTask) loadInput(task navvy.Task) {
 	types.LoadHandleObjCallbackFunc(task, t)
 }
 
-// Run implement navvy.Task
-func (t *DeletePrefixTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *DeletePrefixTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeletePrefixTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeletePrefixTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeletePrefixTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeletePrefixTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1575,16 +1772,12 @@ func (t *DeletePrefixTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *DeletePrefixTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeletePrefixTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1596,18 +1789,16 @@ func (t *DeletePrefixTask) String() string {
 	return fmt.Sprintf("DeletePrefixTask {%s}", strings.Join(s, ", "))
 }
 
-// NewDeletePrefixTask will create a DeletePrefixTask which meets navvy.Task.
-func NewDeletePrefixTask(task navvy.Task) navvy.Task {
+// NewDeletePrefixTask will create a DeletePrefixTask which meets task.Task.
+func NewDeletePrefixTask(task task.Task) task.Task {
 	return NewDeletePrefix(task)
 }
 
 // DeleteSegmentTask will delete segments with a given path.
 type DeleteSegmentTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1621,12 +1812,12 @@ type DeleteSegmentTask struct {
 }
 
 // NewDeleteSegment will create a DeleteSegmentTask struct and fetch inherited data from parent task.
-func NewDeleteSegment(task navvy.Task) *DeleteSegmentTask {
+func NewDeleteSegment(task task.Task) *DeleteSegmentTask {
 	t := &DeleteSegmentTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1643,10 +1834,7 @@ func (t *DeleteSegmentTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *DeleteSegmentTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *DeleteSegmentTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPrefixSegmentsLister(task, t)
 	types.LoadSegment(task, t)
@@ -1654,22 +1842,46 @@ func (t *DeleteSegmentTask) loadInput(task navvy.Task) {
 	types.LoadHandleSegmentCallbackFunc(task, t)
 }
 
-// Run implement navvy.Task
-func (t *DeleteSegmentTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *DeleteSegmentTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteSegmentTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteSegmentTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteSegmentTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteSegmentTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1677,16 +1889,12 @@ func (t *DeleteSegmentTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *DeleteSegmentTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteSegmentTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1698,18 +1906,16 @@ func (t *DeleteSegmentTask) String() string {
 	return fmt.Sprintf("DeleteSegmentTask {%s}", strings.Join(s, ", "))
 }
 
-// NewDeleteSegmentTask will create a DeleteSegmentTask which meets navvy.Task.
-func NewDeleteSegmentTask(task navvy.Task) navvy.Task {
+// NewDeleteSegmentTask will create a DeleteSegmentTask which meets task.Task.
+func NewDeleteSegmentTask(task task.Task) task.Task {
 	return NewDeleteSegment(task)
 }
 
 // DeleteStorageTask will delete a storage.
 type DeleteStorageTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1726,12 +1932,12 @@ type DeleteStorageTask struct {
 }
 
 // NewDeleteStorage will create a DeleteStorageTask struct and fetch inherited data from parent task.
-func NewDeleteStorage(task navvy.Task) *DeleteStorageTask {
+func NewDeleteStorage(task task.Task) *DeleteStorageTask {
 	t := &DeleteStorageTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1748,10 +1954,7 @@ func (t *DeleteStorageTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *DeleteStorageTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *DeleteStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadService(task, t)
 	types.LoadStorageName(task, t)
@@ -1762,22 +1965,46 @@ func (t *DeleteStorageTask) loadInput(task navvy.Task) {
 	types.LoadZone(task, t)
 }
 
-// Run implement navvy.Task
-func (t *DeleteStorageTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *DeleteStorageTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *DeleteStorageTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *DeleteStorageTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *DeleteStorageTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "DeleteStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1785,16 +2012,12 @@ func (t *DeleteStorageTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *DeleteStorageTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *DeleteStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1812,18 +2035,16 @@ func (t *DeleteStorageTask) String() string {
 	return fmt.Sprintf("DeleteStorageTask {%s}", strings.Join(s, ", "))
 }
 
-// NewDeleteStorageTask will create a DeleteStorageTask which meets navvy.Task.
-func NewDeleteStorageTask(task navvy.Task) navvy.Task {
+// NewDeleteStorageTask will create a DeleteStorageTask which meets task.Task.
+func NewDeleteStorageTask(task task.Task) task.Task {
 	return NewDeleteStorage(task)
 }
 
 // IsDestinationObjectExistTask will check if destination object exist.
 type IsDestinationObjectExistTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1836,12 +2057,12 @@ type IsDestinationObjectExistTask struct {
 }
 
 // NewIsDestinationObjectExist will create a IsDestinationObjectExistTask struct and fetch inherited data from parent task.
-func NewIsDestinationObjectExist(task navvy.Task) *IsDestinationObjectExistTask {
+func NewIsDestinationObjectExist(task task.Task) *IsDestinationObjectExistTask {
 	t := &IsDestinationObjectExistTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1855,31 +2076,52 @@ func (t *IsDestinationObjectExistTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *IsDestinationObjectExistTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *IsDestinationObjectExistTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationObject(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *IsDestinationObjectExistTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *IsDestinationObjectExistTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *IsDestinationObjectExistTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *IsDestinationObjectExistTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *IsDestinationObjectExistTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsDestinationObjectExistTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1887,16 +2129,12 @@ func (t *IsDestinationObjectExistTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *IsDestinationObjectExistTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsDestinationObjectExistTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -1907,18 +2145,16 @@ func (t *IsDestinationObjectExistTask) String() string {
 	return fmt.Sprintf("IsDestinationObjectExistTask {%s}", strings.Join(s, ", "))
 }
 
-// NewIsDestinationObjectExistTask will create a IsDestinationObjectExistTask which meets navvy.Task.
-func NewIsDestinationObjectExistTask(task navvy.Task) navvy.Task {
+// NewIsDestinationObjectExistTask will create a IsDestinationObjectExistTask which meets task.Task.
+func NewIsDestinationObjectExistTask(task task.Task) task.Task {
 	return NewIsDestinationObjectExist(task)
 }
 
 // IsDestinationObjectNotExistTask will check if destination object not exist.
 type IsDestinationObjectNotExistTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -1931,12 +2167,12 @@ type IsDestinationObjectNotExistTask struct {
 }
 
 // NewIsDestinationObjectNotExist will create a IsDestinationObjectNotExistTask struct and fetch inherited data from parent task.
-func NewIsDestinationObjectNotExist(task navvy.Task) *IsDestinationObjectNotExistTask {
+func NewIsDestinationObjectNotExist(task task.Task) *IsDestinationObjectNotExistTask {
 	t := &IsDestinationObjectNotExistTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -1950,31 +2186,52 @@ func (t *IsDestinationObjectNotExistTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *IsDestinationObjectNotExistTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *IsDestinationObjectNotExistTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationObject(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *IsDestinationObjectNotExistTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *IsDestinationObjectNotExistTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *IsDestinationObjectNotExistTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsDestinationObjectNotExistTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -1982,16 +2239,12 @@ func (t *IsDestinationObjectNotExistTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *IsDestinationObjectNotExistTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsDestinationObjectNotExistTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2002,18 +2255,16 @@ func (t *IsDestinationObjectNotExistTask) String() string {
 	return fmt.Sprintf("IsDestinationObjectNotExistTask {%s}", strings.Join(s, ", "))
 }
 
-// NewIsDestinationObjectNotExistTask will create a IsDestinationObjectNotExistTask which meets navvy.Task.
-func NewIsDestinationObjectNotExistTask(task navvy.Task) navvy.Task {
+// NewIsDestinationObjectNotExistTask will create a IsDestinationObjectNotExistTask which meets task.Task.
+func NewIsDestinationObjectNotExistTask(task task.Task) task.Task {
 	return NewIsDestinationObjectNotExist(task)
 }
 
 // IsSizeEqualTask will check if source object and destination object size equal.
 type IsSizeEqualTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2027,12 +2278,12 @@ type IsSizeEqualTask struct {
 }
 
 // NewIsSizeEqual will create a IsSizeEqualTask struct and fetch inherited data from parent task.
-func NewIsSizeEqual(task navvy.Task) *IsSizeEqualTask {
+func NewIsSizeEqual(task task.Task) *IsSizeEqualTask {
 	t := &IsSizeEqualTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2049,32 +2300,53 @@ func (t *IsSizeEqualTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *IsSizeEqualTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *IsSizeEqualTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationObject(task, t)
 	types.LoadSourceObject(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *IsSizeEqualTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *IsSizeEqualTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *IsSizeEqualTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *IsSizeEqualTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *IsSizeEqualTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsSizeEqualTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2082,16 +2354,12 @@ func (t *IsSizeEqualTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *IsSizeEqualTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsSizeEqualTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2103,18 +2371,16 @@ func (t *IsSizeEqualTask) String() string {
 	return fmt.Sprintf("IsSizeEqualTask {%s}", strings.Join(s, ", "))
 }
 
-// NewIsSizeEqualTask will create a IsSizeEqualTask which meets navvy.Task.
-func NewIsSizeEqualTask(task navvy.Task) navvy.Task {
+// NewIsSizeEqualTask will create a IsSizeEqualTask which meets task.Task.
+func NewIsSizeEqualTask(task task.Task) task.Task {
 	return NewIsSizeEqual(task)
 }
 
 // IsSourcePathExcludeIncludeTask will check if source path is excluded or included.
 type IsSourcePathExcludeIncludeTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2129,12 +2395,12 @@ type IsSourcePathExcludeIncludeTask struct {
 }
 
 // NewIsSourcePathExcludeInclude will create a IsSourcePathExcludeIncludeTask struct and fetch inherited data from parent task.
-func NewIsSourcePathExcludeInclude(task navvy.Task) *IsSourcePathExcludeIncludeTask {
+func NewIsSourcePathExcludeInclude(task task.Task) *IsSourcePathExcludeIncludeTask {
 	t := &IsSourcePathExcludeIncludeTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2148,10 +2414,7 @@ func (t *IsSourcePathExcludeIncludeTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *IsSourcePathExcludeIncludeTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *IsSourcePathExcludeIncludeTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadSourcePath(task, t)
 	// load optional fields
@@ -2159,22 +2422,46 @@ func (t *IsSourcePathExcludeIncludeTask) loadInput(task navvy.Task) {
 	types.LoadIncludeRegexp(task, t)
 }
 
-// Run implement navvy.Task
-func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *IsSourcePathExcludeIncludeTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *IsSourcePathExcludeIncludeTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *IsSourcePathExcludeIncludeTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsSourcePathExcludeIncludeTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2182,16 +2469,12 @@ func (t *IsSourcePathExcludeIncludeTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *IsSourcePathExcludeIncludeTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsSourcePathExcludeIncludeTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2208,18 +2491,16 @@ func (t *IsSourcePathExcludeIncludeTask) String() string {
 	return fmt.Sprintf("IsSourcePathExcludeIncludeTask {%s}", strings.Join(s, ", "))
 }
 
-// NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets navvy.Task.
-func NewIsSourcePathExcludeIncludeTask(task navvy.Task) navvy.Task {
+// NewIsSourcePathExcludeIncludeTask will create a IsSourcePathExcludeIncludeTask which meets task.Task.
+func NewIsSourcePathExcludeIncludeTask(task task.Task) task.Task {
 	return NewIsSourcePathExcludeInclude(task)
 }
 
 // IsUpdateAtGreaterTask will check if source object's mtime is greater (newer) than destination object's.
 type IsUpdateAtGreaterTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2233,12 +2514,12 @@ type IsUpdateAtGreaterTask struct {
 }
 
 // NewIsUpdateAtGreater will create a IsUpdateAtGreaterTask struct and fetch inherited data from parent task.
-func NewIsUpdateAtGreater(task navvy.Task) *IsUpdateAtGreaterTask {
+func NewIsUpdateAtGreater(task task.Task) *IsUpdateAtGreaterTask {
 	t := &IsUpdateAtGreaterTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2255,32 +2536,53 @@ func (t *IsUpdateAtGreaterTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *IsUpdateAtGreaterTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *IsUpdateAtGreaterTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationObject(task, t)
 	types.LoadSourceObject(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *IsUpdateAtGreaterTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *IsUpdateAtGreaterTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *IsUpdateAtGreaterTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "IsUpdateAtGreaterTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2288,16 +2590,12 @@ func (t *IsUpdateAtGreaterTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *IsUpdateAtGreaterTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *IsUpdateAtGreaterTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2309,18 +2607,16 @@ func (t *IsUpdateAtGreaterTask) String() string {
 	return fmt.Sprintf("IsUpdateAtGreaterTask {%s}", strings.Join(s, ", "))
 }
 
-// NewIsUpdateAtGreaterTask will create a IsUpdateAtGreaterTask which meets navvy.Task.
-func NewIsUpdateAtGreaterTask(task navvy.Task) navvy.Task {
+// NewIsUpdateAtGreaterTask will create a IsUpdateAtGreaterTask which meets task.Task.
+func NewIsUpdateAtGreaterTask(task task.Task) task.Task {
 	return NewIsUpdateAtGreater(task)
 }
 
 // ListDirTask will list dirs.
 type ListDirTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2335,12 +2631,12 @@ type ListDirTask struct {
 }
 
 // NewListDir will create a ListDirTask struct and fetch inherited data from parent task.
-func NewListDir(task navvy.Task) *ListDirTask {
+func NewListDir(task task.Task) *ListDirTask {
 	t := &ListDirTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2363,10 +2659,7 @@ func (t *ListDirTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *ListDirTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *ListDirTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDirFunc(task, t)
 	types.LoadDirLister(task, t)
@@ -2375,22 +2668,46 @@ func (t *ListDirTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *ListDirTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *ListDirTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ListDirTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ListDirTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ListDirTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListDirTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2398,16 +2715,12 @@ func (t *ListDirTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *ListDirTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2419,18 +2732,16 @@ func (t *ListDirTask) String() string {
 	return fmt.Sprintf("ListDirTask {%s}", strings.Join(s, ", "))
 }
 
-// NewListDirTask will create a ListDirTask which meets navvy.Task.
-func NewListDirTask(task navvy.Task) navvy.Task {
+// NewListDirTask will create a ListDirTask which meets task.Task.
+func NewListDirTask(task task.Task) task.Task {
 	return NewListDir(task)
 }
 
 // ListPrefixTask will list prefix.
 type ListPrefixTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2444,12 +2755,12 @@ type ListPrefixTask struct {
 }
 
 // NewListPrefix will create a ListPrefixTask struct and fetch inherited data from parent task.
-func NewListPrefix(task navvy.Task) *ListPrefixTask {
+func NewListPrefix(task task.Task) *ListPrefixTask {
 	t := &ListPrefixTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2469,10 +2780,7 @@ func (t *ListPrefixTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *ListPrefixTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *ListPrefixTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadObjectFunc(task, t)
 	types.LoadPath(task, t)
@@ -2480,22 +2788,46 @@ func (t *ListPrefixTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *ListPrefixTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *ListPrefixTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ListPrefixTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ListPrefixTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ListPrefixTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListPrefixTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2503,16 +2835,12 @@ func (t *ListPrefixTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *ListPrefixTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListPrefixTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2524,18 +2852,16 @@ func (t *ListPrefixTask) String() string {
 	return fmt.Sprintf("ListPrefixTask {%s}", strings.Join(s, ", "))
 }
 
-// NewListPrefixTask will create a ListPrefixTask which meets navvy.Task.
-func NewListPrefixTask(task navvy.Task) navvy.Task {
+// NewListPrefixTask will create a ListPrefixTask which meets task.Task.
+func NewListPrefixTask(task task.Task) task.Task {
 	return NewListPrefix(task)
 }
 
 // ListSegmentTask will list segments.
 type ListSegmentTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2549,12 +2875,12 @@ type ListSegmentTask struct {
 }
 
 // NewListSegment will create a ListSegmentTask struct and fetch inherited data from parent task.
-func NewListSegment(task navvy.Task) *ListSegmentTask {
+func NewListSegment(task task.Task) *ListSegmentTask {
 	t := &ListSegmentTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2574,10 +2900,7 @@ func (t *ListSegmentTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *ListSegmentTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *ListSegmentTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadPrefixSegmentsLister(task, t)
@@ -2585,22 +2908,46 @@ func (t *ListSegmentTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *ListSegmentTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *ListSegmentTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ListSegmentTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ListSegmentTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ListSegmentTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListSegmentTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2608,16 +2955,12 @@ func (t *ListSegmentTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *ListSegmentTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListSegmentTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2629,18 +2972,16 @@ func (t *ListSegmentTask) String() string {
 	return fmt.Sprintf("ListSegmentTask {%s}", strings.Join(s, ", "))
 }
 
-// NewListSegmentTask will create a ListSegmentTask which meets navvy.Task.
-func NewListSegmentTask(task navvy.Task) navvy.Task {
+// NewListSegmentTask will create a ListSegmentTask which meets task.Task.
+func NewListSegmentTask(task task.Task) task.Task {
 	return NewListSegment(task)
 }
 
 // ListStorageTask will send get request to get bucket list.
 type ListStorageTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2654,12 +2995,12 @@ type ListStorageTask struct {
 }
 
 // NewListStorage will create a ListStorageTask struct and fetch inherited data from parent task.
-func NewListStorage(task navvy.Task) *ListStorageTask {
+func NewListStorage(task task.Task) *ListStorageTask {
 	t := &ListStorageTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2676,10 +3017,7 @@ func (t *ListStorageTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *ListStorageTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *ListStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadService(task, t)
 	types.LoadStoragerFunc(task, t)
@@ -2687,22 +3025,46 @@ func (t *ListStorageTask) loadInput(task navvy.Task) {
 	types.LoadZone(task, t)
 }
 
-// Run implement navvy.Task
-func (t *ListStorageTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *ListStorageTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ListStorageTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ListStorageTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ListStorageTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ListStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2710,16 +3072,12 @@ func (t *ListStorageTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *ListStorageTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ListStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2733,18 +3091,16 @@ func (t *ListStorageTask) String() string {
 	return fmt.Sprintf("ListStorageTask {%s}", strings.Join(s, ", "))
 }
 
-// NewListStorageTask will create a ListStorageTask which meets navvy.Task.
-func NewListStorageTask(task navvy.Task) navvy.Task {
+// NewListStorageTask will create a ListStorageTask which meets task.Task.
+func NewListStorageTask(task task.Task) task.Task {
 	return NewListStorage(task)
 }
 
 // MD5SumFileTask will get file's md5 sum.
 type MD5SumFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2760,12 +3116,12 @@ type MD5SumFileTask struct {
 }
 
 // NewMD5SumFile will create a MD5SumFileTask struct and fetch inherited data from parent task.
-func NewMD5SumFile(task navvy.Task) *MD5SumFileTask {
+func NewMD5SumFile(task task.Task) *MD5SumFileTask {
 	t := &MD5SumFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2788,10 +3144,7 @@ func (t *MD5SumFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *MD5SumFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *MD5SumFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadOffset(task, t)
 	types.LoadPath(task, t)
@@ -2800,22 +3153,46 @@ func (t *MD5SumFileTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *MD5SumFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *MD5SumFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *MD5SumFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *MD5SumFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *MD5SumFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MD5SumFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2823,16 +3200,12 @@ func (t *MD5SumFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *MD5SumFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2846,18 +3219,16 @@ func (t *MD5SumFileTask) String() string {
 	return fmt.Sprintf("MD5SumFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewMD5SumFileTask will create a MD5SumFileTask which meets navvy.Task.
-func NewMD5SumFileTask(task navvy.Task) navvy.Task {
+// NewMD5SumFileTask will create a MD5SumFileTask which meets task.Task.
+func NewMD5SumFileTask(task task.Task) task.Task {
 	return NewMD5SumFile(task)
 }
 
 // MD5SumStreamTask will get stream's md5 sum.
 type MD5SumStreamTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2870,12 +3241,12 @@ type MD5SumStreamTask struct {
 }
 
 // NewMD5SumStream will create a MD5SumStreamTask struct and fetch inherited data from parent task.
-func NewMD5SumStream(task navvy.Task) *MD5SumStreamTask {
+func NewMD5SumStream(task task.Task) *MD5SumStreamTask {
 	t := &MD5SumStreamTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -2889,31 +3260,52 @@ func (t *MD5SumStreamTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *MD5SumStreamTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *MD5SumStreamTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadContent(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *MD5SumStreamTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *MD5SumStreamTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *MD5SumStreamTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *MD5SumStreamTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *MD5SumStreamTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MD5SumStreamTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -2921,16 +3313,12 @@ func (t *MD5SumStreamTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *MD5SumStreamTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MD5SumStreamTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -2941,18 +3329,16 @@ func (t *MD5SumStreamTask) String() string {
 	return fmt.Sprintf("MD5SumStreamTask {%s}", strings.Join(s, ", "))
 }
 
-// NewMD5SumStreamTask will create a MD5SumStreamTask which meets navvy.Task.
-func NewMD5SumStreamTask(task navvy.Task) navvy.Task {
+// NewMD5SumStreamTask will create a MD5SumStreamTask which meets task.Task.
+func NewMD5SumStreamTask(task task.Task) task.Task {
 	return NewMD5SumStream(task)
 }
 
 // MoveDirTask will move a directory recursively between two storager.
 type MoveDirTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -2972,12 +3358,12 @@ type MoveDirTask struct {
 }
 
 // NewMoveDir will create a MoveDirTask struct and fetch inherited data from parent task.
-func NewMoveDir(task navvy.Task) *MoveDirTask {
+func NewMoveDir(task task.Task) *MoveDirTask {
 	t := &MoveDirTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3000,10 +3386,7 @@ func (t *MoveDirTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *MoveDirTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *MoveDirTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -3017,22 +3400,46 @@ func (t *MoveDirTask) loadInput(task navvy.Task) {
 	types.LoadPartThreshold(task, t)
 }
 
-// Run implement navvy.Task
-func (t *MoveDirTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *MoveDirTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *MoveDirTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *MoveDirTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *MoveDirTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MoveDirTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3040,16 +3447,12 @@ func (t *MoveDirTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *MoveDirTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveDirTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3075,18 +3478,16 @@ func (t *MoveDirTask) String() string {
 	return fmt.Sprintf("MoveDirTask {%s}", strings.Join(s, ", "))
 }
 
-// NewMoveDirTask will create a MoveDirTask which meets navvy.Task.
-func NewMoveDirTask(task navvy.Task) navvy.Task {
+// NewMoveDirTask will create a MoveDirTask which meets task.Task.
+func NewMoveDirTask(task task.Task) task.Task {
 	return NewMoveDir(task)
 }
 
 // MoveFileTask will move a file between two storager.
 type MoveFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3106,12 +3507,12 @@ type MoveFileTask struct {
 }
 
 // NewMoveFile will create a MoveFileTask struct and fetch inherited data from parent task.
-func NewMoveFile(task navvy.Task) *MoveFileTask {
+func NewMoveFile(task task.Task) *MoveFileTask {
 	t := &MoveFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3134,10 +3535,7 @@ func (t *MoveFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *MoveFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *MoveFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -3151,22 +3549,46 @@ func (t *MoveFileTask) loadInput(task navvy.Task) {
 	types.LoadPartThreshold(task, t)
 }
 
-// Run implement navvy.Task
-func (t *MoveFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *MoveFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *MoveFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *MoveFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *MoveFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "MoveFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3174,16 +3596,12 @@ func (t *MoveFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *MoveFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *MoveFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3209,18 +3627,16 @@ func (t *MoveFileTask) String() string {
 	return fmt.Sprintf("MoveFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewMoveFileTask will create a MoveFileTask which meets navvy.Task.
-func NewMoveFileTask(task navvy.Task) navvy.Task {
+// NewMoveFileTask will create a MoveFileTask which meets task.Task.
+func NewMoveFileTask(task task.Task) task.Task {
 	return NewMoveFile(task)
 }
 
 // ReachFileTask will will reach a remote object and return the signed url.
 type ReachFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3235,12 +3651,12 @@ type ReachFileTask struct {
 }
 
 // NewReachFile will create a ReachFileTask struct and fetch inherited data from parent task.
-func NewReachFile(task navvy.Task) *ReachFileTask {
+func NewReachFile(task task.Task) *ReachFileTask {
 	t := &ReachFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3260,10 +3676,7 @@ func (t *ReachFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *ReachFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *ReachFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadExpire(task, t)
 	types.LoadPath(task, t)
@@ -3271,22 +3684,46 @@ func (t *ReachFileTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *ReachFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *ReachFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *ReachFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *ReachFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *ReachFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "ReachFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3294,16 +3731,12 @@ func (t *ReachFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *ReachFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *ReachFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3316,18 +3749,16 @@ func (t *ReachFileTask) String() string {
 	return fmt.Sprintf("ReachFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewReachFileTask will create a ReachFileTask which meets navvy.Task.
-func NewReachFileTask(task navvy.Task) navvy.Task {
+// NewReachFileTask will create a ReachFileTask which meets task.Task.
+func NewReachFileTask(task task.Task) task.Task {
 	return NewReachFile(task)
 }
 
 // SegmentCompleteTask will complete a segment.
 type SegmentCompleteTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3341,12 +3772,12 @@ type SegmentCompleteTask struct {
 }
 
 // NewSegmentComplete will create a SegmentCompleteTask struct and fetch inherited data from parent task.
-func NewSegmentComplete(task navvy.Task) *SegmentCompleteTask {
+func NewSegmentComplete(task task.Task) *SegmentCompleteTask {
 	t := &SegmentCompleteTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3366,10 +3797,7 @@ func (t *SegmentCompleteTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SegmentCompleteTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SegmentCompleteTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadIndexSegmenter(task, t)
 	types.LoadPath(task, t)
@@ -3377,22 +3805,46 @@ func (t *SegmentCompleteTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *SegmentCompleteTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SegmentCompleteTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SegmentCompleteTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SegmentCompleteTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SegmentCompleteTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentCompleteTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3400,16 +3852,12 @@ func (t *SegmentCompleteTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SegmentCompleteTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentCompleteTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3422,18 +3870,16 @@ func (t *SegmentCompleteTask) String() string {
 	return fmt.Sprintf("SegmentCompleteTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSegmentCompleteTask will create a SegmentCompleteTask which meets navvy.Task.
-func NewSegmentCompleteTask(task navvy.Task) navvy.Task {
+// NewSegmentCompleteTask will create a SegmentCompleteTask which meets task.Task.
+func NewSegmentCompleteTask(task task.Task) task.Task {
 	return NewSegmentComplete(task)
 }
 
 // SegmentFileCopyTask will copy a segment file.
 type SegmentFileCopyTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3453,12 +3899,12 @@ type SegmentFileCopyTask struct {
 }
 
 // NewSegmentFileCopy will create a SegmentFileCopyTask struct and fetch inherited data from parent task.
-func NewSegmentFileCopy(task navvy.Task) *SegmentFileCopyTask {
+func NewSegmentFileCopy(task task.Task) *SegmentFileCopyTask {
 	t := &SegmentFileCopyTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3493,10 +3939,7 @@ func (t *SegmentFileCopyTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SegmentFileCopyTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SegmentFileCopyTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationIndexSegmenter(task, t)
 	types.LoadDestinationPath(task, t)
@@ -3510,22 +3953,46 @@ func (t *SegmentFileCopyTask) loadInput(task navvy.Task) {
 	types.LoadMD5Sum(task, t)
 }
 
-// Run implement navvy.Task
-func (t *SegmentFileCopyTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SegmentFileCopyTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SegmentFileCopyTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SegmentFileCopyTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SegmentFileCopyTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentFileCopyTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3533,16 +4000,12 @@ func (t *SegmentFileCopyTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SegmentFileCopyTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentFileCopyTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3563,18 +4026,16 @@ func (t *SegmentFileCopyTask) String() string {
 	return fmt.Sprintf("SegmentFileCopyTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSegmentFileCopyTask will create a SegmentFileCopyTask which meets navvy.Task.
-func NewSegmentFileCopyTask(task navvy.Task) navvy.Task {
+// NewSegmentFileCopyTask will create a SegmentFileCopyTask which meets task.Task.
+func NewSegmentFileCopyTask(task task.Task) task.Task {
 	return NewSegmentFileCopy(task)
 }
 
 // SegmentInitTask will init a segment upload.
 type SegmentInitTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3589,12 +4050,12 @@ type SegmentInitTask struct {
 }
 
 // NewSegmentInit will create a SegmentInitTask struct and fetch inherited data from parent task.
-func NewSegmentInit(task navvy.Task) *SegmentInitTask {
+func NewSegmentInit(task task.Task) *SegmentInitTask {
 	t := &SegmentInitTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3614,10 +4075,7 @@ func (t *SegmentInitTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SegmentInitTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SegmentInitTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadIndexSegmenter(task, t)
 	types.LoadPartSize(task, t)
@@ -3625,22 +4083,46 @@ func (t *SegmentInitTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *SegmentInitTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SegmentInitTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SegmentInitTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SegmentInitTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SegmentInitTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentInitTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3648,16 +4130,12 @@ func (t *SegmentInitTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SegmentInitTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentInitTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3670,18 +4148,16 @@ func (t *SegmentInitTask) String() string {
 	return fmt.Sprintf("SegmentInitTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSegmentInitTask will create a SegmentInitTask which meets navvy.Task.
-func NewSegmentInitTask(task navvy.Task) navvy.Task {
+// NewSegmentInitTask will create a SegmentInitTask which meets task.Task.
+func NewSegmentInitTask(task task.Task) task.Task {
 	return NewSegmentInit(task)
 }
 
 // SegmentStreamCopyTask will copy a segment stream.
 type SegmentStreamCopyTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3700,12 +4176,12 @@ type SegmentStreamCopyTask struct {
 }
 
 // NewSegmentStreamCopy will create a SegmentStreamCopyTask struct and fetch inherited data from parent task.
-func NewSegmentStreamCopy(task navvy.Task) *SegmentStreamCopyTask {
+func NewSegmentStreamCopy(task task.Task) *SegmentStreamCopyTask {
 	t := &SegmentStreamCopyTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3737,10 +4213,7 @@ func (t *SegmentStreamCopyTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SegmentStreamCopyTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SegmentStreamCopyTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadContent(task, t)
 	types.LoadDestinationIndexSegmenter(task, t)
@@ -3753,22 +4226,46 @@ func (t *SegmentStreamCopyTask) loadInput(task navvy.Task) {
 	types.LoadMD5Sum(task, t)
 }
 
-// Run implement navvy.Task
-func (t *SegmentStreamCopyTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SegmentStreamCopyTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SegmentStreamCopyTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SegmentStreamCopyTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SegmentStreamCopyTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentStreamCopyTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3776,16 +4273,12 @@ func (t *SegmentStreamCopyTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SegmentStreamCopyTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentStreamCopyTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3805,18 +4298,16 @@ func (t *SegmentStreamCopyTask) String() string {
 	return fmt.Sprintf("SegmentStreamCopyTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets navvy.Task.
-func NewSegmentStreamCopyTask(task navvy.Task) navvy.Task {
+// NewSegmentStreamCopyTask will create a SegmentStreamCopyTask which meets task.Task.
+func NewSegmentStreamCopyTask(task task.Task) task.Task {
 	return NewSegmentStreamCopy(task)
 }
 
 // SegmentStreamInitTask will init a partial stream between two storager.
 type SegmentStreamInitTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3834,12 +4325,12 @@ type SegmentStreamInitTask struct {
 }
 
 // NewSegmentStreamInit will create a SegmentStreamInitTask struct and fetch inherited data from parent task.
-func NewSegmentStreamInit(task navvy.Task) *SegmentStreamInitTask {
+func NewSegmentStreamInit(task task.Task) *SegmentStreamInitTask {
 	t := &SegmentStreamInitTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3862,10 +4353,7 @@ func (t *SegmentStreamInitTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SegmentStreamInitTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SegmentStreamInitTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadBytesPool(task, t)
 	types.LoadPartSize(task, t)
@@ -3874,22 +4362,46 @@ func (t *SegmentStreamInitTask) loadInput(task navvy.Task) {
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *SegmentStreamInitTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SegmentStreamInitTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SegmentStreamInitTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SegmentStreamInitTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SegmentStreamInitTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SegmentStreamInitTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -3897,16 +4409,12 @@ func (t *SegmentStreamInitTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SegmentStreamInitTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SegmentStreamInitTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -3920,18 +4428,16 @@ func (t *SegmentStreamInitTask) String() string {
 	return fmt.Sprintf("SegmentStreamInitTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSegmentStreamInitTask will create a SegmentStreamInitTask which meets navvy.Task.
-func NewSegmentStreamInitTask(task navvy.Task) navvy.Task {
+// NewSegmentStreamInitTask will create a SegmentStreamInitTask which meets task.Task.
+func NewSegmentStreamInitTask(task task.Task) task.Task {
 	return NewSegmentStreamInit(task)
 }
 
 // StatFileTask will stat a remote object by request headObject.
 type StatFileTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -3945,12 +4451,12 @@ type StatFileTask struct {
 }
 
 // NewStatFile will create a StatFileTask struct and fetch inherited data from parent task.
-func NewStatFile(task navvy.Task) *StatFileTask {
+func NewStatFile(task task.Task) *StatFileTask {
 	t := &StatFileTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -3967,32 +4473,53 @@ func (t *StatFileTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *StatFileTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *StatFileTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadPath(task, t)
 	types.LoadStorage(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *StatFileTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *StatFileTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *StatFileTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *StatFileTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *StatFileTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "StatFileTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4000,16 +4527,12 @@ func (t *StatFileTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *StatFileTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *StatFileTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4021,18 +4544,16 @@ func (t *StatFileTask) String() string {
 	return fmt.Sprintf("StatFileTask {%s}", strings.Join(s, ", "))
 }
 
-// NewStatFileTask will create a StatFileTask which meets navvy.Task.
-func NewStatFileTask(task navvy.Task) navvy.Task {
+// NewStatFileTask will create a StatFileTask which meets task.Task.
+func NewStatFileTask(task task.Task) task.Task {
 	return NewStatFile(task)
 }
 
 // StatStorageTask will stat a remote storage by Statistical.
 type StatStorageTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -4045,12 +4566,12 @@ type StatStorageTask struct {
 }
 
 // NewStatStorage will create a StatStorageTask struct and fetch inherited data from parent task.
-func NewStatStorage(task navvy.Task) *StatStorageTask {
+func NewStatStorage(task task.Task) *StatStorageTask {
 	t := &StatStorageTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -4064,31 +4585,52 @@ func (t *StatStorageTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *StatStorageTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *StatStorageTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadStorage(task, t)
 	// load optional fields
 }
 
-// Run implement navvy.Task
-func (t *StatStorageTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *StatStorageTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *StatStorageTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *StatStorageTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *StatStorageTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "StatStorageTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4096,16 +4638,12 @@ func (t *StatStorageTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *StatStorageTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *StatStorageTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4116,18 +4654,16 @@ func (t *StatStorageTask) String() string {
 	return fmt.Sprintf("StatStorageTask {%s}", strings.Join(s, ", "))
 }
 
-// NewStatStorageTask will create a StatStorageTask which meets navvy.Task.
-func NewStatStorageTask(task navvy.Task) navvy.Task {
+// NewStatStorageTask will create a StatStorageTask which meets task.Task.
+func NewStatStorageTask(task task.Task) task.Task {
 	return NewStatStorage(task)
 }
 
 // SyncTask will sync directory between two storage.
 type SyncTask struct {
 	// Predefined value
-	types.Fault
-	types.ID
-	types.Pool
 	types.Scheduler
+	types.ID
 	types.CallbackFunc
 
 	// Required Input value
@@ -4149,12 +4685,12 @@ type SyncTask struct {
 }
 
 // NewSync will create a SyncTask struct and fetch inherited data from parent task.
-func NewSync(task navvy.Task) *SyncTask {
+func NewSync(task task.Task) *SyncTask {
 	t := &SyncTask{}
+	t.SetScheduler(schedule.New())
 	t.SetID(uuid.New().String())
 
 	t.loadInput(task)
-	t.SetScheduler(schedule.NewScheduler(t.GetPool()))
 
 	t.new()
 	return t
@@ -4177,10 +4713,7 @@ func (t *SyncTask) validateInput() {
 }
 
 // loadInput will check and load all input before new task.
-func (t *SyncTask) loadInput(task navvy.Task) {
-	types.LoadFault(task, t)
-	types.LoadPool(task, t)
-
+func (t *SyncTask) loadInput(task task.Task) {
 	// load required fields
 	types.LoadDestinationPath(task, t)
 	types.LoadDestinationStorage(task, t)
@@ -4196,22 +4729,46 @@ func (t *SyncTask) loadInput(task navvy.Task) {
 	types.LoadRecursive(task, t)
 }
 
-// Run implement navvy.Task
-func (t *SyncTask) Run(ctx context.Context) {
+// Sync run sub task directly
+func (t *SyncTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *SyncTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *SyncTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *SyncTask) Run(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	t.validateInput()
 
 	logger.Debug(
 		log.String("task_started", t.String()),
 	)
-	t.run(ctx)
-	t.GetScheduler().Wait()
-	if t.GetFault().HasError() {
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
 		logger.Debug(
-			log.String("task_failed", t.String()),
-			log.String("err", t.GetFault().Error()),
+			log.String("task_failed", "SyncTask"),
+			log.String("err", err.Error()),
 		)
-		return
+		return err
 	}
 	if t.ValidateCallbackFunc() {
 		t.GetCallbackFunc()()
@@ -4219,16 +4776,12 @@ func (t *SyncTask) Run(ctx context.Context) {
 	logger.Debug(
 		log.String("task_finished", t.String()),
 	)
-}
-
-// Context implement navvy.Task
-func (t *SyncTask) Context() context.Context {
-	return context.TODO()
+	return nil
 }
 
 // TriggerFault will be used to trigger a task related fault.
 func (t *SyncTask) TriggerFault(err error) {
-	t.GetFault().Append(fmt.Errorf("Failed %s: {%w}", t, err))
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
 }
 
 // String will implement Stringer interface.
@@ -4257,7 +4810,7 @@ func (t *SyncTask) String() string {
 	return fmt.Sprintf("SyncTask {%s}", strings.Join(s, ", "))
 }
 
-// NewSyncTask will create a SyncTask which meets navvy.Task.
-func NewSyncTask(task navvy.Task) navvy.Task {
+// NewSyncTask will create a SyncTask which meets task.Task.
+func NewSyncTask(task task.Task) task.Task {
 	return NewSync(task)
 }
