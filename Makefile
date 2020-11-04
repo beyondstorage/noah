@@ -1,16 +1,16 @@
 SHELL := /bin/bash
 GO_BUILD_OPTION := -trimpath -tags netgo
 
-.PHONY: all check format vet lint build clean test generate
+.PHONY: all check format vet build clean test generate
 
 help:
 	@echo "Please use \`make <target>\` where <target> is one of"
-	@echo "  check      to format, vet and lint "
+	@echo "  check      to format and vet"
 	@echo "  build      to create bin directory and build noah"
 	@echo "  clean      to clean build and test files"
 	@echo "  test       to run test"
 
-check: format vet lint
+check: format vet
 
 format:
 	@echo "go fmt"
@@ -20,11 +20,6 @@ format:
 vet:
 	@echo "go vet"
 	@go vet ./...
-	@echo "ok"
-
-lint:
-	@echo "golint"
-	@golint ./...
 	@echo "ok"
 
 generate:
