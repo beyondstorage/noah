@@ -21,6 +21,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install mockgen
+        run: go get github.com/golang/mock/mockgen
+
       - name: Build
         run: make build
 
