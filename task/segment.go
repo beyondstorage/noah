@@ -27,6 +27,7 @@ func (t *SegmentInitTask) run(ctx context.Context) error {
 func (t *SegmentFileCopyTask) new() {}
 func (t *SegmentFileCopyTask) run(ctx context.Context) error {
 	r, w := io.Pipe()
+	defer w.Close()
 
 	rst := NewReadFile(t)
 	utils.ChooseSourceStorage(rst, t)
@@ -46,7 +47,7 @@ func (t *SegmentFileCopyTask) run(ctx context.Context) error {
 	})
 
 	t.Async(ctx, wst)
-	return nil
+	return t.Await()
 }
 
 func (t *SegmentStreamInitTask) new() {}

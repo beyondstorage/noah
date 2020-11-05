@@ -47,7 +47,9 @@ func (t *SyncTask) run(ctx context.Context) error {
 				sf := NewSync(t)
 				sf.SetSourcePath(obj.Name)
 				sf.SetDestinationPath(obj.Name)
-				t.Async(ctx, sf)
+				if err := t.Sync(ctx, sf); err != nil {
+					return err
+				}
 			}
 		default:
 			return types.NewErrObjectTypeInvalid(nil, obj)

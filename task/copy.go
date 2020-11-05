@@ -52,7 +52,9 @@ func (t *CopyDirTask) run(ctx context.Context) error {
 			sf := NewCopyDir(t)
 			sf.SetSourcePath(obj.Name)
 			sf.SetDestinationPath(obj.Name)
-			t.Async(ctx, sf)
+			if err := t.Sync(ctx, sf); err != nil {
+				return err
+			}
 		default:
 			return types.NewErrObjectTypeInvalid(nil, obj)
 		}
@@ -295,6 +297,7 @@ func (t *CopyPartialStreamTask) run(ctx context.Context) error {
 func (t *CopySingleFileTask) new() {}
 func (t *CopySingleFileTask) run(ctx context.Context) error {
 	r, w := io.Pipe()
+	defer w.Close()
 
 	rst := NewReadFile(t)
 	utils.ChooseSourceStorage(rst, t)
@@ -316,5 +319,5 @@ func (t *CopySingleFileTask) run(ctx context.Context) error {
 	}
 
 	t.Async(ctx, wst)
-	return nil
+	return t.Await()
 }
