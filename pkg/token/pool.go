@@ -1,5 +1,8 @@
 package token
 
+// defaultCap is the default value for pool cap
+const defaultCap = 20
+
 // Pool handle a reusable token pool
 type Pool struct {
 	ch chan struct{}
@@ -23,7 +26,7 @@ func (p *Pool) Close() {
 // NewPool create a Pool with given cap and return its pointer
 func NewPool(cap int) *Pool {
 	if cap <= 0 {
-		cap = 10
+		cap = defaultCap
 	}
 	ch := make(chan struct{}, cap)
 	for i := 0; i < cap; i++ {
