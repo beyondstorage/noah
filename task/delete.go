@@ -61,7 +61,9 @@ func (t *DeleteDirTask) run(ctx context.Context) error {
 		case typ.ObjectTypeDir:
 			sf := NewDeleteDir(t)
 			sf.SetPath(obj.Name)
-			t.Async(ctx, sf)
+			if err := t.Sync(ctx, sf); err != nil {
+				return err
+			}
 		default:
 			return types.NewErrObjectTypeInvalid(nil, obj)
 		}

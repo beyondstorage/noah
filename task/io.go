@@ -26,7 +26,6 @@ func (t *ReadFileTask) run(ctx context.Context) error {
 		t.GetWriteCloser().Close()
 		return types.NewErrUnhandled(err)
 	}
-	// time.Sleep(time.Second)
 	return nil
 }
 

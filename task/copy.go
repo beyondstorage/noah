@@ -11,6 +11,7 @@ import (
 
 	"github.com/qingstor/noah/constants"
 	"github.com/qingstor/noah/pkg/progress"
+	"github.com/qingstor/noah/pkg/token"
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
 )
@@ -52,7 +53,9 @@ func (t *CopyDirTask) run(ctx context.Context) error {
 			sf := NewCopyDir(t)
 			sf.SetSourcePath(obj.Name)
 			sf.SetDestinationPath(obj.Name)
-			t.Async(ctx, sf)
+			if err := t.Sync(ctx, sf); err != nil {
+				return err
+			}
 		default:
 			return types.NewErrObjectTypeInvalid(nil, obj)
 		}
@@ -275,6 +278,10 @@ func (t *CopyStreamTask) run(ctx context.Context) error {
 
 func (t *CopyPartialStreamTask) new() {}
 func (t *CopyPartialStreamTask) run(ctx context.Context) error {
+	tk := token.FromContext(ctx)
+	tk.Take()
+	defer tk.Return()
+
 	copyTask := NewSegmentStreamCopy(t)
 	if t.GetCheckMD5() {
 		md5sumTask := NewMD5SumStream(t)
@@ -294,7 +301,12 @@ func (t *CopyPartialStreamTask) run(ctx context.Context) error {
 
 func (t *CopySingleFileTask) new() {}
 func (t *CopySingleFileTask) run(ctx context.Context) error {
+	tk := token.FromContext(ctx)
+	tk.Take()
+	defer tk.Return()
+
 	r, w := io.Pipe()
+	defer w.Close()
 
 	rst := NewReadFile(t)
 	utils.ChooseSourceStorage(rst, t)
@@ -316,5 +328,5 @@ func (t *CopySingleFileTask) run(ctx context.Context) error {
 	}
 
 	t.Async(ctx, wst)
-	return nil
+	return t.Await()
 }
