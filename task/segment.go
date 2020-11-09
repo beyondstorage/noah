@@ -10,7 +10,6 @@ import (
 	"github.com/aos-dev/go-storage/v2/pairs"
 
 	"github.com/qingstor/noah/pkg/progress"
-	"github.com/qingstor/noah/pkg/token"
 	"github.com/qingstor/noah/pkg/types"
 	"github.com/qingstor/noah/utils"
 )
@@ -27,10 +26,6 @@ func (t *SegmentInitTask) run(ctx context.Context) error {
 
 func (t *SegmentFileCopyTask) new() {}
 func (t *SegmentFileCopyTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
 	r, w := io.Pipe()
 	defer w.Close()
 
@@ -57,10 +52,6 @@ func (t *SegmentFileCopyTask) run(ctx context.Context) error {
 
 func (t *SegmentStreamInitTask) new() {}
 func (t *SegmentStreamInitTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
 	// Set size and update offset.
 	partSize := t.GetPartSize()
 	b := t.GetBytesPool().Get().(*bytes.Buffer)
@@ -82,10 +73,6 @@ func (t *SegmentStreamInitTask) run(ctx context.Context) error {
 
 func (t *SegmentStreamCopyTask) new() {}
 func (t *SegmentStreamCopyTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
 	progress.SetState(t.GetID(), progress.InitIncState(t.GetDestinationPath(), fmt.Sprintf("copy stream part: %d", t.GetIndex()), t.GetSize()))
 	// TODO: Add checksum support
 	writeDone := 0
