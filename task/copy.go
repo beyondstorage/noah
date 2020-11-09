@@ -203,6 +203,10 @@ func (t *CopyPartialFileTask) new() {
 	}
 }
 func (t *CopyPartialFileTask) run(ctx context.Context) error {
+	tk := token.FromContext(ctx)
+	tk.Take()
+	defer tk.Return()
+
 	fileCopyTask := NewSegmentFileCopy(t)
 
 	if t.ValidateCheckMD5() && t.GetCheckMD5() {
