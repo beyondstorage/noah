@@ -28,7 +28,8 @@
         "CheckTasks",
         "HandleObjCallbackFunc",
         "PartSize",
-        "PartThreshold"
+        "PartThreshold",
+        "StorageClass"
       ]
     }
   },
@@ -47,7 +48,8 @@
         "DryRunFunc",
         "HandleObjCallbackFunc",
         "PartSize",
-        "PartThreshold"
+        "PartThreshold",
+        "StorageClass"
       ]
     }
   },
@@ -63,7 +65,8 @@
       ],
       "optional": [
         "CheckMD5",
-        "PartSize"
+        "PartSize",
+        "StorageClass"
       ]
     },
     "output": [
@@ -86,7 +89,8 @@
         "TotalSize"
       ],
       "optional": [
-        "CheckMD5"
+        "CheckMD5",
+        "StorageClass"
       ]
     },
     "output": [
@@ -107,7 +111,8 @@
         "SourceStorage"
       ],
       "optional": [
-        "CheckMD5"
+        "CheckMD5",
+        "StorageClass"
       ]
     },
     "output": [
@@ -128,7 +133,8 @@
         "SourceStorage"
       ],
       "optional": [
-        "MD5Sum"
+        "MD5Sum",
+        "StorageClass"
       ]
     }
   },
@@ -144,7 +150,8 @@
       ],
       "optional": [
         "CheckMD5",
-        "MD5Sum"
+        "MD5Sum",
+        "StorageClass"
       ]
     }
   },
@@ -159,7 +166,8 @@
       ],
       "optional": [
         "CheckMD5",
-        "PartSize"
+        "PartSize",
+        "StorageClass"
       ]
     },
     "output": [
@@ -584,7 +592,8 @@
       "optional": [
         "Offset",
         "ReadCallBackFunc",
-        "Size"
+        "Size",
+        "StorageClass"
       ]
     }
   },

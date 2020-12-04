@@ -65,6 +65,7 @@
   "SourceStorage": "types.Storager",
   "SourceType": "types.ObjectType",
   "Storage": "types.Storager",
+  "StorageClass": "string",
   "StorageInfo": "*types.StorageStatistic",
   "StorageIter": "*types.StoragerIterator",
   "StorageName": "string",
