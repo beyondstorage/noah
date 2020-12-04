@@ -4388,6 +4388,72 @@ func (o *Storage) String() string {
 	return o.v.String()
 }
 
+type StorageClass struct {
+	valid bool
+	v     string
+
+	l sync.RWMutex
+}
+
+type StorageClassGetter interface {
+	GetStorageClass() string
+}
+
+func (o *StorageClass) GetStorageClass() string {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("StorageClass value is not valid")
+	}
+	return o.v
+}
+
+type StorageClassSetter interface {
+	SetStorageClass(string)
+}
+
+func (o *StorageClass) SetStorageClass(v string) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type StorageClassValidator interface {
+	ValidateStorageClass() bool
+}
+
+func (o *StorageClass) ValidateStorageClass() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadStorageClass(t task.Task, v StorageClassSetter) {
+	x, ok := t.(interface {
+		StorageClassGetter
+		StorageClassValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateStorageClass() {
+		return
+	}
+
+	v.SetStorageClass(x.GetStorageClass())
+}
+
+func (o *StorageClass) String() string {
+	if !o.valid {
+		return ""
+	}
+	return o.v
+}
+
 type StorageInfo struct {
 	valid bool
 	v     *types.StorageStatistic

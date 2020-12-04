@@ -164,6 +164,7 @@ type CopyDirTask struct {
 	types.HandleObjCallbackFunc
 	types.PartSize
 	types.PartThreshold
+	types.StorageClass
 
 	// Output value
 }
@@ -209,6 +210,7 @@ func (t *CopyDirTask) loadInput(task task.Task) {
 	types.LoadHandleObjCallbackFunc(task, t)
 	types.LoadPartSize(task, t)
 	types.LoadPartThreshold(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -268,7 +270,7 @@ func (t *CopyDirTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyDirTask) String() string {
-	s := make([]string, 0, 9)
+	s := make([]string, 0, 10)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -285,6 +287,9 @@ func (t *CopyDirTask) String() string {
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyDirTask {%s}", strings.Join(s, ", "))
 }
@@ -314,6 +319,7 @@ type CopyFileTask struct {
 	types.HandleObjCallbackFunc
 	types.PartSize
 	types.PartThreshold
+	types.StorageClass
 
 	// Output value
 }
@@ -360,6 +366,7 @@ func (t *CopyFileTask) loadInput(task task.Task) {
 	types.LoadHandleObjCallbackFunc(task, t)
 	types.LoadPartSize(task, t)
 	types.LoadPartThreshold(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -419,7 +426,7 @@ func (t *CopyFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyFileTask) String() string {
-	s := make([]string, 0, 10)
+	s := make([]string, 0, 11)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -436,6 +443,9 @@ func (t *CopyFileTask) String() string {
 	}
 	if t.ValidatePartThreshold() {
 		s = append(s, fmt.Sprintf("PartThreshold: %s", t.PartThreshold.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyFileTask {%s}", strings.Join(s, ", "))
 }
@@ -462,6 +472,7 @@ type CopyLargeFileTask struct {
 	// Optional Input value
 	types.CheckMD5
 	types.PartSize
+	types.StorageClass
 
 	// Output value
 	types.Offset
@@ -510,6 +521,7 @@ func (t *CopyLargeFileTask) loadInput(task task.Task) {
 	// load optional fields
 	types.LoadCheckMD5(task, t)
 	types.LoadPartSize(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -569,7 +581,7 @@ func (t *CopyLargeFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyLargeFileTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 8)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -581,6 +593,9 @@ func (t *CopyLargeFileTask) String() string {
 	}
 	if t.ValidatePartSize() {
 		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyLargeFileTask {%s}", strings.Join(s, ", "))
 }
@@ -610,6 +625,7 @@ type CopyPartialFileTask struct {
 
 	// Optional Input value
 	types.CheckMD5
+	types.StorageClass
 
 	// Output value
 	types.Done
@@ -673,6 +689,7 @@ func (t *CopyPartialFileTask) loadInput(task task.Task) {
 	types.LoadTotalSize(task, t)
 	// load optional fields
 	types.LoadCheckMD5(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -732,7 +749,7 @@ func (t *CopyPartialFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialFileTask) String() string {
-	s := make([]string, 0, 10)
+	s := make([]string, 0, 11)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -745,6 +762,9 @@ func (t *CopyPartialFileTask) String() string {
 	s = append(s, fmt.Sprintf("TotalSize: %s", t.TotalSize.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyPartialFileTask {%s}", strings.Join(s, ", "))
 }
@@ -772,6 +792,7 @@ type CopyPartialStreamTask struct {
 
 	// Optional Input value
 	types.CheckMD5
+	types.StorageClass
 
 	// Output value
 	types.Content
@@ -829,6 +850,7 @@ func (t *CopyPartialStreamTask) loadInput(task task.Task) {
 	types.LoadSourceStorage(task, t)
 	// load optional fields
 	types.LoadCheckMD5(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -888,7 +910,7 @@ func (t *CopyPartialStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyPartialStreamTask) String() string {
-	s := make([]string, 0, 8)
+	s := make([]string, 0, 9)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -899,6 +921,9 @@ func (t *CopyPartialStreamTask) String() string {
 	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateCheckMD5() {
 		s = append(s, fmt.Sprintf("CheckMD5: %s", t.CheckMD5.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyPartialStreamTask {%s}", strings.Join(s, ", "))
 }
@@ -924,6 +949,7 @@ type CopySingleFileTask struct {
 
 	// Optional Input value
 	types.MD5Sum
+	types.StorageClass
 
 	// Output value
 }
@@ -969,6 +995,7 @@ func (t *CopySingleFileTask) loadInput(task task.Task) {
 	types.LoadSourceStorage(task, t)
 	// load optional fields
 	types.LoadMD5Sum(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -1028,7 +1055,7 @@ func (t *CopySingleFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySingleFileTask) String() string {
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -1037,6 +1064,9 @@ func (t *CopySingleFileTask) String() string {
 	s = append(s, fmt.Sprintf("SourceStorage: %s", t.SourceStorage.String()))
 	if t.ValidateMD5Sum() {
 		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopySingleFileTask {%s}", strings.Join(s, ", "))
 }
@@ -1063,6 +1093,7 @@ type CopySmallFileTask struct {
 	// Optional Input value
 	types.CheckMD5
 	types.MD5Sum
+	types.StorageClass
 
 	// Output value
 }
@@ -1109,6 +1140,7 @@ func (t *CopySmallFileTask) loadInput(task task.Task) {
 	// load optional fields
 	types.LoadCheckMD5(task, t)
 	types.LoadMD5Sum(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -1168,7 +1200,7 @@ func (t *CopySmallFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopySmallFileTask) String() string {
-	s := make([]string, 0, 7)
+	s := make([]string, 0, 8)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -1180,6 +1212,9 @@ func (t *CopySmallFileTask) String() string {
 	}
 	if t.ValidateMD5Sum() {
 		s = append(s, fmt.Sprintf("MD5Sum: %s", t.MD5Sum.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopySmallFileTask {%s}", strings.Join(s, ", "))
 }
@@ -1205,6 +1240,7 @@ type CopyStreamTask struct {
 	// Optional Input value
 	types.CheckMD5
 	types.PartSize
+	types.StorageClass
 
 	// Output value
 	types.BytesPool
@@ -1249,6 +1285,7 @@ func (t *CopyStreamTask) loadInput(task task.Task) {
 	// load optional fields
 	types.LoadCheckMD5(task, t)
 	types.LoadPartSize(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -1308,7 +1345,7 @@ func (t *CopyStreamTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *CopyStreamTask) String() string {
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
 
 	s = append(s, fmt.Sprintf("DestinationPath: %s", t.DestinationPath.String()))
 	s = append(s, fmt.Sprintf("DestinationStorage: %s", t.DestinationStorage.String()))
@@ -1319,6 +1356,9 @@ func (t *CopyStreamTask) String() string {
 	}
 	if t.ValidatePartSize() {
 		s = append(s, fmt.Sprintf("PartSize: %s", t.PartSize.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("CopyStreamTask {%s}", strings.Join(s, ", "))
 }
@@ -5060,6 +5100,7 @@ type WriteFileTask struct {
 	types.Offset
 	types.ReadCallBackFunc
 	types.Size
+	types.StorageClass
 
 	// Output value
 }
@@ -5099,6 +5140,7 @@ func (t *WriteFileTask) loadInput(task task.Task) {
 	types.LoadOffset(task, t)
 	types.LoadReadCallBackFunc(task, t)
 	types.LoadSize(task, t)
+	types.LoadStorageClass(task, t)
 }
 
 // Sync run sub task directly
@@ -5158,7 +5200,7 @@ func (t *WriteFileTask) TriggerFault(err error) {
 
 // String will implement Stringer interface.
 func (t *WriteFileTask) String() string {
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
 
 	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
 	s = append(s, fmt.Sprintf("ReadCloser: %s", t.ReadCloser.String()))
@@ -5168,6 +5210,9 @@ func (t *WriteFileTask) String() string {
 	}
 	if t.ValidateSize() {
 		s = append(s, fmt.Sprintf("Size: %s", t.Size.String()))
+	}
+	if t.ValidateStorageClass() {
+		s = append(s, fmt.Sprintf("StorageClass: %s", t.StorageClass.String()))
 	}
 	return fmt.Sprintf("WriteFileTask {%s}", strings.Join(s, ", "))
 }

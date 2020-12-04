@@ -41,6 +41,9 @@ func (t *WriteFileTask) run(ctx context.Context) error {
 	if t.ValidateReadCallBackFunc() {
 		ps = append(ps, pairs.WithReadCallbackFunc(t.GetReadCallBackFunc()))
 	}
+	if t.ValidateStorageClass() {
+		ps = append(ps, pairs.WithStorageClass(t.GetStorageClass()))
+	}
 
 	if _, err := t.GetStorage().WriteWithContext(ctx, t.GetPath(), t.GetReadCloser(), ps...); err != nil {
 		t.GetReadCloser().Close()
