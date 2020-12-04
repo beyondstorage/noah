@@ -264,6 +264,16 @@
       ]
     }
   },
+  "Fetch": {
+    "description": "fetch object",
+    "input": {
+      "required": [
+        "Fetcher",
+        "Path",
+        "URL"
+      ]
+    }
+  },
   "IsDestinationObjectExist": {
     "description": "check if destination object exist",
     "input": {

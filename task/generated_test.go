@@ -138,6 +138,14 @@ func TestDeleteStorageTask_TriggerFault(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestFetchTask_TriggerFault(t *testing.T) {
+	task := &FetchTask{}
+	task.SetScheduler(schedule.New())
+	task.TriggerFault(types.NewErrUnhandled(nil))
+	err := task.Await()
+	assert.NotNil(t, err)
+}
+
 func TestIsDestinationObjectExistTask_TriggerFault(t *testing.T) {
 	task := &IsDestinationObjectExistTask{}
 	task.SetScheduler(schedule.New())

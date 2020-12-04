@@ -2197,6 +2197,127 @@ func NewDeleteStorageTask(task task.Task) task.Task {
 	return NewDeleteStorage(task)
 }
 
+// FetchTask will fetch object.
+type FetchTask struct {
+	// Predefined value
+	types.Scheduler
+	types.ID
+	types.CallbackFunc
+
+	// Required Input value
+	types.Fetcher
+	types.Path
+	types.URL
+
+	// Optional Input value
+
+	// Output value
+}
+
+// NewFetch will create a FetchTask struct and fetch inherited data from parent task.
+func NewFetch(task task.Task) *FetchTask {
+	t := &FetchTask{}
+	t.SetScheduler(schedule.New())
+	t.SetID(uuid.New().String())
+
+	t.loadInput(task)
+
+	t.new()
+	return t
+}
+
+// validateInput will validate all input before run task.
+func (t *FetchTask) validateInput() {
+	if !t.ValidateFetcher() {
+		panic(fmt.Errorf("Task Fetch value Fetcher is invalid"))
+	}
+	if !t.ValidatePath() {
+		panic(fmt.Errorf("Task Fetch value Path is invalid"))
+	}
+	if !t.ValidateURL() {
+		panic(fmt.Errorf("Task Fetch value URL is invalid"))
+	}
+}
+
+// loadInput will check and load all input before new task.
+func (t *FetchTask) loadInput(task task.Task) {
+	// load required fields
+	types.LoadFetcher(task, t)
+	types.LoadPath(task, t)
+	types.LoadURL(task, t)
+	// load optional fields
+}
+
+// Sync run sub task directly
+func (t *FetchTask) Sync(ctx context.Context, st task.Task) error {
+	return st.Run(ctx)
+}
+
+// Async run sub task asynchronously
+func (t *FetchTask) Async(ctx context.Context, st task.Task) {
+	t.GetScheduler().Add(1)
+	go func() {
+		defer t.GetScheduler().Done()
+		if err := st.Run(ctx); err != nil {
+			t.TriggerFault(err)
+		}
+	}()
+}
+
+// Await wait sub task done
+func (t *FetchTask) Await() error {
+	return t.GetScheduler().Await()
+}
+
+// Run implement task.Task
+func (t *FetchTask) Run(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	t.validateInput()
+
+	logger.Debug(
+		log.String("task_started", t.String()),
+	)
+	err := t.run(ctx)
+	if err != nil {
+		t.TriggerFault(err)
+	}
+
+	if err := t.Await(); err != nil {
+		logger.Debug(
+			log.String("task_failed", "FetchTask"),
+			log.String("err", err.Error()),
+		)
+		return err
+	}
+	if t.ValidateCallbackFunc() {
+		t.GetCallbackFunc()()
+	}
+	logger.Debug(
+		log.String("task_finished", t.String()),
+	)
+	return nil
+}
+
+// TriggerFault will be used to trigger a task related fault.
+func (t *FetchTask) TriggerFault(err error) {
+	t.GetScheduler().AppendFault(fmt.Errorf("Failed %s: {%w}", t, err))
+}
+
+// String will implement Stringer interface.
+func (t *FetchTask) String() string {
+	s := make([]string, 0, 3)
+
+	s = append(s, fmt.Sprintf("Fetcher: %s", t.Fetcher.String()))
+	s = append(s, fmt.Sprintf("Path: %s", t.Path.String()))
+	s = append(s, fmt.Sprintf("URL: %s", t.URL.String()))
+	return fmt.Sprintf("FetchTask {%s}", strings.Join(s, ", "))
+}
+
+// NewFetchTask will create a FetchTask which meets task.Task.
+func NewFetchTask(task task.Task) task.Task {
+	return NewFetch(task)
+}
+
 // IsDestinationObjectExistTask will check if destination object exist.
 type IsDestinationObjectExistTask struct {
 	// Predefined value
