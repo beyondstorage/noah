@@ -11,7 +11,7 @@ import (
 
 func (t *ReadFileTask) new() {}
 func (t *ReadFileTask) run(ctx context.Context) error {
-	ps := make([]*typ.Pair, 0)
+	ps := make([]typ.Pair, 0)
 	if t.ValidateSize() {
 		ps = append(ps, pairs.WithSize(t.GetSize()))
 	}
@@ -31,7 +31,7 @@ func (t *ReadFileTask) run(ctx context.Context) error {
 
 func (t *WriteFileTask) new() {}
 func (t *WriteFileTask) run(ctx context.Context) error {
-	ps := make([]*typ.Pair, 0)
+	ps := make([]typ.Pair, 0)
 	if t.ValidateSize() {
 		ps = append(ps, pairs.WithSize(t.GetSize()))
 	}
@@ -51,7 +51,7 @@ func (t *WriteFileTask) run(ctx context.Context) error {
 
 func (t *WriteSegmentTask) new() {}
 func (t *WriteSegmentTask) run(ctx context.Context) error {
-	ps := make([]*typ.Pair, 0)
+	ps := make([]typ.Pair, 0)
 	if t.ValidateReadCallBackFunc() {
 		ps = append(ps, pairs.WithReadCallbackFunc(t.GetReadCallBackFunc()))
 	}

@@ -44,7 +44,7 @@ func (t *ListSegmentTask) run(ctx context.Context) error {
 
 func (t *ListStorageTask) new() {}
 func (t *ListStorageTask) run(ctx context.Context) error {
-	ps := make([]*typ.Pair, 0)
+	ps := make([]typ.Pair, 0)
 	if t.ValidateZone() {
 		ps = append(ps, pairs.WithLocation(t.GetZone()))
 	}

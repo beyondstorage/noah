@@ -4390,16 +4390,16 @@ func (o *Storage) String() string {
 
 type StorageInfo struct {
 	valid bool
-	v     types.StorageStatistic
+	v     *types.StorageStatistic
 
 	l sync.RWMutex
 }
 
 type StorageInfoGetter interface {
-	GetStorageInfo() types.StorageStatistic
+	GetStorageInfo() *types.StorageStatistic
 }
 
-func (o *StorageInfo) GetStorageInfo() types.StorageStatistic {
+func (o *StorageInfo) GetStorageInfo() *types.StorageStatistic {
 	o.l.RLock()
 	defer o.l.RUnlock()
 
@@ -4410,10 +4410,10 @@ func (o *StorageInfo) GetStorageInfo() types.StorageStatistic {
 }
 
 type StorageInfoSetter interface {
-	SetStorageInfo(types.StorageStatistic)
+	SetStorageInfo(*types.StorageStatistic)
 }
 
-func (o *StorageInfo) SetStorageInfo(v types.StorageStatistic) {
+func (o *StorageInfo) SetStorageInfo(v *types.StorageStatistic) {
 	o.l.Lock()
 	defer o.l.Unlock()
 

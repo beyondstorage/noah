@@ -146,7 +146,7 @@ func (t *DeleteSegmentsByPrefixTask) run(ctx context.Context) error {
 
 func (t *DeleteStorageTask) new() {}
 func (t *DeleteStorageTask) run(ctx context.Context) error {
-	var ps []*typ.Pair
+	var ps []typ.Pair
 	if t.ValidateZone() {
 		ps = append(ps, pairs.WithLocation(t.GetZone()))
 	}

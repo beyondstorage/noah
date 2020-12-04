@@ -3,7 +3,7 @@ module github.com/qingstor/noah
 go 1.13
 
 require (
-	github.com/aos-dev/go-storage/v2 v2.0.0-20201021090247-828ece82a9ec
+	github.com/aos-dev/go-storage/v2 v2.0.1-0.20201203030158-b94397533b85
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.2
 	github.com/qingstor/log v0.0.0-20200804082313-615256cccabc

@@ -36,7 +36,7 @@ func (m *MockCopier) EXPECT() *MockCopierMockRecorder {
 }
 
 // Copy mocks base method
-func (m *MockCopier) Copy(arg0, arg1 string, arg2 ...*types.Pair) error {
+func (m *MockCopier) Copy(arg0, arg1 string, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -55,7 +55,7 @@ func (mr *MockCopierMockRecorder) Copy(arg0, arg1 interface{}, arg2 ...interface
 }
 
 // CopyWithContext mocks base method
-func (m *MockCopier) CopyWithContext(arg0 context.Context, arg1, arg2 string, arg3 ...*types.Pair) error {
+func (m *MockCopier) CopyWithContext(arg0 context.Context, arg1, arg2 string, arg3 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -97,7 +97,7 @@ func (m *MockDirLister) EXPECT() *MockDirListerMockRecorder {
 }
 
 // ListDir mocks base method
-func (m *MockDirLister) ListDir(arg0 string, arg1 ...*types.Pair) (*types.ObjectIterator, error) {
+func (m *MockDirLister) ListDir(arg0 string, arg1 ...types.Pair) (*types.ObjectIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -117,7 +117,7 @@ func (mr *MockDirListerMockRecorder) ListDir(arg0 interface{}, arg1 ...interface
 }
 
 // ListDirWithContext mocks base method
-func (m *MockDirLister) ListDirWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (*types.ObjectIterator, error) {
+func (m *MockDirLister) ListDirWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (*types.ObjectIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -160,7 +160,7 @@ func (m *MockDirSegmentsLister) EXPECT() *MockDirSegmentsListerMockRecorder {
 }
 
 // AbortSegment mocks base method
-func (m *MockDirSegmentsLister) AbortSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockDirSegmentsLister) AbortSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -179,7 +179,7 @@ func (mr *MockDirSegmentsListerMockRecorder) AbortSegment(arg0 interface{}, arg1
 }
 
 // AbortSegmentWithContext mocks base method
-func (m *MockDirSegmentsLister) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockDirSegmentsLister) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -198,7 +198,7 @@ func (mr *MockDirSegmentsListerMockRecorder) AbortSegmentWithContext(arg0, arg1 
 }
 
 // CompleteSegment mocks base method
-func (m *MockDirSegmentsLister) CompleteSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockDirSegmentsLister) CompleteSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -217,7 +217,7 @@ func (mr *MockDirSegmentsListerMockRecorder) CompleteSegment(arg0 interface{}, a
 }
 
 // CompleteSegmentWithContext mocks base method
-func (m *MockDirSegmentsLister) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockDirSegmentsLister) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -236,7 +236,7 @@ func (mr *MockDirSegmentsListerMockRecorder) CompleteSegmentWithContext(arg0, ar
 }
 
 // ListDirSegments mocks base method
-func (m *MockDirSegmentsLister) ListDirSegments(arg0 string, arg1 ...*types.Pair) (*types.SegmentIterator, error) {
+func (m *MockDirSegmentsLister) ListDirSegments(arg0 string, arg1 ...types.Pair) (*types.SegmentIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -256,7 +256,7 @@ func (mr *MockDirSegmentsListerMockRecorder) ListDirSegments(arg0 interface{}, a
 }
 
 // ListDirSegmentsWithContext mocks base method
-func (m *MockDirSegmentsLister) ListDirSegmentsWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (*types.SegmentIterator, error) {
+func (m *MockDirSegmentsLister) ListDirSegmentsWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (*types.SegmentIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -299,7 +299,7 @@ func (m *MockIndexSegmenter) EXPECT() *MockIndexSegmenterMockRecorder {
 }
 
 // AbortSegment mocks base method
-func (m *MockIndexSegmenter) AbortSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockIndexSegmenter) AbortSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -318,7 +318,7 @@ func (mr *MockIndexSegmenterMockRecorder) AbortSegment(arg0 interface{}, arg1 ..
 }
 
 // AbortSegmentWithContext mocks base method
-func (m *MockIndexSegmenter) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockIndexSegmenter) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -337,7 +337,7 @@ func (mr *MockIndexSegmenterMockRecorder) AbortSegmentWithContext(arg0, arg1 int
 }
 
 // CompleteSegment mocks base method
-func (m *MockIndexSegmenter) CompleteSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockIndexSegmenter) CompleteSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -356,7 +356,7 @@ func (mr *MockIndexSegmenterMockRecorder) CompleteSegment(arg0 interface{}, arg1
 }
 
 // CompleteSegmentWithContext mocks base method
-func (m *MockIndexSegmenter) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockIndexSegmenter) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -375,7 +375,7 @@ func (mr *MockIndexSegmenterMockRecorder) CompleteSegmentWithContext(arg0, arg1 
 }
 
 // InitIndexSegment mocks base method
-func (m *MockIndexSegmenter) InitIndexSegment(arg0 string, arg1 ...*types.Pair) (types.Segment, error) {
+func (m *MockIndexSegmenter) InitIndexSegment(arg0 string, arg1 ...types.Pair) (types.Segment, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -395,7 +395,7 @@ func (mr *MockIndexSegmenterMockRecorder) InitIndexSegment(arg0 interface{}, arg
 }
 
 // InitIndexSegmentWithContext mocks base method
-func (m *MockIndexSegmenter) InitIndexSegmentWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (types.Segment, error) {
+func (m *MockIndexSegmenter) InitIndexSegmentWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (types.Segment, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -415,7 +415,7 @@ func (mr *MockIndexSegmenterMockRecorder) InitIndexSegmentWithContext(arg0, arg1
 }
 
 // WriteIndexSegment mocks base method
-func (m *MockIndexSegmenter) WriteIndexSegment(arg0 types.Segment, arg1 io.Reader, arg2 int, arg3 int64, arg4 ...*types.Pair) error {
+func (m *MockIndexSegmenter) WriteIndexSegment(arg0 types.Segment, arg1 io.Reader, arg2 int, arg3 int64, arg4 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3}
 	for _, a := range arg4 {
@@ -434,7 +434,7 @@ func (mr *MockIndexSegmenterMockRecorder) WriteIndexSegment(arg0, arg1, arg2, ar
 }
 
 // WriteIndexSegmentWithContext mocks base method
-func (m *MockIndexSegmenter) WriteIndexSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 io.Reader, arg3 int, arg4 int64, arg5 ...*types.Pair) error {
+func (m *MockIndexSegmenter) WriteIndexSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 io.Reader, arg3 int, arg4 int64, arg5 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3, arg4}
 	for _, a := range arg5 {
@@ -476,7 +476,7 @@ func (m *MockMover) EXPECT() *MockMoverMockRecorder {
 }
 
 // Move mocks base method
-func (m *MockMover) Move(arg0, arg1 string, arg2 ...*types.Pair) error {
+func (m *MockMover) Move(arg0, arg1 string, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -495,7 +495,7 @@ func (mr *MockMoverMockRecorder) Move(arg0, arg1 interface{}, arg2 ...interface{
 }
 
 // MoveWithContext mocks base method
-func (m *MockMover) MoveWithContext(arg0 context.Context, arg1, arg2 string, arg3 ...*types.Pair) error {
+func (m *MockMover) MoveWithContext(arg0 context.Context, arg1, arg2 string, arg3 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -537,7 +537,7 @@ func (m *MockPrefixLister) EXPECT() *MockPrefixListerMockRecorder {
 }
 
 // ListPrefix mocks base method
-func (m *MockPrefixLister) ListPrefix(arg0 string, arg1 ...*types.Pair) (*types.ObjectIterator, error) {
+func (m *MockPrefixLister) ListPrefix(arg0 string, arg1 ...types.Pair) (*types.ObjectIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -557,7 +557,7 @@ func (mr *MockPrefixListerMockRecorder) ListPrefix(arg0 interface{}, arg1 ...int
 }
 
 // ListPrefixWithContext mocks base method
-func (m *MockPrefixLister) ListPrefixWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (*types.ObjectIterator, error) {
+func (m *MockPrefixLister) ListPrefixWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (*types.ObjectIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -600,7 +600,7 @@ func (m *MockPrefixSegmentsLister) EXPECT() *MockPrefixSegmentsListerMockRecorde
 }
 
 // AbortSegment mocks base method
-func (m *MockPrefixSegmentsLister) AbortSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockPrefixSegmentsLister) AbortSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -619,7 +619,7 @@ func (mr *MockPrefixSegmentsListerMockRecorder) AbortSegment(arg0 interface{}, a
 }
 
 // AbortSegmentWithContext mocks base method
-func (m *MockPrefixSegmentsLister) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockPrefixSegmentsLister) AbortSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -638,7 +638,7 @@ func (mr *MockPrefixSegmentsListerMockRecorder) AbortSegmentWithContext(arg0, ar
 }
 
 // CompleteSegment mocks base method
-func (m *MockPrefixSegmentsLister) CompleteSegment(arg0 types.Segment, arg1 ...*types.Pair) error {
+func (m *MockPrefixSegmentsLister) CompleteSegment(arg0 types.Segment, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -657,7 +657,7 @@ func (mr *MockPrefixSegmentsListerMockRecorder) CompleteSegment(arg0 interface{}
 }
 
 // CompleteSegmentWithContext mocks base method
-func (m *MockPrefixSegmentsLister) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...*types.Pair) error {
+func (m *MockPrefixSegmentsLister) CompleteSegmentWithContext(arg0 context.Context, arg1 types.Segment, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -676,7 +676,7 @@ func (mr *MockPrefixSegmentsListerMockRecorder) CompleteSegmentWithContext(arg0,
 }
 
 // ListPrefixSegments mocks base method
-func (m *MockPrefixSegmentsLister) ListPrefixSegments(arg0 string, arg1 ...*types.Pair) (*types.SegmentIterator, error) {
+func (m *MockPrefixSegmentsLister) ListPrefixSegments(arg0 string, arg1 ...types.Pair) (*types.SegmentIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -696,7 +696,7 @@ func (mr *MockPrefixSegmentsListerMockRecorder) ListPrefixSegments(arg0 interfac
 }
 
 // ListPrefixSegmentsWithContext mocks base method
-func (m *MockPrefixSegmentsLister) ListPrefixSegmentsWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (*types.SegmentIterator, error) {
+func (m *MockPrefixSegmentsLister) ListPrefixSegmentsWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (*types.SegmentIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -739,7 +739,7 @@ func (m *MockReacher) EXPECT() *MockReacherMockRecorder {
 }
 
 // Reach mocks base method
-func (m *MockReacher) Reach(arg0 string, arg1 ...*types.Pair) (string, error) {
+func (m *MockReacher) Reach(arg0 string, arg1 ...types.Pair) (string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -759,7 +759,7 @@ func (mr *MockReacherMockRecorder) Reach(arg0 interface{}, arg1 ...interface{}) 
 }
 
 // ReachWithContext mocks base method
-func (m *MockReacher) ReachWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (string, error) {
+func (m *MockReacher) ReachWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -802,7 +802,7 @@ func (m *MockServicer) EXPECT() *MockServicerMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockServicer) Create(arg0 string, arg1 ...*types.Pair) (types.Storager, error) {
+func (m *MockServicer) Create(arg0 string, arg1 ...types.Pair) (types.Storager, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -822,7 +822,7 @@ func (mr *MockServicerMockRecorder) Create(arg0 interface{}, arg1 ...interface{}
 }
 
 // CreateWithContext mocks base method
-func (m *MockServicer) CreateWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (types.Storager, error) {
+func (m *MockServicer) CreateWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (types.Storager, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -842,7 +842,7 @@ func (mr *MockServicerMockRecorder) CreateWithContext(arg0, arg1 interface{}, ar
 }
 
 // Delete mocks base method
-func (m *MockServicer) Delete(arg0 string, arg1 ...*types.Pair) error {
+func (m *MockServicer) Delete(arg0 string, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -861,7 +861,7 @@ func (mr *MockServicerMockRecorder) Delete(arg0 interface{}, arg1 ...interface{}
 }
 
 // DeleteWithContext mocks base method
-func (m *MockServicer) DeleteWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) error {
+func (m *MockServicer) DeleteWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -880,7 +880,7 @@ func (mr *MockServicerMockRecorder) DeleteWithContext(arg0, arg1 interface{}, ar
 }
 
 // Get mocks base method
-func (m *MockServicer) Get(arg0 string, arg1 ...*types.Pair) (types.Storager, error) {
+func (m *MockServicer) Get(arg0 string, arg1 ...types.Pair) (types.Storager, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -900,7 +900,7 @@ func (mr *MockServicerMockRecorder) Get(arg0 interface{}, arg1 ...interface{}) *
 }
 
 // GetWithContext mocks base method
-func (m *MockServicer) GetWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (types.Storager, error) {
+func (m *MockServicer) GetWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (types.Storager, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -920,7 +920,7 @@ func (mr *MockServicerMockRecorder) GetWithContext(arg0, arg1 interface{}, arg2 
 }
 
 // List mocks base method
-func (m *MockServicer) List(arg0 ...*types.Pair) (*types.StoragerIterator, error) {
+func (m *MockServicer) List(arg0 ...types.Pair) (*types.StoragerIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
@@ -939,7 +939,7 @@ func (mr *MockServicerMockRecorder) List(arg0 ...interface{}) *gomock.Call {
 }
 
 // ListWithContext mocks base method
-func (m *MockServicer) ListWithContext(arg0 context.Context, arg1 ...*types.Pair) (*types.StoragerIterator, error) {
+func (m *MockServicer) ListWithContext(arg0 context.Context, arg1 ...types.Pair) (*types.StoragerIterator, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -996,14 +996,14 @@ func (m *MockStatistician) EXPECT() *MockStatisticianMockRecorder {
 }
 
 // Statistical mocks base method
-func (m *MockStatistician) Statistical(arg0 ...*types.Pair) (types.StorageStatistic, error) {
+func (m *MockStatistician) Statistical(arg0 ...types.Pair) (*types.StorageStatistic, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Statistical", varargs...)
-	ret0, _ := ret[0].(types.StorageStatistic)
+	ret0, _ := ret[0].(*types.StorageStatistic)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1015,14 +1015,14 @@ func (mr *MockStatisticianMockRecorder) Statistical(arg0 ...interface{}) *gomock
 }
 
 // StatisticalWithContext mocks base method
-func (m *MockStatistician) StatisticalWithContext(arg0 context.Context, arg1 ...*types.Pair) (types.StorageStatistic, error) {
+func (m *MockStatistician) StatisticalWithContext(arg0 context.Context, arg1 ...types.Pair) (*types.StorageStatistic, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "StatisticalWithContext", varargs...)
-	ret0, _ := ret[0].(types.StorageStatistic)
+	ret0, _ := ret[0].(*types.StorageStatistic)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1058,7 +1058,7 @@ func (m *MockStorager) EXPECT() *MockStoragerMockRecorder {
 }
 
 // Delete mocks base method
-func (m *MockStorager) Delete(arg0 string, arg1 ...*types.Pair) error {
+func (m *MockStorager) Delete(arg0 string, arg1 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -1077,7 +1077,7 @@ func (mr *MockStoragerMockRecorder) Delete(arg0 interface{}, arg1 ...interface{}
 }
 
 // DeleteWithContext mocks base method
-func (m *MockStorager) DeleteWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) error {
+func (m *MockStorager) DeleteWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -1096,14 +1096,14 @@ func (mr *MockStoragerMockRecorder) DeleteWithContext(arg0, arg1 interface{}, ar
 }
 
 // Metadata mocks base method
-func (m *MockStorager) Metadata(arg0 ...*types.Pair) (types.StorageMeta, error) {
+func (m *MockStorager) Metadata(arg0 ...types.Pair) (*types.StorageMeta, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Metadata", varargs...)
-	ret0, _ := ret[0].(types.StorageMeta)
+	ret0, _ := ret[0].(*types.StorageMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1115,14 +1115,14 @@ func (mr *MockStoragerMockRecorder) Metadata(arg0 ...interface{}) *gomock.Call {
 }
 
 // MetadataWithContext mocks base method
-func (m *MockStorager) MetadataWithContext(arg0 context.Context, arg1 ...*types.Pair) (types.StorageMeta, error) {
+func (m *MockStorager) MetadataWithContext(arg0 context.Context, arg1 ...types.Pair) (*types.StorageMeta, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "MetadataWithContext", varargs...)
-	ret0, _ := ret[0].(types.StorageMeta)
+	ret0, _ := ret[0].(*types.StorageMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1135,7 +1135,7 @@ func (mr *MockStoragerMockRecorder) MetadataWithContext(arg0 interface{}, arg1 .
 }
 
 // Read mocks base method
-func (m *MockStorager) Read(arg0 string, arg1 io.Writer, arg2 ...*types.Pair) (int64, error) {
+func (m *MockStorager) Read(arg0 string, arg1 io.Writer, arg2 ...types.Pair) (int64, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -1155,7 +1155,7 @@ func (mr *MockStoragerMockRecorder) Read(arg0, arg1 interface{}, arg2 ...interfa
 }
 
 // ReadWithContext mocks base method
-func (m *MockStorager) ReadWithContext(arg0 context.Context, arg1 string, arg2 io.Writer, arg3 ...*types.Pair) (int64, error) {
+func (m *MockStorager) ReadWithContext(arg0 context.Context, arg1 string, arg2 io.Writer, arg3 ...types.Pair) (int64, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -1175,7 +1175,7 @@ func (mr *MockStoragerMockRecorder) ReadWithContext(arg0, arg1, arg2 interface{}
 }
 
 // Stat mocks base method
-func (m *MockStorager) Stat(arg0 string, arg1 ...*types.Pair) (*types.Object, error) {
+func (m *MockStorager) Stat(arg0 string, arg1 ...types.Pair) (*types.Object, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -1195,7 +1195,7 @@ func (mr *MockStoragerMockRecorder) Stat(arg0 interface{}, arg1 ...interface{}) 
 }
 
 // StatWithContext mocks base method
-func (m *MockStorager) StatWithContext(arg0 context.Context, arg1 string, arg2 ...*types.Pair) (*types.Object, error) {
+func (m *MockStorager) StatWithContext(arg0 context.Context, arg1 string, arg2 ...types.Pair) (*types.Object, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -1229,7 +1229,7 @@ func (mr *MockStoragerMockRecorder) String() *gomock.Call {
 }
 
 // Write mocks base method
-func (m *MockStorager) Write(arg0 string, arg1 io.Reader, arg2 ...*types.Pair) (int64, error) {
+func (m *MockStorager) Write(arg0 string, arg1 io.Reader, arg2 ...types.Pair) (int64, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -1249,7 +1249,7 @@ func (mr *MockStoragerMockRecorder) Write(arg0, arg1 interface{}, arg2 ...interf
 }
 
 // WriteWithContext mocks base method
-func (m *MockStorager) WriteWithContext(arg0 context.Context, arg1 string, arg2 io.Reader, arg3 ...*types.Pair) (int64, error) {
+func (m *MockStorager) WriteWithContext(arg0 context.Context, arg1 string, arg2 io.Reader, arg3 ...types.Pair) (int64, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {

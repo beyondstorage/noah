@@ -15,6 +15,13 @@ func (l errList) Error() string {
 	return strings.Join(x, "\n")
 }
 
+func (l errList) Unwrap() error {
+	if len(l) == 0 {
+		return nil
+	}
+	return l[0]
+}
+
 // Fault will handle multi error in tasks.
 type Fault struct {
 	errs errList
