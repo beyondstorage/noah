@@ -1541,6 +1541,72 @@ func (o *Expire) String() string {
 	return strconv.Itoa(o.v)
 }
 
+type Fetcher struct {
+	valid bool
+	v     types.Fetcher
+
+	l sync.RWMutex
+}
+
+type FetcherGetter interface {
+	GetFetcher() types.Fetcher
+}
+
+func (o *Fetcher) GetFetcher() types.Fetcher {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	if !o.valid {
+		panic("Fetcher value is not valid")
+	}
+	return o.v
+}
+
+type FetcherSetter interface {
+	SetFetcher(types.Fetcher)
+}
+
+func (o *Fetcher) SetFetcher(v types.Fetcher) {
+	o.l.Lock()
+	defer o.l.Unlock()
+
+	o.v = v
+	o.valid = true
+}
+
+type FetcherValidator interface {
+	ValidateFetcher() bool
+}
+
+func (o *Fetcher) ValidateFetcher() bool {
+	o.l.RLock()
+	defer o.l.RUnlock()
+
+	return o.valid
+}
+
+func LoadFetcher(t task.Task, v FetcherSetter) {
+	x, ok := t.(interface {
+		FetcherGetter
+		FetcherValidator
+	})
+	if !ok {
+		return
+	}
+	if !x.ValidateFetcher() {
+		return
+	}
+
+	v.SetFetcher(x.GetFetcher())
+}
+
+func (o *Fetcher) String() string {
+	if !o.valid {
+		return ""
+	}
+	return ""
+}
+
 type FileFunc struct {
 	valid bool
 	v     func(*types.Object)
