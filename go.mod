@@ -7,5 +7,5 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.4
 	github.com/qingstor/log v0.0.0-20200804082313-615256cccabc
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 )
