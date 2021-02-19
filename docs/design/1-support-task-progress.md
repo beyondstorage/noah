@@ -34,7 +34,7 @@ import (
     "log"
     "time"
 
-	"github.com/qingstor/noah/task"
+	"github.com/aos-dev/noah/task"
     "github.com/schollz/progressbar/v2"
 )
 

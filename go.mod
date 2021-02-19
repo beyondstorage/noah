@@ -1,4 +1,4 @@
-module github.com/qingstor/noah
+module github.com/aos-dev/noah
 
 go 1.13
 

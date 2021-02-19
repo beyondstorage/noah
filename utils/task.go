@@ -5,8 +5,8 @@ import (
 
 	typ "github.com/aos-dev/go-storage/v2/types"
 
-	"github.com/qingstor/noah/constants"
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/constants"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 // CalculatePartSize will calculate the object's part size.
