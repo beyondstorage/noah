@@ -3,10 +3,10 @@ package schedule
 import (
 	"sync"
 
-	"github.com/qingstor/noah/pkg/fault"
+	"github.com/aos-dev/noah/pkg/fault"
 )
 
-//go:generate mockgen -package mock -destination ../mock/scheduler.go github.com/qingstor/noah/pkg/schedule Scheduler
+//go:generate mockgen -package mock -destination ../mock/scheduler.go github.com/aos-dev/noah/pkg/schedule Scheduler
 
 // Scheduler will schedule tasks
 type Scheduler interface {

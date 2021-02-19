@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/pkg/schedule"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 func TestBetweenStorageCheckTask_TriggerFault(t *testing.T) {

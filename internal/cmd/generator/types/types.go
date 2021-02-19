@@ -122,8 +122,8 @@ import (
 
 	"github.com/aos-dev/go-storage/v2/types"
 
-	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/task"
+	"github.com/aos-dev/noah/pkg/schedule"
+	"github.com/aos-dev/noah/pkg/task"
 )
 
 var _ fmt.Stringer

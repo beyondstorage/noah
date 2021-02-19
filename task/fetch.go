@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 func (t *FetchTask) new() {}

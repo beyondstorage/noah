@@ -6,7 +6,7 @@ import (
 	"github.com/aos-dev/go-storage/v2/pairs"
 	typ "github.com/aos-dev/go-storage/v2/types"
 
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 func (t *ListDirTask) new() {}

@@ -9,11 +9,11 @@ import (
 
 	typ "github.com/aos-dev/go-storage/v2/types"
 
-	"github.com/qingstor/noah/constants"
-	"github.com/qingstor/noah/pkg/progress"
-	"github.com/qingstor/noah/pkg/token"
-	"github.com/qingstor/noah/pkg/types"
-	"github.com/qingstor/noah/utils"
+	"github.com/aos-dev/noah/constants"
+	"github.com/aos-dev/noah/pkg/progress"
+	"github.com/aos-dev/noah/pkg/token"
+	"github.com/aos-dev/noah/pkg/types"
+	"github.com/aos-dev/noah/utils"
 )
 
 func (t *CopyDirTask) new() {}

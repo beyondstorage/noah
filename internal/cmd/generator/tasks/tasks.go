@@ -137,9 +137,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/qingstor/log"
 
-	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/task"
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/pkg/schedule"
+	"github.com/aos-dev/noah/pkg/task"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 var _ = uuid.New()
@@ -290,8 +290,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/qingstor/noah/pkg/schedule"
-	"github.com/qingstor/noah/pkg/types"
+	"github.com/aos-dev/noah/pkg/schedule"
+	"github.com/aos-dev/noah/pkg/types"
 )
 
 `))
