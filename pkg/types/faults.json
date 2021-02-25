@@ -18,11 +18,11 @@
     ],
     "message": "`Object [%s] metadata [%s] is invalid`, f.GetObject().ID, f.GetName()"
   },
-  "ObjectTypeInvalid": {
+  "ObjectModeInvalid": {
     "value": [
       "Object"
     ],
-    "message": "`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type"
+    "message": "`Object [%s] mode [%s] is invalid`, f.GetObject().ID, f.GetObject().Mode"
   },
   "ReadableSizeFormatInvalid": {
     "value": [

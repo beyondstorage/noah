@@ -1,3 +1,5 @@
+// +build refactor
+
 package task
 
 //go:generate go run ../internal/cmd/generator/tasks

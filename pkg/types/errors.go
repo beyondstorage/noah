@@ -4,7 +4,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/aos-dev/go-storage/v2/types"
+	"github.com/aos-dev/go-storage/v3/types"
 )
 
 type LocalFileNotExist struct {
@@ -72,21 +72,21 @@ func NewErrObjectMetaInvalid(err error, name string, object *types.Object) error
 	return f
 }
 
-type ObjectTypeInvalid struct {
+type ObjectModeInvalid struct {
 	err error
 	Object
 }
 
-func (f *ObjectTypeInvalid) Error() string {
-	return fmt.Sprintf(`Object [%s] type [%s] is invalid`, f.GetObject().ID, f.GetObject().Type)
+func (f *ObjectModeInvalid) Error() string {
+	return fmt.Sprintf(`Object [%s] mode [%s] is invalid`, f.GetObject().ID, f.GetObject().Mode)
 }
 
-func (f *ObjectTypeInvalid) Unwrap() error {
+func (f *ObjectModeInvalid) Unwrap() error {
 	return f.err
 }
 
-func NewErrObjectTypeInvalid(err error, object *types.Object) error {
-	f := &ObjectTypeInvalid{}
+func NewErrObjectModeInvalid(err error, object *types.Object) error {
+	f := &ObjectModeInvalid{}
 	f.err = err
 	f.SetObject(object)
 
