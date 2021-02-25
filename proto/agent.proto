@@ -3,5 +3,22 @@ package agent;
 
 option go_package = "github.com/aos-dev/noah/proto";
 
-message GetEndpoint {
+service Agent {
+    rpc GetEndpoint (GetEndpointRequest) returns (GetEndpointReply) {
+    }
+}
+
+message GetEndpointRequest {
+    uint32 id = 1;
+}
+
+message GetEndpointReply {
+    uint32 id = 1;
+    string type = 2;
+    repeated Pair pairs = 3;
+}
+
+message Pair {
+    string key = 1;
+    string value = 2;
 }

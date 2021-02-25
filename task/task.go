@@ -2,9 +2,11 @@ package task
 
 import (
 	"context"
-	"github.com/aos-dev/noah/proto"
-	proto2 "github.com/golang/protobuf/proto"
+
+	protobuf "github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 type Client struct {
@@ -26,7 +28,7 @@ func NewClient(addr string) (*Client, error) {
 }
 
 func (c *Client) Publish(ctx context.Context, task *proto.Task) error {
-	data, err := proto2.Marshal(task)
+	data, err := protobuf.Marshal(task)
 	if err != nil {
 		return err
 	}
@@ -42,7 +44,7 @@ func (c *Client) Next(ctx context.Context) (*proto.Task, error) {
 		return nil, err
 	}
 
-	err = proto2.Unmarshal(msg.Data, task)
+	err = protobuf.Unmarshal(msg.Data, task)
 	if err != nil {
 		panic("unmarshal failed")
 	}
