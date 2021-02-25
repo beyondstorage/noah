@@ -1,8 +1,9 @@
 module github.com/aos-dev/noah
 
-go 1.13
+go 1.15
 
 require (
+	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210222102329-17c334649fe7
 	github.com/aos-dev/go-storage/v2 v2.0.0
 	github.com/aos-dev/go-storage/v3 v3.2.0
 	github.com/golang/mock v1.5.0
