@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	TypeList uint32 = iota + 1
+	TypeCopyDir uint32 = iota + 1
 )
 
 type Client struct {
@@ -63,15 +63,15 @@ func (c *Client) Next(ctx context.Context) (*proto.Task, error) {
 	return task, nil
 }
 
-func (c *Client) Handle(task *proto.Task) error {
+func (c *Client) Handle(ctx context.Context, task *proto.Task) error {
 	switch task.Type {
-	case TypeList:
-		var t *proto.List
+	case TypeCopyDir:
+		var t *proto.CopyDir
 		err := protobuf.Unmarshal(task.Content, t)
 		if err != nil {
 			panic("unmarshal failed")
 		}
-		return c.HandleList(t)
+		return c.HandleCopyDir(ctx, t)
 	}
 	return nil
 }

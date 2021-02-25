@@ -9,15 +9,6 @@ message Task {
     bytes content = 3;
 }
 
-message List {
-    uint32 src = 1;
-    string path = 2;
-    uint32 list_mode = 3;
-}
-
-message ListResult {
-}
-
 message CopyDir {
     uint32 src = 1;
     uint32 dst = 2;
