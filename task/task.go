@@ -15,6 +15,7 @@ import (
 
 const (
 	TypeCopyDir uint32 = iota + 1
+	TypeCopyFile
 )
 
 type Client struct {

@@ -5,6 +5,7 @@ import (
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 )
 
 func (c *Client) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
@@ -38,8 +39,8 @@ func (c *Client) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
 		}
 
 		err = c.Publish(ctx, &proto.Task{
-			Id:      0,
-			Type:    0,
+			Id:      uuid.New().ID(),
+			Type:    TypeCopyFile,
 			Content: content,
 		})
 		if err != nil {
