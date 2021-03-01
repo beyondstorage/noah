@@ -1,0 +1,30 @@
+syntax = "proto3";
+package job;
+
+option go_package = "github.com/aos-dev/noah/proto";
+
+message Job {
+    string id = 1;
+    uint32 type = 2;
+    bytes content = 3;
+}
+
+message CopyDir {
+    uint32 src = 1;
+    uint32 dst = 2;
+    string src_path = 3;
+    string dst_path = 4;
+}
+
+message CopyDirResult {
+}
+
+message CopyFile {
+    uint32 src = 1;
+    uint32 dst = 2;
+    string src_path = 3;
+    string dst_path = 4;
+}
+
+message CopyFileResult {
+}

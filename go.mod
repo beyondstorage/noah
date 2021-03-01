@@ -3,13 +3,12 @@ module github.com/aos-dev/noah
 go 1.15
 
 require (
-	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210222102329-17c334649fe7
 	github.com/aos-dev/go-storage/v2 v2.0.0
 	github.com/aos-dev/go-storage/v3 v3.2.0
 	github.com/golang/mock v1.5.0
 	github.com/golang/protobuf v1.4.1
 	github.com/google/uuid v1.2.0
-	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
+	github.com/nats-io/nats-server/v2 v2.1.9
 	github.com/nats-io/nats.go v1.10.0
 	github.com/qingstor/log v0.0.0-20200804082313-615256cccabc
 	github.com/stretchr/testify v1.7.0

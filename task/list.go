@@ -8,11 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func (c *Client) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
-	store, err := c.GetStorage(arg.Src)
-	if err != nil {
-		return err
-	}
+func (a *Agent) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
+	store := a.storages[arg.Src]
 
 	it, err := store.List(arg.SrcPath)
 	if err != nil {
@@ -38,8 +35,8 @@ func (c *Client) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
 			panic("marshal failed")
 		}
 
-		err = c.Publish(ctx, &proto.Task{
-			Id:      uuid.New().ID(),
+		err = a.Publish(ctx, &proto.Job{
+			Id:      uuid.New().String(),
 			Type:    TypeCopyFile,
 			Content: content,
 		})
