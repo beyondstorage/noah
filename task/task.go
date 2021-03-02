@@ -17,11 +17,6 @@ import (
 	"github.com/aos-dev/noah/proto"
 )
 
-const (
-	TypeCopyDir uint32 = iota + 1
-	TypeCopyFile
-)
-
 type Worker struct {
 	id   string
 	addr string
@@ -206,6 +201,15 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 	case TypeCopyFile:
 		t = &proto.CopyFile{}
 		fn = a.HandleCopyFile
+	case TypeCopySingleFile:
+		t = &proto.CopySingleFile{}
+		fn = a.HandleCopySingleFile
+	case TypeCopyMultipartFile:
+		t = &proto.CopyMultipartFile{}
+		fn = a.HandleCopyMultipartFile
+	case TypeCopyMultipart:
+		t = &proto.CopyMultipart{}
+		fn = a.HandleCopyMultipart
 	default:
 		panic("not support job type")
 	}

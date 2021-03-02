@@ -58,3 +58,23 @@ func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error 
 	log.Printf("copy file from %s to %s", arg.SrcPath, arg.DstPath)
 	return nil
 }
+
+func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
+	arg := msg.(*proto.CopySingleFile)
+
+	log.Printf("copy single file from %s to %s", arg.SrcPath, arg.DstPath)
+	return nil
+}
+func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
+	arg := msg.(*proto.CopyMultipartFile)
+
+	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
+	return nil
+}
+
+func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
+	arg := msg.(*proto.CopyMultipart)
+
+	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
+	return nil
+}

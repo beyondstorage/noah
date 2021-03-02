@@ -42,7 +42,7 @@ func TestWorker(t *testing.T) {
 
 	ctx := context.Background()
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 10; i++ {
 		w, err := NewWorker(ctx, testGRPC)
 		if err != nil {
 			t.Error(err)
