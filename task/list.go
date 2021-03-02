@@ -6,9 +6,12 @@ import (
 	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
+	"log"
 )
 
-func (a *Agent) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
+func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
+	arg := msg.(*proto.CopyDir)
+
 	store := a.storages[arg.Src]
 
 	it, err := store.List(arg.SrcPath)
@@ -44,4 +47,14 @@ func (a *Agent) HandleCopyDir(ctx context.Context, arg *proto.CopyDir) error {
 			return err
 		}
 	}
+}
+
+func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
+	arg := msg.(*proto.CopyFile)
+
+	//src := a.storages[arg.Src]
+	//dst := a.storages[arg.Dst]
+
+	log.Printf("copy file from %s to %s", arg.SrcPath, arg.DstPath)
+	return nil
 }

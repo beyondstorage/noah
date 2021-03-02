@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"github.com/aos-dev/go-storage/v3/types"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -161,17 +162,28 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 
 	ctx := context.Background()
 
+	var fn func(ctx context.Context, msg protobuf.Message) error
+	var t protobuf.Message
+
 	switch job.Type {
 	case TypeCopyDir:
-		var t *proto.CopyDir
-		err := protobuf.Unmarshal(job.Content, t)
-		if err != nil {
-			panic("unmarshal failed")
-		}
-		err = a.HandleCopyDir(ctx, t)
-		if err != nil {
-			panic("handle copy dir failed")
-		}
+		t = &proto.CopyDir{}
+		fn = a.HandleCopyDir
+	case TypeCopyFile:
+		t = &proto.CopyFile{}
+		fn = a.HandleCopyFile
+	default:
+		panic("not support job type")
+	}
+
+	err = protobuf.Unmarshal(job.Content, t)
+	if err != nil {
+		panic("unmarshal failed")
+	}
+
+	err = fn(ctx, t)
+	if err != nil {
+		panic(fmt.Errorf("handle task: %s", err))
 	}
 }
 
