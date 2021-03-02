@@ -26,6 +26,9 @@ jobs:
         with:
           version: '3.x'
 
+      - name: Install protoc-gen-go
+        run: go install github.com/golang/protobuf/protoc-gen-go
+
       - name: Build
         run: make build
 
