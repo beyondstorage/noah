@@ -3,12 +3,15 @@ package task
 import (
 	"context"
 	"fmt"
+	fs "github.com/aos-dev/go-service-fs/v2"
 	"github.com/aos-dev/go-storage/v3/types"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/grpc"
+	"log"
+	"time"
 
 	"github.com/aos-dev/noah/proto"
 )
@@ -20,27 +23,36 @@ const (
 
 type Worker struct {
 	id   string
+	addr string
 	node proto.NodeClient
 
 	sub *nats.Subscription
 }
 
 func NewWorker(ctx context.Context, addr string) (w *Worker, err error) {
-	conn, err := grpc.DialContext(ctx, addr)
+	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
 
-	w = &Worker{node: proto.NewNodeClient(conn), id: uuid.New().String()}
+	w = &Worker{
+		node: proto.NewNodeClient(conn),
+		id:   uuid.New().String(),
+		addr: "localhost:7000",
+	}
 	return
 }
 
 func (w *Worker) Connect(ctx context.Context) (err error) {
-	reply, err := w.node.Register(ctx, &proto.RegisterRequest{Id: w.id})
+	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
+		Id:   w.id,
+		Addr: w.addr,
+	})
 	if err != nil {
 		return
 	}
 
+	log.Printf("connect to addr %s subject %s", reply.Addr, reply.Subject)
 	queue, err := nats.Connect(reply.Addr)
 	if err != nil {
 		return
@@ -55,7 +67,8 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 }
 
 func (w *Worker) Handle(msg *nats.Msg) {
-	var task *proto.Task
+	log.Printf("worker got message: %v", msg.Subject)
+	task := &proto.Task{}
 
 	err := protobuf.Unmarshal(msg.Data, task)
 	if err != nil {
@@ -65,7 +78,7 @@ func (w *Worker) Handle(msg *nats.Msg) {
 	a := NewAgent(w, task)
 	err = a.Handle()
 	if err != nil {
-		panic("agent handle failed")
+		log.Printf("agent handle: %v", err)
 	}
 }
 
@@ -90,8 +103,9 @@ func (a *Agent) Handle() (err error) {
 		TaskId: a.t.Id,
 	})
 	if err != nil {
-		return
+		return fmt.Errorf("node upgrade: %v", err)
 	}
+	log.Printf("upgrade reply: %s", reply.String())
 
 	a.subject = reply.Subject
 
@@ -108,7 +122,9 @@ func (a *Agent) Handle() (err error) {
 }
 
 func (a *Agent) parseStorage(ctx context.Context) (err error) {
-	// TODO: Implement storage parse
+	for range a.t.Endpoints {
+		a.storages = append(a.storages, &fs.Storage{})
+	}
 	return
 }
 
@@ -124,12 +140,21 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 	}
 
 	go func() {
-		srv.Start()
+		srv.ConfigureLogger()
+
+		err = server.Run(srv)
+		if err != nil {
+			log.Printf("server run: %s", err)
+		}
 	}()
+
+	if !srv.ReadyForConnections(time.Second) {
+		panic(fmt.Errorf("server start too slow"))
+	}
 
 	conn, err := nats.Connect("localhost:7000")
 	if err != nil {
-		return
+		return fmt.Errorf("nats connect: %w", err)
 	}
 	a.conn = conn
 
@@ -137,28 +162,36 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
+	var conn *nats.Conn
 	// Connect queue
-	conn, err := nats.Connect(addr)
-	if err != nil {
-		return
+	log.Printf("connect to %s", addr)
+	end := time.Now().Add(time.Second)
+	for time.Now().Before(end) {
+		conn, err = nats.Connect(addr)
+		if err != nil {
+			time.Sleep(25 * time.Millisecond)
+			continue
+		}
+		break
 	}
 	a.conn = conn
 
 	// FIXME: we need to handle the returning subscription.
-	_, err = conn.Subscribe(a.subject, a.handleJob)
+	_, err = a.conn.Subscribe(a.subject, a.handleJob)
 	if err != nil {
-		return
+		return fmt.Errorf("nats subscribe: %w", err)
 	}
 	return
 }
 
 func (a *Agent) handleJob(msg *nats.Msg) {
-	var job *proto.Job
-
+	job := &proto.Job{}
 	err := protobuf.Unmarshal(msg.Data, job)
 	if err != nil {
 		panic("unmarshal failed")
 	}
+
+	log.Printf("got job: %v", job.Id)
 
 	ctx := context.Background()
 
@@ -188,6 +221,8 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 }
 
 func (a *Agent) Publish(ctx context.Context, job *proto.Job) (err error) {
+	log.Printf("publish job: %s", job.Id)
+
 	content, err := protobuf.Marshal(job)
 	if err != nil {
 		return err
@@ -195,7 +230,7 @@ func (a *Agent) Publish(ctx context.Context, job *proto.Job) (err error) {
 
 	err = a.conn.Publish(a.subject, content)
 	if err != nil {
-		return
+		return fmt.Errorf("nats publish: %w", err)
 	}
 	return
 }
