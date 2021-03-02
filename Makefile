@@ -22,12 +22,17 @@ vet:
 	@go vet ./...
 	@echo "ok"
 
+setup:
+	go install github.com/golang/protobuf/protoc-gen-go
+	go get google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
 generate:
 	@echo "generate code..."
 	@go generate ./...
 	@echo "Done"
 
-build: tidy generate check
+build: tidy setup generate check
 	@echo "build noah"
 	@mkdir -p ./bin
 	@go build ${GO_BUILD_OPTION} -race ./...

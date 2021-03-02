@@ -26,12 +26,6 @@ jobs:
         with:
           version: '3.x'
 
-      - name: Install protoc-gen-go
-        run: go install github.com/golang/protobuf/protoc-gen-go
-
-      - name: Install protoc-gen-go-grpc
-        run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-
       - name: Build
         run: make build
 
