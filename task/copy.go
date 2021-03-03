@@ -2,11 +2,15 @@ package task
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"log"
+
 	"github.com/aos-dev/go-storage/v3/types"
-	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-	"log"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
@@ -74,6 +78,33 @@ func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Messag
 
 func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
 	arg := msg.(*proto.CopyMultipart)
+
+	src := a.storages[arg.Src]
+	dst, ok := a.storages[arg.Dst].(types.Multiparter)
+	if !ok {
+		log.Printf("storage %s does not implement Multiparter", dst)
+		return fmt.Errorf("not supported")
+	}
+
+	r, w := io.Pipe()
+
+	go func() {
+		_, err := dst.WriteMultipart(nil, r, arg.Size, int(arg.Index))
+		if err != nil {
+			log.Printf("write multipart: %v", err)
+		}
+	}()
+
+	_, err := src.Read(arg.SrcPath, w)
+	if err != nil {
+		log.Printf("src read: %v", err)
+	}
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			return
+		}
+	}()
 
 	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
 	return nil

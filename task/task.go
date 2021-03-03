@@ -221,6 +221,7 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 
 	err = fn(ctx, t)
 	if err != nil {
+		// TODO: reply to message sender the response.
 		panic(fmt.Errorf("handle task: %s", err))
 	}
 }
