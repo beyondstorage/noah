@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	ps "github.com/aos-dev/go-storage/v3/pairs"
 	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
 	"github.com/aos-dev/go-storage/v3/types"
 	protobuf "github.com/golang/protobuf/proto"
@@ -72,6 +73,7 @@ func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) 
 func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
 	arg := msg.(*proto.CopyMultipartFile)
 
+	// Send task and wait for response.
 	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
 	return nil
 }
@@ -80,7 +82,8 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 	arg := msg.(*proto.CopyMultipart)
 
 	src := a.storages[arg.Src]
-	dst, ok := a.storages[arg.Dst].(types.Multiparter)
+	dst := a.storages[arg.Dst]
+	mulipart, ok := dst.(types.Multiparter)
 	if !ok {
 		log.Printf("storage %s does not implement Multiparter", dst)
 		return fmt.Errorf("not supported")
@@ -89,7 +92,8 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 	r, w := iowrap.Pipe()
 
 	go func() {
-		_, err := dst.WriteMultipart(nil, r, arg.Size, int(arg.Index))
+		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
+		_, err := mulipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 		if err != nil {
 			log.Printf("write multipart: %v", err)
 		}

@@ -3,8 +3,8 @@ module github.com/aos-dev/noah
 go 1.15
 
 require (
-	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210301074815-f36bb82b2415
-	github.com/aos-dev/go-storage/v3 v3.2.1-0.20210303095911-1cc84e092133
+	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210304102732-f57fecf4e68a
+	github.com/aos-dev/go-storage/v3 v3.4.1
 	github.com/golang/mock v1.5.0
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.2.0
