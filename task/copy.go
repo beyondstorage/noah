@@ -3,9 +3,9 @@ package task
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 
+	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
 	"github.com/aos-dev/go-storage/v3/types"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -86,7 +86,7 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 		return fmt.Errorf("not supported")
 	}
 
-	r, w := io.Pipe()
+	r, w := iowrap.Pipe()
 
 	go func() {
 		_, err := dst.WriteMultipart(nil, r, arg.Size, int(arg.Index))

@@ -6,8 +6,9 @@ github.com/aos-dev/go-integration-test/v3 v3.0.0-20210205075620-0b779f4b3afc/go.
 github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210301074815-f36bb82b2415 h1:hK1tuG/VwzHUJP8QlQkKi94YbsEIT/WTX2ZoVVDh9LQ=
 github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210301074815-f36bb82b2415/go.mod h1:NREXan1hUR9mcP6IPgIhX3PE70B1ZY3yoAA9Qc57Vz4=
 github.com/aos-dev/go-storage/v3 v3.0.1-0.20210205074802-e8a5b22166c2/go.mod h1:JznhvyhPDnETfZ3RyWm3mT/S5ic+uuYFWagSIkUZujc=
-github.com/aos-dev/go-storage/v3 v3.2.0 h1:PXAqF4lhmTQ9m1F63v6oiHjCV1BRtugHrXd51SuXk6E=
 github.com/aos-dev/go-storage/v3 v3.2.0/go.mod h1:sKmR8rfqTYm2mMS7Z6rMvlM45fpLEbKOXZUglws0yuM=
+github.com/aos-dev/go-storage/v3 v3.2.1-0.20210303095911-1cc84e092133 h1:Hv08EDPXm3O72E+L/a/0Rsu12+6onzWZ2QuFcXBY9B8=
+github.com/aos-dev/go-storage/v3 v3.2.1-0.20210303095911-1cc84e092133/go.mod h1:sKmR8rfqTYm2mMS7Z6rMvlM45fpLEbKOXZUglws0yuM=
 github.com/aos-dev/specs/go v0.0.0-20210205073047-af8ef94af73d/go.mod h1:XTNlLZtPA1inITyDH5hNnQXVjvvKUvo+lurs5GYB8NA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
