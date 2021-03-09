@@ -71,7 +71,7 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 
 	return &proto.RegisterReply{
 		Addr:    "localhost:7100",
-		Subject: fmt.Sprintf("node-%s", request.Id),
+		Subject: "task",
 	}, nil
 }
 
@@ -91,14 +91,11 @@ func (p *Portal) mustEmbedUnimplementedAgentServer() {
 }
 
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
-	log := zapcontext.From(ctx)
+	_ = zapcontext.From(ctx)
 
-	for _, v := range p.nodes {
-		log.Info("publish task to", zap.String("node", "node-"+v))
-		err = p.conn.Publish(fmt.Sprintf("node-%s", v), task)
-		if err != nil {
-			return
-		}
+	err = p.conn.Publish("task", task)
+	if err != nil {
+		return
 	}
 
 	return
