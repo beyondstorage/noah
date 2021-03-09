@@ -34,7 +34,6 @@ generate:
 
 build: tidy setup generate check
 	@echo "build noah"
-	@mkdir -p ./bin
 	@go build ${GO_BUILD_OPTION} -race ./...
 	@echo "ok"
 
