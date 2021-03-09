@@ -37,7 +37,8 @@ func setupPortal(t *testing.T) *Portal {
 	return p
 }
 
-func TestWorker(t *testing.T) {
+// This is not a really unit test, just for developing, SHOULD be removed.
+func testWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
