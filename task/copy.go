@@ -100,7 +100,7 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 
 	src := a.storages[arg.Src]
 	dst := a.storages[arg.Dst]
-	mulipart, ok := dst.(types.Multiparter)
+	multipart, ok := dst.(types.Multiparter)
 	if !ok {
 		log.Warn("storage does not implement Multiparter",
 			zap.String("storage", dst.String()))
@@ -111,7 +111,7 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 
 	go func() {
 		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
-		_, err := mulipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
+		_, err := multipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 		if err != nil {
 			log.Error("write multipart", zap.Error(err))
 		}
