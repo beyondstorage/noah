@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/aos-dev/go-toolbox/zapcontext"
-	protobuf "github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
+	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
 
 	"github.com/aos-dev/noah/proto"
 )
 
 type Portal struct {
-	conn        *nats.Conn
+	conn        *nats.EncodedConn
 	nodes       []string
 	nodeAddrMap map[string]string
 
@@ -53,7 +53,11 @@ func NewPortal() (p *Portal, err error) {
 	if err != nil {
 		return
 	}
-	p.conn = conn
+	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	if err != nil {
+		return
+	}
+	p.conn = queue
 
 	return p, nil
 }
@@ -89,14 +93,9 @@ func (p *Portal) mustEmbedUnimplementedAgentServer() {
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
 	log := zapcontext.From(ctx)
 
-	content, err := protobuf.Marshal(task)
-	if err != nil {
-		return err
-	}
-
 	for _, v := range p.nodes {
 		log.Info("publish task to", zap.String("node", "node-"+v))
-		err = p.conn.Publish(fmt.Sprintf("node-%s", v), content)
+		err = p.conn.Publish(fmt.Sprintf("node-%s", v), task)
 		if err != nil {
 			return
 		}

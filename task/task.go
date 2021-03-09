@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
+	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -59,7 +60,11 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 		zap.String("addr", reply.Addr),
 		zap.String("subject", reply.Subject))
 
-	queue, err := nats.Connect(reply.Addr)
+	conn, err := nats.Connect(reply.Addr)
+	if err != nil {
+		return
+	}
+	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return
 	}
@@ -72,19 +77,12 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 	return nil
 }
 
-func (w *Worker) Handle(msg *nats.Msg) {
+func (w *Worker) Handle(subject, reply string, task *proto.Task) {
 	w.log.Debug("worker got message",
-		zap.String("subject", msg.Subject))
-
-	task := &proto.Task{}
-
-	err := protobuf.Unmarshal(msg.Data, task)
-	if err != nil {
-		panic("unmarshal failed")
-	}
+		zap.String("subject", subject))
 
 	a := NewAgent(w, task)
-	err = a.Handle()
+	err := a.Handle()
 	if err != nil {
 		w.log.Error("agent handle", zap.Error(err))
 	}
@@ -94,7 +92,7 @@ type Agent struct {
 	w *Worker
 	t *proto.Task
 
-	conn     *nats.Conn
+	conn     *nats.EncodedConn
 	subject  string
 	storages []types.Storager
 
@@ -166,7 +164,11 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
 	}
-	a.conn = conn
+	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	if err != nil {
+		return fmt.Errorf("nats encoded connect: %w", err)
+	}
+	a.conn = queue
 
 	return a.Publish(ctx, a.t.Job)
 }
@@ -186,7 +188,11 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 		}
 		break
 	}
-	a.conn = conn
+	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	if err != nil {
+		return
+	}
+	a.conn = queue
 
 	// FIXME: we need to handle the returning subscription.
 	_, err = a.conn.Subscribe(a.subject, a.handleJob)
@@ -196,13 +202,7 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	return
 }
 
-func (a *Agent) handleJob(msg *nats.Msg) {
-	job := &proto.Job{}
-	err := protobuf.Unmarshal(msg.Data, job)
-	if err != nil {
-		panic("unmarshal failed")
-	}
-
+func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
 	a.log.Debug("got job", zap.String("id", job.Id))
 
 	ctx := context.Background()
@@ -230,7 +230,7 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 		panic("not support job type")
 	}
 
-	err = protobuf.Unmarshal(job.Content, t)
+	err := protobuf.Unmarshal(job.Content, t)
 	if err != nil {
 		panic("unmarshal failed")
 	}
@@ -247,12 +247,7 @@ func (a *Agent) Publish(ctx context.Context, job *proto.Job) (err error) {
 
 	log.Debug("publish job", zap.String("id", job.Id))
 
-	content, err := protobuf.Marshal(job)
-	if err != nil {
-		return err
-	}
-
-	err = a.conn.Publish(a.subject, content)
+	err = a.conn.Publish(a.subject, job)
 	if err != nil {
 		return fmt.Errorf("nats publish: %w", err)
 	}
