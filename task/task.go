@@ -195,7 +195,7 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	a.conn = queue
 
 	// FIXME: we need to handle the returning subscription.
-	_, err = a.conn.Subscribe(a.subject, a.handleJob)
+	_, err = a.conn.QueueSubscribe(a.subject, a.subject, a.handleJob)
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}
