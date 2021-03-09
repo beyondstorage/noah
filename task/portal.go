@@ -3,11 +3,14 @@ package task
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
-	"log"
-	"time"
+	"go.uber.org/zap"
 
 	"github.com/aos-dev/noah/proto"
 )
@@ -56,7 +59,9 @@ func NewPortal() (p *Portal, err error) {
 }
 
 func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
-	log.Printf("got %s", request.String())
+	log := zapcontext.From(ctx)
+
+	log.Debug("got", zap.String("request", request.String()))
 	p.nodes = append(p.nodes, request.Id)
 	p.nodeAddrMap[request.Id] = request.Addr
 
@@ -67,7 +72,9 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 }
 
 func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*proto.UpgradeReply, error) {
-	log.Printf("node addr map: %v", p.nodeAddrMap)
+	log := zapcontext.From(ctx)
+
+	log.Debug("node addr map", zap.Reflect("map", p.nodeAddrMap))
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],
@@ -80,13 +87,15 @@ func (p *Portal) mustEmbedUnimplementedAgentServer() {
 }
 
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
+	log := zapcontext.From(ctx)
+
 	content, err := protobuf.Marshal(task)
 	if err != nil {
 		return err
 	}
 
 	for _, v := range p.nodes {
-		log.Printf("publish task to node-%s", v)
+		log.Info("publish task to", zap.String("node", "node-"+v))
 		err = p.conn.Publish(fmt.Sprintf("node-%s", v), content)
 		if err != nil {
 			return

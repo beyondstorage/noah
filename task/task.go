@@ -3,15 +3,16 @@ package task
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	fs "github.com/aos-dev/go-service-fs/v2"
 	"github.com/aos-dev/go-storage/v3/types"
+	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/aos-dev/noah/proto"
@@ -23,9 +24,12 @@ type Worker struct {
 	node proto.NodeClient
 
 	sub *nats.Subscription
+	log *zap.Logger
 }
 
 func NewWorker(ctx context.Context, addr string) (w *Worker, err error) {
+	logger := zapcontext.From(ctx)
+
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
 	if err != nil {
 		return
@@ -35,11 +39,14 @@ func NewWorker(ctx context.Context, addr string) (w *Worker, err error) {
 		node: proto.NewNodeClient(conn),
 		id:   uuid.New().String(),
 		addr: "localhost:7000",
+		log:  logger,
 	}
 	return
 }
 
 func (w *Worker) Connect(ctx context.Context) (err error) {
+	log := zapcontext.From(ctx)
+
 	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
 		Id:   w.id,
 		Addr: w.addr,
@@ -48,7 +55,10 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 		return
 	}
 
-	log.Printf("connect to addr %s subject %s", reply.Addr, reply.Subject)
+	log.Info("connect to nats server",
+		zap.String("addr", reply.Addr),
+		zap.String("subject", reply.Subject))
+
 	queue, err := nats.Connect(reply.Addr)
 	if err != nil {
 		return
@@ -63,7 +73,9 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 }
 
 func (w *Worker) Handle(msg *nats.Msg) {
-	log.Printf("worker got message: %v", msg.Subject)
+	w.log.Debug("worker got message",
+		zap.String("subject", msg.Subject))
+
 	task := &proto.Task{}
 
 	err := protobuf.Unmarshal(msg.Data, task)
@@ -74,7 +86,7 @@ func (w *Worker) Handle(msg *nats.Msg) {
 	a := NewAgent(w, task)
 	err = a.Handle()
 	if err != nil {
-		log.Printf("agent handle: %v", err)
+		w.log.Error("agent handle", zap.Error(err))
 	}
 }
 
@@ -85,10 +97,12 @@ type Agent struct {
 	conn     *nats.Conn
 	subject  string
 	storages []types.Storager
+
+	log *zap.Logger
 }
 
 func NewAgent(w *Worker, t *proto.Task) *Agent {
-	return &Agent{w: w, t: t}
+	return &Agent{w: w, t: t, log: w.log}
 }
 
 func (a *Agent) Handle() (err error) {
@@ -101,7 +115,7 @@ func (a *Agent) Handle() (err error) {
 	if err != nil {
 		return fmt.Errorf("node upgrade: %v", err)
 	}
-	log.Printf("upgrade reply: %s", reply.String())
+	a.log.Info("receive upgrade", zap.String("reply", reply.String()))
 
 	a.subject = reply.Subject
 
@@ -140,7 +154,7 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 
 		err = server.Run(srv)
 		if err != nil {
-			log.Printf("server run: %s", err)
+			a.log.Error("server run", zap.Error(err))
 		}
 	}()
 
@@ -158,9 +172,11 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
+	log := zapcontext.From(ctx)
+
 	var conn *nats.Conn
 	// Connect queue
-	log.Printf("connect to %s", addr)
+	log.Info("agent connect to nats server", zap.String("addr", addr))
 	end := time.Now().Add(time.Second)
 	for time.Now().Before(end) {
 		conn, err = nats.Connect(addr)
@@ -187,7 +203,7 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 		panic("unmarshal failed")
 	}
 
-	log.Printf("got job: %v", job.Id)
+	a.log.Debug("got job", zap.String("id", job.Id))
 
 	ctx := context.Background()
 
@@ -227,7 +243,9 @@ func (a *Agent) handleJob(msg *nats.Msg) {
 }
 
 func (a *Agent) Publish(ctx context.Context, job *proto.Job) (err error) {
-	log.Printf("publish job: %s", job.Id)
+	log := zapcontext.From(ctx)
+
+	log.Debug("publish job", zap.String("id", job.Id))
 
 	content, err := protobuf.Marshal(job)
 	if err != nil {

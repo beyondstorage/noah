@@ -3,18 +3,21 @@ package task
 import (
 	"context"
 	"fmt"
-	"log"
 
 	ps "github.com/aos-dev/go-storage/v3/pairs"
 	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
 	"github.com/aos-dev/go-storage/v3/types"
+	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/aos-dev/noah/proto"
 )
 
 func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
+	_ = zapcontext.From(ctx)
+
 	arg := msg.(*proto.CopyDir)
 
 	store := a.storages[arg.Src]
@@ -55,37 +58,52 @@ func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 }
 
 func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
+
 	arg := msg.(*proto.CopyFile)
 
 	//src := a.storages[arg.Src]
 	//dst := a.storages[arg.Dst]
 
-	log.Printf("copy file from %s to %s", arg.SrcPath, arg.DstPath)
+	log.Info("copy file",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
 	return nil
 }
 
 func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
+
 	arg := msg.(*proto.CopySingleFile)
 
-	log.Printf("copy single file from %s to %s", arg.SrcPath, arg.DstPath)
+	log.Info("copy single file",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
 	return nil
 }
 func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
+
 	arg := msg.(*proto.CopyMultipartFile)
 
 	// Send task and wait for response.
-	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
+	log.Info("copy multipart",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
 	return nil
 }
 
 func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
+
 	arg := msg.(*proto.CopyMultipart)
 
 	src := a.storages[arg.Src]
 	dst := a.storages[arg.Dst]
 	mulipart, ok := dst.(types.Multiparter)
 	if !ok {
-		log.Printf("storage %s does not implement Multiparter", dst)
+		log.Warn("storage does not implement Multiparter",
+			zap.String("storage", dst.String()))
 		return fmt.Errorf("not supported")
 	}
 
@@ -95,13 +113,13 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
 		_, err := mulipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 		if err != nil {
-			log.Printf("write multipart: %v", err)
+			log.Error("write multipart", zap.Error(err))
 		}
 	}()
 
 	_, err := src.Read(arg.SrcPath, w)
 	if err != nil {
-		log.Printf("src read: %v", err)
+		log.Error("src read", zap.Error(err))
 	}
 	defer func() {
 		err = r.Close()
@@ -110,6 +128,8 @@ func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) e
 		}
 	}()
 
-	log.Printf("copy multipart from %s to %s", arg.SrcPath, arg.DstPath)
+	log.Info("copy multipart",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
 	return nil
 }

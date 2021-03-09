@@ -2,13 +2,15 @@ package task
 
 import (
 	"context"
-	"github.com/aos-dev/noah/proto"
-	protobuf "github.com/golang/protobuf/proto"
-	"github.com/google/uuid"
-	"google.golang.org/grpc"
 	"net"
 	"testing"
 	"time"
+
+	protobuf "github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
+	"google.golang.org/grpc"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 const testGRPC = "localhost:7010"
