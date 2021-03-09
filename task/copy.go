@@ -1,336 +1,135 @@
 package task
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"io"
-	"sync"
+	"fmt"
 
-	typ "github.com/aos-dev/go-storage/v2/types"
+	ps "github.com/aos-dev/go-storage/v3/pairs"
+	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
+	"github.com/aos-dev/go-storage/v3/types"
+	"github.com/aos-dev/go-toolbox/zapcontext"
+	protobuf "github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 
-	"github.com/aos-dev/noah/constants"
-	"github.com/aos-dev/noah/pkg/progress"
-	"github.com/aos-dev/noah/pkg/token"
-	"github.com/aos-dev/noah/pkg/types"
-	"github.com/aos-dev/noah/utils"
+	"github.com/aos-dev/noah/proto"
 )
 
-func (t *CopyDirTask) new() {}
-func (t *CopyDirTask) run(ctx context.Context) error {
-	x := NewListDir(t)
-	err := utils.ChooseSourceStorageAsDirLister(x, t)
+func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
+	_ = zapcontext.From(ctx)
+
+	arg := msg.(*proto.CopyDir)
+
+	store := a.storages[arg.Src]
+
+	it, err := store.List(arg.SrcPath)
 	if err != nil {
 		return err
 	}
 
-	if err := t.Sync(ctx, x); err != nil {
-		return err
-	}
-
-	it := x.GetObjectIter()
 	for {
-		obj, err := it.Next()
+		o, err := it.Next()
+		if err == types.IterateDone {
+			return nil
+		}
 		if err != nil {
-			if errors.Is(err, typ.IterateDone) {
-				break
-			}
-			return types.NewErrUnhandled(err)
+			return err
 		}
 
-		switch obj.Type {
-		case typ.ObjectTypeFile:
-			sf := NewCopyFile(t)
-			sf.SetSourcePath(obj.Name)
-			sf.SetDestinationPath(obj.Name)
-			if t.ValidateHandleObjCallbackFunc() {
-				sf.SetCallbackFunc(func() {
-					t.GetHandleObjCallbackFunc()(obj)
-				})
-			}
-			t.Async(ctx, sf)
-		case typ.ObjectTypeDir:
-			sf := NewCopyDir(t)
-			sf.SetSourcePath(obj.Name)
-			sf.SetDestinationPath(obj.Name)
-			if err := t.Sync(ctx, sf); err != nil {
-				return err
-			}
-		default:
-			return types.NewErrObjectTypeInvalid(nil, obj)
+		content, err := protobuf.Marshal(&proto.CopyFile{
+			Src:     arg.Src,
+			Dst:     arg.Dst,
+			SrcPath: o.Path,
+			DstPath: o.Path,
+		})
+		if err != nil {
+			panic("marshal failed")
+		}
+
+		err = a.Publish(ctx, &proto.Job{
+			Id:      uuid.New().String(),
+			Type:    TypeCopyFile,
+			Content: content,
+		})
+		if err != nil {
+			return err
 		}
 	}
+}
 
+func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
+
+	arg := msg.(*proto.CopyFile)
+
+	//src := a.storages[arg.Src]
+	//dst := a.storages[arg.Dst]
+
+	log.Info("copy file",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
 	return nil
 }
 
-func (t *CopyFileTask) new() {}
-func (t *CopyFileTask) run(ctx context.Context) error {
-	check := NewBetweenStorageCheck(t)
-	err := t.Sync(ctx, check)
-	if err != nil {
-		return err
-	}
+func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
 
-	// Execute check tasks
-	if t.ValidateCheckTasks() {
-		for _, v := range t.GetCheckTasks() {
-			ct := v(check)
-			if err := t.Sync(ctx, ct); err != nil {
-				return err
-			}
-			// If either check not pass, do not copy this file.
-			if result := ct.(types.ResultGetter); !result.GetResult() {
-				// if check not pass, clear callback func
-				t.SetCallbackFunc(func() {})
-				return nil
-			}
-			// If all check passed, we should continue do copy works.
-		}
-	}
+	arg := msg.(*proto.CopySingleFile)
 
-	// if dry run func set, only dry run, not copy
-	if t.ValidateDryRunFunc() {
-		t.GetDryRunFunc()(check.GetSourceObject())
-		return nil
-	}
+	log.Info("copy single file",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
+	return nil
+}
+func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
 
-	srcSize, ok := check.GetSourceObject().GetSize()
-	if !ok {
-		return types.NewErrObjectMetaInvalid(nil, "size", check.GetSourceObject())
-	}
+	arg := msg.(*proto.CopyMultipartFile)
 
-	// if destination not support segmenter, we do not call multipart api
-	_, ok = t.GetDestinationStorage().(typ.IndexSegmenter)
-	if !ok {
-		x := NewCopySmallFile(t)
-		x.SetSize(srcSize)
-		return t.Sync(ctx, x)
-	}
-
-	// if part threshold not set, use default value (1G) instead
-	if !t.ValidatePartThreshold() {
-		t.SetPartThreshold(constants.MaximumAutoMultipartSize)
-	}
-
-	if srcSize <= t.GetPartThreshold() {
-		x := NewCopySmallFile(t)
-		x.SetSize(srcSize)
-		return t.Sync(ctx, x)
-	}
-
-	x := NewCopyLargeFile(t)
-	x.SetTotalSize(srcSize)
-	return t.Sync(ctx, x)
+	// Send task and wait for response.
+	log.Info("copy multipart",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
+	return nil
 }
 
-func (t *CopySmallFileTask) new() {}
-func (t *CopySmallFileTask) run(ctx context.Context) error {
-	fileCopyTask := NewCopySingleFile(t)
+func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
+	log := zapcontext.From(ctx)
 
-	if t.ValidateCheckMD5() && t.GetCheckMD5() {
-		md5Task := NewMD5SumFile(t)
-		utils.ChooseSourceStorage(md5Task, t)
-		md5Task.SetOffset(0)
-		if err := t.Sync(ctx, md5Task); err != nil {
-			return err
-		}
-		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
+	arg := msg.(*proto.CopyMultipart)
+
+	src := a.storages[arg.Src]
+	dst := a.storages[arg.Dst]
+	multipart, ok := dst.(types.Multiparter)
+	if !ok {
+		log.Warn("storage does not implement Multiparter",
+			zap.String("storage", dst.String()))
+		return fmt.Errorf("not supported")
 	}
 
-	return t.Sync(ctx, fileCopyTask)
-}
+	r, w := iowrap.Pipe()
 
-func (t *CopyLargeFileTask) new() {}
-func (t *CopyLargeFileTask) run(ctx context.Context) error {
-	// if part size set, use it directly
-	// TODO: we need to check validation of part size
-	if !t.ValidatePartSize() {
-		// otherwise, calculate part size.
-		partSize, err := utils.CalculatePartSize(t.GetTotalSize())
+	go func() {
+		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
+		_, err := multipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 		if err != nil {
-			return types.NewErrUnhandled(err)
+			log.Error("write multipart", zap.Error(err))
 		}
-		t.SetPartSize(partSize)
-	}
+	}()
 
-	initTask := NewSegmentInit(t)
-	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
+	_, err := src.Read(arg.SrcPath, w)
 	if err != nil {
-		return err
+		log.Error("src read", zap.Error(err))
 	}
-
-	if err := t.Sync(ctx, initTask); err != nil {
-		return err
-	}
-	t.SetSegment(initTask.GetSegment())
-
-	offset, part := int64(0), 0
-	for {
-		t.SetOffset(offset)
-
-		x := NewCopyPartialFile(t)
-		x.SetIndex(part)
-		t.Async(ctx, x)
-		// While GetDone is true, this must be the last part.
-		if x.GetDone() {
-			break
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			return
 		}
+	}()
 
-		offset += x.GetSize()
-		part++
-	}
-
-	// Make sure all segment upload finished.
-	// if meet error, not continue run complete task
-	if err := t.Await(); err != nil {
-		return err
-	}
-	return t.Sync(ctx, NewSegmentCompleteTask(initTask))
-}
-
-func (t *CopyPartialFileTask) new() {
-	totalSize := t.GetTotalSize()
-	partSize := t.GetPartSize()
-	offset := t.GetOffset()
-
-	if totalSize <= offset+partSize {
-		t.SetSize(totalSize - offset)
-		t.SetDone(true)
-	} else {
-		t.SetSize(partSize)
-		t.SetDone(false)
-	}
-}
-func (t *CopyPartialFileTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
-	fileCopyTask := NewSegmentFileCopy(t)
-
-	if t.ValidateCheckMD5() && t.GetCheckMD5() {
-		md5Task := NewMD5SumFile(t)
-		utils.ChooseSourceStorage(md5Task, t)
-		if err := t.Sync(ctx, md5Task); err != nil {
-			return err
-		}
-		fileCopyTask.SetMD5Sum(md5Task.GetMD5Sum())
-	}
-
-	err := utils.ChooseDestinationStorageAsDestinationIndexSegmenter(fileCopyTask, t)
-	if err != nil {
-		return err
-	}
-	return t.Sync(ctx, fileCopyTask)
-}
-
-func (t *CopyStreamTask) new() {
-	bytesPool := &sync.Pool{
-		New: func() interface{} {
-			return bytes.NewBuffer(make([]byte, 0, t.GetPartSize()))
-		},
-	}
-	t.SetBytesPool(bytesPool)
-}
-func (t *CopyStreamTask) run(ctx context.Context) error {
-	initTask := NewSegmentInit(t)
-	err := utils.ChooseDestinationStorageAsIndexSegmenter(initTask, t)
-	if err != nil {
-		return err
-	}
-
-	// TODO: we will use expect size to calculate part size later.
-	// if part size not set, use default value, otherwise load part size automatically
-	if !t.ValidatePartSize() {
-		t.SetPartSize(constants.DefaultPartSize)
-	}
-
-	if err := t.Sync(ctx, initTask); err != nil {
-		return err
-	}
-	t.SetSegment(initTask.GetSegment())
-
-	offset, part := int64(0), 0
-	for {
-		it := NewSegmentStreamInit(t)
-		if err := t.Sync(ctx, it); err != nil {
-			return err
-		}
-
-		x := NewCopyPartialStream(t)
-		x.SetSize(it.GetSize())
-		x.SetContent(it.GetContent())
-		x.SetOffset(offset)
-		x.SetIndex(part)
-		t.Async(ctx, x)
-
-		if it.GetDone() {
-			break
-		}
-
-		offset += it.GetSize()
-		part++
-	}
-
-	// if meet error, not continue run complete task
-	if err := t.Await(); err != nil {
-		return err
-	}
-	return t.Sync(ctx, NewSegmentCompleteTask(initTask))
-}
-
-func (t *CopyPartialStreamTask) new() {}
-func (t *CopyPartialStreamTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
-	copyTask := NewSegmentStreamCopy(t)
-	if t.GetCheckMD5() {
-		md5sumTask := NewMD5SumStream(t)
-		if err := t.Sync(ctx, md5sumTask); err != nil {
-			return err
-		}
-		copyTask.SetMD5Sum(md5sumTask.GetMD5Sum())
-	}
-
-	err := utils.ChooseDestinationStorageAsDestinationIndexSegmenter(copyTask, t)
-	if err != nil {
-		return err
-	}
-
-	return t.Sync(ctx, copyTask)
-}
-
-func (t *CopySingleFileTask) new() {}
-func (t *CopySingleFileTask) run(ctx context.Context) error {
-	tk := token.FromContext(ctx)
-	tk.Take()
-	defer tk.Return()
-
-	r, w := io.Pipe()
-	defer w.Close()
-
-	rst := NewReadFile(t)
-	utils.ChooseSourceStorage(rst, t)
-	rst.SetWriteCloser(w)
-	t.Async(ctx, rst)
-
-	wst := NewWriteFile(t)
-	utils.ChooseDestinationStorage(wst, t)
-	wst.SetReadCloser(r)
-
-	// improve progress bar's performance, do not set state for small files less than 32M
-	if t.GetSize() > constants.DefaultPartSize/4 {
-		writeDone := 0
-		progress.SetState(t.GetID(), progress.InitIncState(t.GetSourcePath(), "copy:", t.GetSize()))
-		wst.SetReadCallBackFunc(func(b []byte) {
-			writeDone += len(b)
-			progress.UpdateState(t.GetID(), int64(writeDone))
-		})
-	}
-
-	t.Async(ctx, wst)
-	return t.Await()
+	log.Info("copy multipart",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
+	return nil
 }

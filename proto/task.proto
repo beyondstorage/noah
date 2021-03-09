@@ -1,0 +1,22 @@
+syntax = "proto3";
+package task;
+
+import "job.proto";
+
+option go_package = "github.com/aos-dev/noah/proto";
+
+message Task {
+    string id = 1;
+    repeated Endpoint endpoints = 2;
+    job.Job job = 3;
+}
+
+message Endpoint {
+    string type = 1;
+    repeated Pair pairs = 2;
+}
+
+message Pair {
+    string key = 1;
+    string value = 2;
+}

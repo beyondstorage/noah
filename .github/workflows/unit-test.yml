@@ -1,6 +1,6 @@
 name: "Unit Test"
 
-on: [push,pull_request]
+on: [ push,pull_request ]
 
 jobs:
   unit_test:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         go: [ "1.15", "1.16" ]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
       - name: Set up Go 1.x
@@ -21,8 +21,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install mockgen
-        run: go get github.com/golang/mock/mockgen
+      - name: Install protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.x'
+          # Fix API request limit: https://github.com/actions/virtual-environments/issues/602
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         run: make build
