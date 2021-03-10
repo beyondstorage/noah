@@ -18,7 +18,7 @@ type Agent struct {
 	w *Worker
 	t *proto.Task
 
-	conn     *nats.EncodedConn
+	queue    *nats.EncodedConn
 	subject  string
 	storages []types.Storager
 
@@ -76,7 +76,7 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 	if err != nil {
 		return fmt.Errorf("nats encoded connect: %w", err)
 	}
-	a.conn = queue
+	a.queue = queue
 
 	// FIXME: we need to maintain task running status instead of job's
 	rn := NewRunner(a, a.t.Job)
@@ -97,10 +97,10 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	if err != nil {
 		return
 	}
-	a.conn = queue
+	a.queue = queue
 
 	// FIXME: we need to handle the returning subscription.
-	_, err = a.conn.QueueSubscribe(a.subject, a.subject, a.handleJob)
+	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}

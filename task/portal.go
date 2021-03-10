@@ -18,7 +18,7 @@ import (
 )
 
 type Portal struct {
-	conn        *nats.EncodedConn
+	queue       *nats.EncodedConn
 	nodes       []string
 	nodeAddrMap map[string]string
 
@@ -94,7 +94,7 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 	if err != nil {
 		return
 	}
-	p.conn = queue
+	p.queue = queue
 
 	return p, nil
 }
@@ -129,14 +129,10 @@ func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
 	_ = zapcontext.From(ctx)
 
 	// TODO: We need to maintain all tasks in db maybe.
-	err = p.conn.Publish("tasks", task)
+	err = p.queue.Publish("tasks", task)
 	if err != nil {
 		return
 	}
 
 	return
-}
-
-func (p *Portal) mustEmbedUnimplementedAgentServer() {
-	panic("implement me")
 }

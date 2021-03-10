@@ -17,7 +17,7 @@ import (
 type Runner struct {
 	j *proto.Job
 
-	conn     *nats.EncodedConn
+	queue    *nats.EncodedConn
 	subject  string
 	storages []types.Storager
 
@@ -28,7 +28,7 @@ type Runner struct {
 func NewRunner(a *Agent, j *proto.Job) *Runner {
 	return &Runner{
 		j:        j,
-		conn:     a.conn,
+		queue:    a.queue,
 		subject:  a.subject,
 		storages: a.storages,
 		wg:       &sync.WaitGroup{},
@@ -89,7 +89,7 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 		zap.String("id", job.Id))
 
 	rn.wg.Add(1)
-	err = rn.conn.PublishRequest(rn.subject, rn.j.Id, job)
+	err = rn.queue.PublishRequest(rn.subject, rn.j.Id, job)
 	if err != nil {
 		return fmt.Errorf("nats publish: %w", err)
 	}
@@ -101,7 +101,7 @@ func (rn *Runner) Await(ctx context.Context) (err error) {
 	log := zapcontext.From(ctx)
 
 	log.Debug("start await jobs", zap.String("parent_id", rn.j.Id))
-	sub, err := rn.conn.Subscribe(rn.j.Id, rn.awaitHandler)
+	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 	log.Debug("sync job",
 		zap.String("id", job.Id))
 
-	err = rn.conn.RequestWithContext(ctx, rn.subject, job, &reply)
+	err = rn.queue.RequestWithContext(ctx, rn.subject, job, &reply)
 	if err != nil {
 		return fmt.Errorf("nats request: %w", err)
 	}
@@ -148,7 +148,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 }
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
-	return rn.conn.Publish(reply, &proto.JobReply{
+	return rn.queue.Publish(reply, &proto.JobReply{
 		Id:      rn.j.Id,
 		Status:  JobStatusSucceed,
 		Message: "",
