@@ -3,13 +3,10 @@ package task
 import (
 	"context"
 	"fmt"
-	"time"
 
 	fs "github.com/aos-dev/go-service-fs/v2"
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/aos-dev/go-toolbox/zapcontext"
-
-	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
@@ -57,7 +54,7 @@ func (a *Agent) Handle() (err error) {
 	}
 
 	if reply.NodeId == a.w.id {
-		return a.handleServer(ctx)
+		return a.handleServer(ctx, reply.Addr)
 	} else {
 		return a.handleClient(ctx, reply.Addr)
 	}
@@ -70,31 +67,8 @@ func (a *Agent) parseStorage(ctx context.Context) (err error) {
 	return
 }
 
-func (a *Agent) handleServer(ctx context.Context) (err error) {
-	// Setup queue
-	srv, err := server.NewServer(&server.Options{
-		Host:  "localhost",
-		Port:  7000,
-		Debug: true, // FIXME: allow used for developing
-	})
-	if err != nil {
-		return
-	}
-
-	go func() {
-		srv.ConfigureLogger()
-
-		err = server.Run(srv)
-		if err != nil {
-			a.log.Error("server run", zap.Error(err))
-		}
-	}()
-
-	if !srv.ReadyForConnections(time.Second) {
-		panic(fmt.Errorf("server start too slow"))
-	}
-
-	conn, err := nats.Connect("localhost:7000")
+func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
+	conn, err := nats.Connect(addr)
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
 	}
@@ -113,17 +87,11 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	log := zapcontext.From(ctx)
 
-	var conn *nats.Conn
-	// Connect queue
-	log.Info("agent connect to nats server", zap.String("addr", addr))
-	end := time.Now().Add(time.Second)
-	for time.Now().Before(end) {
-		conn, err = nats.Connect(addr)
-		if err != nil {
-			time.Sleep(25 * time.Millisecond)
-			continue
-		}
-		break
+	log.Info("agent connect to job queue", zap.String("addr", addr))
+
+	conn, err := nats.Connect(addr)
+	if err != nil {
+		return
 	}
 	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {

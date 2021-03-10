@@ -2,9 +2,13 @@ package task
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/aos-dev/go-toolbox/natszap"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/google/uuid"
+	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
@@ -15,26 +19,55 @@ import (
 
 type Worker struct {
 	id   string
-	addr string
 	node proto.NodeClient
+	srv  *server.Server
 
 	sub *nats.Subscription
 	log *zap.Logger
 }
 
-func NewWorker(ctx context.Context, addr string) (w *Worker, err error) {
-	logger := zapcontext.From(ctx)
+type WorkerConfig struct {
+	Host string
 
-	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure())
+	PortalAddr string
+}
+
+func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
+	log := zapcontext.From(ctx)
+
+	// FIXME: we need to use ssl/tls to encrypt our channel.
+	conn, err := grpc.DialContext(ctx, cfg.PortalAddr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
 
+	srv, err := server.NewServer(&server.Options{
+		Host: cfg.Host,
+		Port: server.RANDOM_PORT,
+	})
+	if err != nil {
+		return
+	}
+
+	go func() {
+		srv.SetLoggerV2(natszap.NewLog(log), false, false, false)
+
+		err = server.Run(srv)
+		if err != nil {
+			log.Error("nats server run", zap.Error(err))
+		}
+	}()
+
+	if !srv.ReadyForConnections(time.Second) {
+		panic(fmt.Errorf("server start too slow"))
+	}
+
 	w = &Worker{
-		node: proto.NewNodeClient(conn),
 		id:   uuid.New().String(),
-		addr: "localhost:7000",
-		log:  logger,
+		node: proto.NewNodeClient(conn),
+		srv:  srv,
+
+		log: log,
 	}
 	return
 }
@@ -44,13 +77,13 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 
 	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
 		Id:   w.id,
-		Addr: w.addr,
+		Addr: w.srv.Addr().String(),
 	})
 	if err != nil {
 		return
 	}
 
-	log.Info("connect to nats server",
+	log.Info("connect to task queue",
 		zap.String("addr", reply.Addr),
 		zap.String("subject", reply.Subject))
 

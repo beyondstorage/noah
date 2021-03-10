@@ -10,8 +10,8 @@ github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210304102732-f57fecf4e68a/go.mod 
 github.com/aos-dev/go-storage/v3 v3.0.1-0.20210205074802-e8a5b22166c2/go.mod h1:JznhvyhPDnETfZ3RyWm3mT/S5ic+uuYFWagSIkUZujc=
 github.com/aos-dev/go-storage/v3 v3.4.1 h1:D8xrwx64w50E89POJy3xTc/sUM6o8zs8PYHKuIi/cL0=
 github.com/aos-dev/go-storage/v3 v3.4.1/go.mod h1:TjjOLA8NhJISnvYyi3aDxUDRXzAoypM17uvfcLMsfUw=
-github.com/aos-dev/go-toolbox v0.0.0-20210309062625-6031b9981b43 h1:uool91dh3joqYa9bRpIFt78UCGtIDLhBdJkMpOJSKwo=
-github.com/aos-dev/go-toolbox v0.0.0-20210309062625-6031b9981b43/go.mod h1:z9stQnEScgkLExuPYa2x8YosLzqFJm2W947a6QztsM8=
+github.com/aos-dev/go-toolbox v0.0.0-20210310073023-db4ad0026279 h1:wYwWyQ3FyFHW27WCyv8tqmxOk0S9sT2SYL+LJAcjGOk=
+github.com/aos-dev/go-toolbox v0.0.0-20210310073023-db4ad0026279/go.mod h1:z9stQnEScgkLExuPYa2x8YosLzqFJm2W947a6QztsM8=
 github.com/aos-dev/specs/go v0.0.0-20210205073047-af8ef94af73d/go.mod h1:XTNlLZtPA1inITyDH5hNnQXVjvvKUvo+lurs5GYB8NA=
 github.com/aos-dev/specs/go v0.0.0-20210304082749-d044cb2d3362 h1:QqfusB82p+7kHhzXMW/z9V+QHob3CIRxLwUY+L9Qk84=
 github.com/aos-dev/specs/go v0.0.0-20210304082749-d044cb2d3362/go.mod h1:XTNlLZtPA1inITyDH5hNnQXVjvvKUvo+lurs5GYB8NA=
