@@ -19,7 +19,7 @@ type Agent struct {
 	t *proto.Task
 
 	queue    *nats.EncodedConn
-	subject  string
+	subject  string // All agent will share the same task subject
 	storages []types.Storager
 
 	logger *zap.Logger

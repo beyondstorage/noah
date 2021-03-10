@@ -18,7 +18,7 @@ type Runner struct {
 	j *proto.Job
 
 	queue    *nats.EncodedConn
-	subject  string
+	subject  string // All runner will share the same task subject
 	storages []types.Storager
 
 	wg     *sync.WaitGroup
@@ -29,7 +29,7 @@ func NewRunner(a *Agent, j *proto.Job) *Runner {
 	return &Runner{
 		j:        j,
 		queue:    a.queue,
-		subject:  a.subject,
+		subject:  a.subject, // Copy task subject from agent.
 		storages: a.storages,
 		wg:       &sync.WaitGroup{},
 		logger:   a.logger,
@@ -75,6 +75,7 @@ func (rn *Runner) Handle(subject, reply string) {
 		panic(fmt.Errorf("handle task: %s", err))
 	}
 
+	// Send JobReply after the job has been handled.
 	err = rn.Finish(ctx, reply)
 	if err != nil {
 		return
@@ -89,6 +90,11 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 		zap.String("id", job.Id))
 
 	rn.wg.Add(1)
+	// Publish new job with the specific reply subject on the task subject.
+	// After this job finished, the runner will send a JobReply to the reply subject.
+	//
+	// For now, we use the job id as the reply subject.
+	// This could be changed.
 	err = rn.queue.PublishRequest(rn.subject, rn.j.Id, job)
 	if err != nil {
 		return fmt.Errorf("nats publish: %w", err)
@@ -100,7 +106,7 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 func (rn *Runner) Await(ctx context.Context) (err error) {
 	logger := zapcontext.From(ctx)
 
-	logger.Debug("start await jobs", zap.String("parent_id", rn.j.Id))
+	// Wait for all JobReply sending to the reply subject.
 	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
 		return err
@@ -136,6 +142,8 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 	logger.Debug("sync job",
 		zap.String("id", job.Id))
 
+	// NATS provides the builtin request-response style API, so that we don't need to
+	// care about the reply id.
 	err = rn.queue.RequestWithContext(ctx, rn.subject, job, &reply)
 	if err != nil {
 		return fmt.Errorf("nats request: %w", err)
@@ -149,7 +157,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
 	return rn.queue.Publish(reply, &proto.JobReply{
-		Id:      rn.j.Id,
+		Id:      rn.j.Id, // Make sure JobReply sends to the parent job.
 		Status:  JobStatusSucceed,
 		Message: "",
 	})
