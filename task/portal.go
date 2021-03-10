@@ -3,13 +3,13 @@ package task
 import (
 	"context"
 	"fmt"
+	"github.com/aos-dev/go-toolbox/natszap"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"log"
 	"net"
 	"time"
 
@@ -40,7 +40,9 @@ func (p PortalConfig) QueueAddr() string {
 	return fmt.Sprintf("%s:%d", p.Host, p.QueuePort)
 }
 
-func NewPortal(cfg PortalConfig) (p *Portal, err error) {
+func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
+	log := zapcontext.From(ctx)
+
 	p = &Portal{
 		nodeAddrMap: map[string]string{},
 		config:      cfg,
@@ -71,11 +73,11 @@ func NewPortal(cfg PortalConfig) (p *Portal, err error) {
 	}
 
 	go func() {
-		srv.ConfigureLogger()
+		srv.SetLoggerV2(natszap.NewLog(log), false, false, false)
 
 		err = server.Run(srv)
 		if err != nil {
-			log.Printf("server run: %s", err)
+			log.Error("server run", zap.Error(err))
 		}
 	}()
 

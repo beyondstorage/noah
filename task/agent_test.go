@@ -11,7 +11,7 @@ import (
 )
 
 func setupPortal(t *testing.T) *Portal {
-	p, err := NewPortal(PortalConfig{
+	p, err := NewPortal(context.Background(), PortalConfig{
 		Host:      "localhost",
 		GrpcPort:  7000,
 		QueuePort: 7010,
