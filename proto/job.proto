@@ -12,6 +12,7 @@ message Job {
 message JobReply {
     string id = 1;
     uint32 status = 2;
+    string message = 3;
 }
 
 message CopyDir {

@@ -15,12 +15,12 @@ import (
 	"github.com/aos-dev/noah/proto"
 )
 
-func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
+func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 	_ = zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyDir)
 
-	store := a.storages[arg.Src]
+	store := rn.storages[arg.Src]
 
 	it, err := store.List(arg.SrcPath)
 	if err != nil {
@@ -46,7 +46,7 @@ func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 			panic("marshal failed")
 		}
 
-		err = a.Publish(ctx, &proto.Job{
+		err = rn.Async(ctx, &proto.Job{
 			Id:      uuid.New().String(),
 			Type:    TypeCopyFile,
 			Content: content,
@@ -54,16 +54,22 @@ func (a *Agent) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 		if err != nil {
 			return err
 		}
+
+		err = rn.Await(ctx)
+		if err != nil {
+			return err
+		}
+
 	}
 }
 
-func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
+func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
 	log := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyFile)
 
-	//src := a.storages[arg.Src]
-	//dst := a.storages[arg.Dst]
+	//src := rn.storages[arg.Src]
+	//dst := rn.storages[arg.Dst]
 
 	log.Info("copy file",
 		zap.String("from", arg.SrcPath),
@@ -71,7 +77,7 @@ func (a *Agent) HandleCopyFile(ctx context.Context, msg protobuf.Message) error 
 	return nil
 }
 
-func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
+func (rn *Runner) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
 	log := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopySingleFile)
@@ -81,7 +87,7 @@ func (a *Agent) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) 
 		zap.String("to", arg.DstPath))
 	return nil
 }
-func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
+func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
 	log := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyMultipartFile)
@@ -93,13 +99,13 @@ func (a *Agent) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Messag
 	return nil
 }
 
-func (a *Agent) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
+func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
 	log := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyMultipart)
 
-	src := a.storages[arg.Src]
-	dst := a.storages[arg.Dst]
+	src := rn.storages[arg.Src]
+	dst := rn.storages[arg.Dst]
 	multipart, ok := dst.(types.Multiparter)
 	if !ok {
 		log.Warn("storage does not implement Multiparter",

@@ -71,7 +71,7 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 
 	return &proto.RegisterReply{
 		Addr:    "localhost:7100",
-		Subject: "task",
+		Subject: "tasks",
 	}, nil
 }
 
@@ -82,7 +82,7 @@ func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*p
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],
-		Subject: fmt.Sprintf("task-%s", request.TaskId),
+		Subject: fmt.Sprintf("task.%s", request.TaskId),
 	}, nil
 }
 
@@ -93,7 +93,8 @@ func (p *Portal) mustEmbedUnimplementedAgentServer() {
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
 	_ = zapcontext.From(ctx)
 
-	err = p.conn.Publish("task", task)
+	// TODO: We need to maintain all tasks in db maybe.
+	err = p.conn.Publish("tasks", task)
 	if err != nil {
 		return
 	}
