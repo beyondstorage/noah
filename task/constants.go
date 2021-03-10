@@ -7,3 +7,8 @@ const (
 	TypeCopyMultipartFile
 	TypeCopyMultipart
 )
+
+const (
+	JobStatusSucceed uint32 = iota
+	JobStatusFailed
+)

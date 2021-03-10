@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210304102732-f57fecf4e68a
 	github.com/aos-dev/go-storage/v3 v3.4.1
-	github.com/aos-dev/go-toolbox v0.0.0-20210309062625-6031b9981b43
+	github.com/aos-dev/go-toolbox v0.0.0-20210310073023-db4ad0026279
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.2.0
 	github.com/nats-io/nats-server/v2 v2.1.9

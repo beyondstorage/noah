@@ -3,30 +3,70 @@ package task
 import (
 	"context"
 	"fmt"
-	"log"
+	"net"
 	"time"
 
+	"github.com/aos-dev/go-toolbox/natszap"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/aos-dev/noah/proto"
 )
 
 type Portal struct {
-	conn        *nats.EncodedConn
+	queue       *nats.EncodedConn
 	nodes       []string
 	nodeAddrMap map[string]string
+
+	config PortalConfig
 
 	proto.UnimplementedNodeServer
 }
 
-func NewPortal() (p *Portal, err error) {
+type PortalConfig struct {
+	Host      string
+	GrpcPort  int
+	QueuePort int
+}
+
+func (p PortalConfig) GrpcAddr() string {
+	return fmt.Sprintf("%s:%d", p.Host, p.GrpcPort)
+}
+
+func (p PortalConfig) QueueAddr() string {
+	return fmt.Sprintf("%s:%d", p.Host, p.QueuePort)
+}
+
+func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
+	log := zapcontext.From(ctx)
+
+	p = &Portal{
+		nodeAddrMap: map[string]string{},
+		config:      cfg,
+	}
+
+	// Setup grpc server.
+	grpcSrv := grpc.NewServer()
+	proto.RegisterNodeServer(grpcSrv, p)
+	go func() {
+		l, err := net.Listen("tcp", cfg.GrpcAddr())
+		if err != nil {
+			return
+		}
+		err = grpcSrv.Serve(l)
+		if err != nil {
+			return
+		}
+	}()
+
+	// Setup queue server.
 	srv, err := server.NewServer(&server.Options{
-		Host:  "localhost",
-		Port:  7100,
+		Host:  cfg.Host,
+		Port:  cfg.QueuePort,
 		Debug: true, // FIXME: allow used for developing
 	})
 	if err != nil {
@@ -34,11 +74,11 @@ func NewPortal() (p *Portal, err error) {
 	}
 
 	go func() {
-		srv.ConfigureLogger()
+		srv.SetLoggerV2(natszap.NewLog(log), false, false, false)
 
 		err = server.Run(srv)
 		if err != nil {
-			log.Printf("server run: %s", err)
+			log.Error("server run", zap.Error(err))
 		}
 	}()
 
@@ -46,10 +86,7 @@ func NewPortal() (p *Portal, err error) {
 		panic(fmt.Errorf("server start too slow"))
 	}
 
-	p = &Portal{}
-	p.nodeAddrMap = map[string]string{}
-
-	conn, err := nats.Connect("localhost:7100")
+	conn, err := nats.Connect(srv.Addr().String())
 	if err != nil {
 		return
 	}
@@ -57,7 +94,7 @@ func NewPortal() (p *Portal, err error) {
 	if err != nil {
 		return
 	}
-	p.conn = queue
+	p.queue = queue
 
 	return p, nil
 }
@@ -65,13 +102,15 @@ func NewPortal() (p *Portal, err error) {
 func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
 	log := zapcontext.From(ctx)
 
-	log.Debug("got", zap.String("request", request.String()))
+	log.Debug("receive register request",
+		zap.String("id", request.Id),
+		zap.String("addr", request.Addr))
 	p.nodes = append(p.nodes, request.Id)
 	p.nodeAddrMap[request.Id] = request.Addr
 
 	return &proto.RegisterReply{
-		Addr:    "localhost:7100",
-		Subject: "task",
+		Addr:    p.config.QueueAddr(),
+		Subject: "tasks",
 	}, nil
 }
 
@@ -82,18 +121,15 @@ func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*p
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],
-		Subject: fmt.Sprintf("task-%s", request.TaskId),
+		Subject: fmt.Sprintf("task.%s", request.TaskId),
 	}, nil
-}
-
-func (p *Portal) mustEmbedUnimplementedAgentServer() {
-	panic("implement me")
 }
 
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
 	_ = zapcontext.From(ctx)
 
-	err = p.conn.Publish("task", task)
+	// TODO: We need to maintain all tasks in db maybe.
+	err = p.queue.Publish("tasks", task)
 	if err != nil {
 		return
 	}

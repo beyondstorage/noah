@@ -2,39 +2,24 @@ package task
 
 import (
 	"context"
-	"net"
 	"testing"
 	"time"
 
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-	"google.golang.org/grpc"
 
 	"github.com/aos-dev/noah/proto"
 )
 
-const testGRPC = "localhost:7010"
-
 func setupPortal(t *testing.T) *Portal {
-	l, err := net.Listen("tcp", testGRPC)
+	p, err := NewPortal(context.Background(), PortalConfig{
+		Host:      "localhost",
+		GrpcPort:  7000,
+		QueuePort: 7010,
+	})
 	if err != nil {
 		t.Error(err)
 	}
-
-	srv := grpc.NewServer()
-
-	p, err := NewPortal()
-	if err != nil {
-		t.Error(err)
-	}
-
-	proto.RegisterNodeServer(srv, p)
-	go func() {
-		err = srv.Serve(l)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
 
 	return p
 }
@@ -46,7 +31,10 @@ func testWorker(t *testing.T) {
 	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
-		w, err := NewWorker(ctx, testGRPC)
+		w, err := NewWorker(ctx, WorkerConfig{
+			Host:       "localhost",
+			PortalAddr: "localhost:7000",
+		})
 		if err != nil {
 			t.Error(err)
 		}
