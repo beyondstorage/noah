@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 func setupPortal(t *testing.T) *Portal {

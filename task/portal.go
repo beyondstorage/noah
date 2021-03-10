@@ -3,6 +3,9 @@ package task
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/aos-dev/go-toolbox/natszap"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/nats-io/nats-server/v2/server"
@@ -10,8 +13,6 @@ import (
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"net"
-	"time"
 
 	"github.com/aos-dev/noah/proto"
 )

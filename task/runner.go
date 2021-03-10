@@ -3,13 +3,15 @@ package task
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/aos-dev/go-toolbox/zapcontext"
-	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
-	"sync"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 type Runner struct {
