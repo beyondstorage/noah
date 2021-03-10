@@ -22,7 +22,7 @@ type Agent struct {
 	subject  string
 	storages []types.Storager
 
-	log *zap.Logger
+	logger *zap.Logger
 }
 
 func NewAgent(w *Worker, t *proto.Task) *Agent {
@@ -30,7 +30,7 @@ func NewAgent(w *Worker, t *proto.Task) *Agent {
 		w: w,
 		t: t,
 
-		log: w.log,
+		logger: w.logger,
 	}
 }
 
@@ -44,7 +44,7 @@ func (a *Agent) Handle() (err error) {
 	if err != nil {
 		return fmt.Errorf("node upgrade: %v", err)
 	}
-	a.log.Info("receive upgrade", zap.String("reply", reply.String()))
+	a.logger.Info("receive upgrade", zap.String("reply", reply.String()))
 
 	a.subject = reply.Subject
 
@@ -85,9 +85,9 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
-	log.Info("agent connect to job queue", zap.String("addr", addr))
+	logger.Info("agent connect to job queue", zap.String("addr", addr))
 
 	conn, err := nats.Connect(addr)
 	if err != nil {

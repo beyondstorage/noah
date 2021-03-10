@@ -64,43 +64,43 @@ func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error
 }
 
 func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) error {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyFile)
 
 	//src := rn.storages[arg.Src]
 	//dst := rn.storages[arg.Dst]
 
-	log.Info("copy file",
+	logger.Info("copy file",
 		zap.String("from", arg.SrcPath),
 		zap.String("to", arg.DstPath))
 	return nil
 }
 
 func (rn *Runner) HandleCopySingleFile(ctx context.Context, msg protobuf.Message) error {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopySingleFile)
 
-	log.Info("copy single file",
+	logger.Info("copy single file",
 		zap.String("from", arg.SrcPath),
 		zap.String("to", arg.DstPath))
 	return nil
 }
 func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyMultipartFile)
 
 	// Send task and wait for response.
-	log.Info("copy multipart",
+	logger.Info("copy multipart",
 		zap.String("from", arg.SrcPath),
 		zap.String("to", arg.DstPath))
 	return nil
 }
 
 func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message) error {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	arg := msg.(*proto.CopyMultipart)
 
@@ -108,7 +108,7 @@ func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message)
 	dst := rn.storages[arg.Dst]
 	multipart, ok := dst.(types.Multiparter)
 	if !ok {
-		log.Warn("storage does not implement Multiparter",
+		logger.Warn("storage does not implement Multiparter",
 			zap.String("storage", dst.String()))
 		return fmt.Errorf("not supported")
 	}
@@ -119,13 +119,13 @@ func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message)
 		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
 		_, err := multipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 		if err != nil {
-			log.Error("write multipart", zap.Error(err))
+			logger.Error("write multipart", zap.Error(err))
 		}
 	}()
 
 	_, err := src.Read(arg.SrcPath, w)
 	if err != nil {
-		log.Error("src read", zap.Error(err))
+		logger.Error("src read", zap.Error(err))
 	}
 	defer func() {
 		err = r.Close()
@@ -134,7 +134,7 @@ func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message)
 		}
 	}()
 
-	log.Info("copy multipart",
+	logger.Info("copy multipart",
 		zap.String("from", arg.SrcPath),
 		zap.String("to", arg.DstPath))
 	return nil

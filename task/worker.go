@@ -22,8 +22,8 @@ type Worker struct {
 	node proto.NodeClient
 	srv  *server.Server
 
-	sub *nats.Subscription
-	log *zap.Logger
+	sub    *nats.Subscription
+	logger *zap.Logger
 }
 
 type WorkerConfig struct {
@@ -33,7 +33,7 @@ type WorkerConfig struct {
 }
 
 func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	// FIXME: we need to use ssl/tls to encrypt our channel.
 	conn, err := grpc.DialContext(ctx, cfg.PortalAddr, grpc.WithInsecure())
@@ -50,11 +50,11 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 	}
 
 	go func() {
-		srv.SetLoggerV2(natszap.NewLog(log), false, false, false)
+		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
 
 		err = server.Run(srv)
 		if err != nil {
-			log.Error("nats server run", zap.Error(err))
+			logger.Error("nats server run", zap.Error(err))
 		}
 	}()
 
@@ -67,13 +67,13 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 		node: proto.NewNodeClient(conn),
 		srv:  srv,
 
-		log: log,
+		logger: logger,
 	}
 	return
 }
 
 func (w *Worker) Connect(ctx context.Context) (err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
 		Id:   w.id,
@@ -83,7 +83,7 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 		return
 	}
 
-	log.Info("connect to task queue",
+	logger.Info("connect to task queue",
 		zap.String("addr", reply.Addr),
 		zap.String("subject", reply.Subject))
 
@@ -105,13 +105,13 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 }
 
 func (w *Worker) Handle(subject, reply string, task *proto.Task) {
-	w.log.Debug("start handle task",
+	w.logger.Debug("start handle task",
 		zap.String("subject", subject),
 		zap.String("id", task.Id))
 
 	a := NewAgent(w, task)
 	err := a.Handle()
 	if err != nil {
-		w.log.Error("agent handle", zap.Error(err))
+		w.logger.Error("agent handle", zap.Error(err))
 	}
 }
