@@ -42,7 +42,7 @@ func (p PortalConfig) QueueAddr() string {
 }
 
 func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	p = &Portal{
 		nodeAddrMap: map[string]string{},
@@ -74,11 +74,11 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 	}
 
 	go func() {
-		srv.SetLoggerV2(natszap.NewLog(log), false, false, false)
+		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
 
 		err = server.Run(srv)
 		if err != nil {
-			log.Error("server run", zap.Error(err))
+			logger.Error("server run", zap.Error(err))
 		}
 	}()
 
@@ -100,9 +100,9 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 }
 
 func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
-	log.Debug("receive register request",
+	logger.Debug("receive register request",
 		zap.String("id", request.Id),
 		zap.String("addr", request.Addr))
 	p.nodes = append(p.nodes, request.Id)
@@ -115,9 +115,9 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 }
 
 func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*proto.UpgradeReply, error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
-	log.Debug("node addr map", zap.Reflect("map", p.nodeAddrMap))
+	logger.Debug("node addr map", zap.Reflect("map", p.nodeAddrMap))
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],

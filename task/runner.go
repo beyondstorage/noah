@@ -21,8 +21,8 @@ type Runner struct {
 	subject  string
 	storages []types.Storager
 
-	wg  *sync.WaitGroup
-	log *zap.Logger
+	wg     *sync.WaitGroup
+	logger *zap.Logger
 }
 
 func NewRunner(a *Agent, j *proto.Job) *Runner {
@@ -32,12 +32,12 @@ func NewRunner(a *Agent, j *proto.Job) *Runner {
 		subject:  a.subject,
 		storages: a.storages,
 		wg:       &sync.WaitGroup{},
-		log:      a.log,
+		logger:   a.logger,
 	}
 }
 
 func (rn *Runner) Handle(subject, reply string) {
-	rn.log.Debug("start handle job", zap.String("id", rn.j.Id))
+	rn.logger.Debug("start handle job", zap.String("id", rn.j.Id))
 
 	ctx := context.Background()
 
@@ -82,9 +82,9 @@ func (rn *Runner) Handle(subject, reply string) {
 }
 
 func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
-	log.Debug("start async job",
+	logger.Debug("start async job",
 		zap.String("parent_id", rn.j.Id),
 		zap.String("id", job.Id))
 
@@ -98,9 +98,9 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 }
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
-	log.Debug("start await jobs", zap.String("parent_id", rn.j.Id))
+	logger.Debug("start await jobs", zap.String("parent_id", rn.j.Id))
 	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (rn *Runner) Await(ctx context.Context) (err error) {
 
 	rn.wg.Wait()
 
-	log.Debug("finish await jobs", zap.String("parent_id", rn.j.Id))
+	logger.Debug("finish await jobs", zap.String("parent_id", rn.j.Id))
 	return
 }
 
@@ -118,10 +118,10 @@ func (rn *Runner) awaitHandler(job *proto.JobReply) {
 
 	switch job.Status {
 	case JobStatusSucceed:
-		rn.log.Info("job succeed", zap.String("id", job.Id))
+		rn.logger.Info("job succeed", zap.String("id", job.Id))
 	}
 	if job.Status != JobStatusSucceed {
-		rn.log.Error("job failed",
+		rn.logger.Error("job failed",
 			zap.String("id", job.Id),
 			zap.String("error", job.Message),
 		)
@@ -129,11 +129,11 @@ func (rn *Runner) awaitHandler(job *proto.JobReply) {
 }
 
 func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
-	log := zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	var reply proto.JobReply
 
-	log.Debug("sync job",
+	logger.Debug("sync job",
 		zap.String("id", job.Id))
 
 	err = rn.queue.RequestWithContext(ctx, rn.subject, job, &reply)
@@ -141,7 +141,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 		return fmt.Errorf("nats request: %w", err)
 	}
 	if reply.Status != JobStatusSucceed {
-		log.Error("job failed", zap.String("error", reply.Message))
+		logger.Error("job failed", zap.String("error", reply.Message))
 		return fmt.Errorf("job failed: %v", reply.Message)
 	}
 	return
