@@ -20,6 +20,7 @@ message CopyDir {
     uint32 dst = 2;
     string src_path = 3;
     string dst_path = 4;
+    bool recursive = 5;
 }
 
 message CopyFile {
@@ -34,6 +35,7 @@ message CopySingleFile {
     uint32 dst = 2;
     string src_path = 3;
     string dst_path = 4;
+    int64 size = 5;
 }
 
 message CopyMultipartFile {
@@ -41,6 +43,7 @@ message CopyMultipartFile {
     uint32 dst = 2;
     string src_path = 3;
     string dst_path = 4;
+    int64 size = 5;
 }
 
 message CopyMultipart {

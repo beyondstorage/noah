@@ -37,7 +37,7 @@ func NewRunner(a *Agent, j *proto.Job) *Runner {
 }
 
 func (rn *Runner) Handle(subject, reply string) {
-	rn.logger.Debug("start handle job", zap.String("id", rn.j.Id))
+	rn.logger.Info("runner start handle job", zap.String("id", rn.j.Id), zap.String("job", rn.j.String()))
 
 	ctx := context.Background()
 
@@ -85,9 +85,10 @@ func (rn *Runner) Handle(subject, reply string) {
 func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 	logger := zapcontext.From(ctx)
 
-	logger.Debug("start async job",
+	logger.Info("start async job",
 		zap.String("parent_id", rn.j.Id),
-		zap.String("id", job.Id))
+		zap.String("subject", rn.subject),
+		zap.String("job", job.String()))
 
 	rn.wg.Add(1)
 	// Publish new job with the specific reply subject on the task subject.
@@ -105,7 +106,7 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
 	logger := zapcontext.From(ctx)
-
+	logger.Warn("wait msg from subject", zap.String("id", rn.j.Id))
 	// Wait for all JobReply sending to the reply subject.
 	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
@@ -115,7 +116,7 @@ func (rn *Runner) Await(ctx context.Context) (err error) {
 
 	rn.wg.Wait()
 
-	logger.Debug("finish await jobs", zap.String("parent_id", rn.j.Id))
+	logger.Info("finish await jobs", zap.String("parent_id", rn.j.Id))
 	return
 }
 
@@ -125,8 +126,7 @@ func (rn *Runner) awaitHandler(job *proto.JobReply) {
 	switch job.Status {
 	case JobStatusSucceed:
 		rn.logger.Info("job succeed", zap.String("id", job.Id))
-	}
-	if job.Status != JobStatusSucceed {
+	default:
 		rn.logger.Error("job failed",
 			zap.String("id", job.Id),
 			zap.String("error", job.Message),
@@ -139,7 +139,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 
 	var reply proto.JobReply
 
-	logger.Debug("sync job",
+	logger.Info("sync job",
 		zap.String("id", job.Id))
 
 	// NATS provides the builtin request-response style API, so that we don't need to

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 
@@ -29,8 +30,9 @@ func testWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
+	logger := zapcontext.From(ctx)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
 		w, err := NewWorker(ctx, WorkerConfig{
 			Host:       "localhost",
 			PortalAddr: "localhost:7000",
@@ -47,8 +49,8 @@ func testWorker(t *testing.T) {
 	copyFileJob := &proto.CopyDir{
 		Src:     0,
 		Dst:     1,
-		SrcPath: "/tmp",
-		DstPath: "/tmp",
+		SrcPath: "",
+		DstPath: "",
 	}
 	content, err := protobuf.Marshal(copyFileJob)
 	if err != nil {
@@ -58,8 +60,8 @@ func testWorker(t *testing.T) {
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
-			{Type: "fs"},
-			{Type: "fs"},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp2"}}},
 		},
 		Job: &proto.Job{
 			Id:      uuid.NewString(),
@@ -67,10 +69,12 @@ func testWorker(t *testing.T) {
 			Content: content,
 		},
 	}
+
+	logger.Info("before first publish")
 	err = p.Publish(ctx, copyFileTask)
 	if err != nil {
 		t.Error(err)
 	}
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 }

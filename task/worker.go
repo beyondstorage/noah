@@ -105,7 +105,7 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 }
 
 func (w *Worker) Handle(subject, reply string, task *proto.Task) {
-	w.logger.Debug("start handle task",
+	w.logger.Info("start handle task",
 		zap.String("subject", subject),
 		zap.String("id", task.Id))
 

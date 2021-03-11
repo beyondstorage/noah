@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	fs "github.com/aos-dev/go-service-fs/v2"
 	"github.com/aos-dev/go-storage/v3/types"
-	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
@@ -61,13 +59,21 @@ func (a *Agent) Handle() (err error) {
 }
 
 func (a *Agent) parseStorage(ctx context.Context) (err error) {
-	for range a.t.Endpoints {
-		a.storages = append(a.storages, &fs.Storage{})
+	for _, ep := range a.t.Endpoints {
+		store, err := ep.ParseStorager()
+		if err != nil {
+			return err
+		}
+		a.storages = append(a.storages, store)
 	}
 	return
 }
 
 func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
+	logger := a.logger
+
+	logger.Info("agent connect as server", zap.String("addr", addr))
+
 	conn, err := nats.Connect(addr)
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
@@ -85,7 +91,7 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
-	logger := zapcontext.From(ctx)
+	logger := a.logger
 
 	logger.Info("agent connect to job queue", zap.String("addr", addr))
 
@@ -100,6 +106,7 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	a.queue = queue
 
 	// FIXME: we need to handle the returning subscription.
+	logger.Warn("handle client queue subscribe", zap.String("subject", a.subject))
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
@@ -108,5 +115,8 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
+	logger := a.logger
+	logger.Info("start to handle job", zap.String("subject", subject), zap.String("reply", reply), zap.String("job", job.String()))
 	NewRunner(a, job).Handle(subject, reply)
+	logger.Info("after handle job", zap.String("subject", subject), zap.String("reply", reply), zap.String("job", job.String()))
 }

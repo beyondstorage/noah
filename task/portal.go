@@ -102,7 +102,7 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
 	logger := zapcontext.From(ctx)
 
-	logger.Debug("receive register request",
+	logger.Info("receive register request",
 		zap.String("id", request.Id),
 		zap.String("addr", request.Addr))
 	p.nodes = append(p.nodes, request.Id)
@@ -117,7 +117,7 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*proto.UpgradeReply, error) {
 	logger := zapcontext.From(ctx)
 
-	logger.Debug("node addr map", zap.Reflect("map", p.nodeAddrMap))
+	logger.Info("node addr map", zap.Reflect("map", p.nodeAddrMap))
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],
