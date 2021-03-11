@@ -26,7 +26,7 @@ func setupPortal(t *testing.T) *Portal {
 }
 
 // This is not a really unit test, just for developing, SHOULD be removed.
-func testWorker(t *testing.T) {
+func TestWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
@@ -47,10 +47,11 @@ func testWorker(t *testing.T) {
 	}
 
 	copyFileJob := &proto.CopyDir{
-		Src:     0,
-		Dst:     1,
-		SrcPath: "",
-		DstPath: "",
+		Src:       0,
+		Dst:       1,
+		SrcPath:   "",
+		DstPath:   "",
+		Recursive: true,
 	}
 	content, err := protobuf.Marshal(copyFileJob)
 	if err != nil {
@@ -60,8 +61,8 @@ func testWorker(t *testing.T) {
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp"}}},
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp2"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/a"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/b"}}},
 		},
 		Job: &proto.Job{
 			Id:      uuid.NewString(),
@@ -76,5 +77,5 @@ func testWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 }

@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/nats-io/nats.go"
@@ -84,10 +85,10 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 	}
 	a.queue = queue
 
-	// FIXME: we need to maintain task running status instead of job's
-	rn := NewRunner(a, a.t.Job)
-
-	return rn.Async(ctx, a.t.Job)
+	time.Sleep(time.Second)
+	logger.Info("agent publish task",
+		zap.String("subject", a.subject))
+	return a.queue.Publish(a.subject, a.t.Job)
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
@@ -106,7 +107,8 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	a.queue = queue
 
 	// FIXME: we need to handle the returning subscription.
-	logger.Warn("handle client queue subscribe", zap.String("subject", a.subject))
+	logger.Warn("queue subscribe",
+		zap.String("subject", a.subject))
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
@@ -115,8 +117,5 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
-	logger := a.logger
-	logger.Info("start to handle job", zap.String("subject", subject), zap.String("reply", reply), zap.String("job", job.String()))
-	NewRunner(a, job).Handle(subject, reply)
-	logger.Info("after handle job", zap.String("subject", subject), zap.String("reply", reply), zap.String("job", job.String()))
+	go NewRunner(a, job).Handle(subject, reply)
 }

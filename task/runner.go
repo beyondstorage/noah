@@ -85,7 +85,7 @@ func (rn *Runner) Handle(subject, reply string) {
 func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 	logger := zapcontext.From(ctx)
 
-	logger.Info("start async job",
+	logger.Info("publish async job",
 		zap.String("parent_id", rn.j.Id),
 		zap.String("subject", rn.subject),
 		zap.String("job", job.String()))
@@ -101,12 +101,13 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 		return fmt.Errorf("nats publish: %w", err)
 	}
 
+	logger.Info("published async job", zap.String("subject", rn.subject))
 	return
 }
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
 	logger := zapcontext.From(ctx)
-	logger.Warn("wait msg from subject", zap.String("id", rn.j.Id))
+	logger.Warn("wait msg for subject", zap.String("id", rn.j.Id))
 	// Wait for all JobReply sending to the reply subject.
 	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
@@ -156,6 +157,9 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 }
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
+	logger := zapcontext.From(ctx)
+
+	logger.Info("send finish reply", zap.String("reply", reply))
 	return rn.queue.Publish(reply, &proto.JobReply{
 		Id:      rn.j.Id, // Make sure JobReply sends to the parent job.
 		Status:  JobStatusSucceed,

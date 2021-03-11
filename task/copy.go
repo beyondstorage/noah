@@ -143,17 +143,18 @@ func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) erro
 		job.Content = content
 	}
 
+	logger.Info("copy file",
+		zap.String("from", arg.SrcPath),
+		zap.String("to", arg.DstPath))
+
 	if err := rn.Sync(ctx, &job); err != nil {
-		logger.Error("await job failed",
+		logger.Error("sync job failed",
 			zap.Error(err),
 			zap.String("runner job", rn.j.String()),
 			zap.String("store", store.String()))
 		return err
 	}
 
-	logger.Info("copy file",
-		zap.String("from", arg.SrcPath),
-		zap.String("to", arg.DstPath))
 	return nil
 }
 
