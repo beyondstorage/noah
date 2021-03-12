@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -59,7 +60,8 @@ func TestWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	cred := credential.NewHmac("KWRJFAATJAIJMHDJULOR", "ughen0cvizhh8ZInomsyyDol1lWq6JG1QoV0bIhJ")
+	ak, sk := os.Getenv("QS_ACCESS_KEY"), os.Getenv("QS_SECRET_KEY")
+	cred := credential.NewHmac(ak, sk)
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
