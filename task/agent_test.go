@@ -2,11 +2,9 @@ package task
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/aos-dev/go-storage/v3/pkg/credential"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -60,18 +58,11 @@ func testWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	ak, sk := os.Getenv("QS_ACCESS_KEY"), os.Getenv("QS_SECRET_KEY")
-	cred := credential.NewHmac(ak, sk)
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/"}}},
-			{Type: "qingstor", Pairs: []*proto.Pair{
-				{Key: "work_dir", Value: "/tmp3/d/"},
-				{Key: "name", Value: "lance-qsctl2"},
-				{Key: "location", Value: "gd2"},
-				{Key: "credential", Value: cred.String()},
-			}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/b/"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/c/"}}},
 		},
 		Job: &proto.Job{
 			Id:      uuid.NewString(),
@@ -86,5 +77,5 @@ func testWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 }

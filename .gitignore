@@ -24,4 +24,4 @@ coverage.*
 .idea/
 
 profile
-.env
+Makefile.env
