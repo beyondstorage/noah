@@ -141,7 +141,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 	var reply proto.JobReply
 
 	logger.Info("sync job",
-		zap.String("id", job.Id))
+		zap.String("job", job.String()))
 
 	// NATS provides the builtin request-response style API, so that we don't need to
 	// care about the reply id.
@@ -149,6 +149,7 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 	if err != nil {
 		return fmt.Errorf("nats request: %w", err)
 	}
+
 	if reply.Status != JobStatusSucceed {
 		logger.Error("job failed", zap.String("error", reply.Message))
 		return fmt.Errorf("job failed: %v", reply.Message)

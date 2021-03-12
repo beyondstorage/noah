@@ -3,18 +3,18 @@ package task
 import (
 	"context"
 	"fmt"
+	"time"
 
 	ps "github.com/aos-dev/go-storage/v3/pairs"
 	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
 	"github.com/aos-dev/go-storage/v3/types"
-	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
 
 	"github.com/aos-dev/noah/proto"
 )
 
-const defaultMultipartThreshold = 128 * 1024 * 1024
+const defaultMultipartThreshold int64 = 128 * 1024 * 1024
 
 func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 	logger := rn.logger
@@ -101,9 +101,10 @@ func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) erro
 	logger := rn.logger
 	arg := msg.(*proto.CopyFile)
 
-	store := rn.storages[arg.Src]
+	src := rn.storages[arg.Src]
+	dst := rn.storages[arg.Dst]
 
-	obj, err := store.Stat(arg.SrcPath)
+	obj, err := src.Stat(arg.SrcPath)
 	if err != nil {
 		return err
 	}
@@ -113,7 +114,7 @@ func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) erro
 	}
 
 	job := proto.NewJob()
-	if _, ok := store.(types.Multiparter); ok && size > defaultMultipartThreshold {
+	if _, ok := dst.(types.Multiparter); ok && size > defaultMultipartThreshold {
 		content, err := protobuf.Marshal(&proto.CopyMultipartFile{
 			Src:     arg.Src,
 			Dst:     arg.Dst,
@@ -151,7 +152,8 @@ func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) erro
 		logger.Error("sync job failed",
 			zap.Error(err),
 			zap.String("runner job", rn.j.String()),
-			zap.String("store", store.String()))
+			zap.String("src", src.String()),
+			zap.String("dst", dst.String()))
 		return err
 	}
 
@@ -192,9 +194,73 @@ func (rn *Runner) HandleCopySingleFile(ctx context.Context, msg protobuf.Message
 	return nil
 }
 func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Message) error {
-	logger := zapcontext.From(ctx)
+	logger := rn.logger
 
 	arg := msg.(*proto.CopyMultipartFile)
+
+	dst := rn.storages[arg.Dst]
+	multiparter := dst.(types.Multiparter)
+	obj, err := multiparter.CreateMultipartWithContext(ctx, arg.DstPath)
+	if err != nil {
+		logger.Error("create multipart failed", zap.Error(err), zap.String("dst", dst.String()))
+		return err
+	}
+
+	var offset int64
+	var index uint32
+	parts := make([]*types.Part, 0)
+	for {
+		size := defaultMultipartThreshold
+		if offset+size > arg.Size {
+			size = arg.Size - offset
+		}
+
+		job := proto.NewJob()
+		content, err := protobuf.Marshal(&proto.CopyMultipart{
+			Src:         arg.Src,
+			Dst:         arg.Dst,
+			SrcPath:     arg.SrcPath,
+			DstPath:     arg.DstPath,
+			Size:        size,
+			Index:       index,
+			Offset:      offset,
+			MultipartId: obj.MustGetMultipartID(),
+		})
+		logger.Warn("multipart", zap.Strings("job", []string{arg.SrcPath, arg.DstPath}),
+			zap.Int64("size", size), zap.Uint32("index", index), zap.Int64("offset", offset),
+			zap.String("multipartID", obj.MustGetMultipartID()), zap.Int64("arg size", arg.Size))
+		if err != nil {
+			panic("marshal failed")
+		}
+
+		job.Type = TypeCopyMultipart
+		job.Content = content
+
+		if err = rn.Async(ctx, &job); err != nil {
+			return err
+		}
+
+		parts = append(parts, &types.Part{
+			Index: int(index),
+			Size:  size,
+		})
+
+		index++
+		offset += size
+		if offset >= arg.Size {
+			break
+		}
+	}
+
+	if err := rn.Await(ctx); err != nil {
+		return err
+	}
+
+	time.Sleep(time.Second)
+
+	if err = multiparter.CompleteMultipartWithContext(ctx, obj, parts); err != nil {
+		return err
+	}
 
 	// Send task and wait for response.
 	logger.Info("copy multipart",
@@ -227,7 +293,7 @@ func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message)
 		}
 	}()
 
-	_, err := src.Read(arg.SrcPath, w)
+	_, err := src.Read(arg.SrcPath, w, ps.WithSize(arg.Size), ps.WithOffset(arg.Offset))
 	if err != nil {
 		logger.Error("src read", zap.Error(err))
 		return err

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aos-dev/go-storage/v3/pkg/credential"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -46,27 +47,33 @@ func TestWorker(t *testing.T) {
 		}
 	}
 
-	copyFileJob := &proto.CopyDir{
-		Src:       0,
-		Dst:       1,
-		SrcPath:   "",
-		DstPath:   "",
-		Recursive: true,
+	copyFileJob := &proto.CopyFile{
+		Src:     0,
+		Dst:     1,
+		SrcPath: "test-256M",
+		DstPath: "test-256M",
+		// Recursive: true,
 	}
 	content, err := protobuf.Marshal(copyFileJob)
 	if err != nil {
 		t.Error(err)
 	}
 
+	cred := credential.NewHmac("KWRJFAATJAIJMHDJULOR", "ughen0cvizhh8ZInomsyyDol1lWq6JG1QoV0bIhJ")
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/a"}}},
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/b"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp/"}}},
+			{Type: "qingstor", Pairs: []*proto.Pair{
+				{Key: "work_dir", Value: "/tmp3/b/"},
+				{Key: "name", Value: "lance-qsctl2"},
+				{Key: "location", Value: "gd2"},
+				{Key: "credential", Value: cred.String()},
+			}},
 		},
 		Job: &proto.Job{
 			Id:      uuid.NewString(),
-			Type:    TypeCopyDir,
+			Type:    TypeCopyFile,
 			Content: content,
 		},
 	}
@@ -77,5 +84,5 @@ func TestWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(60 * time.Second)
 }

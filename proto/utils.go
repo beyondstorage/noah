@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	fs "github.com/aos-dev/go-service-fs/v2"
+	qingstor "github.com/aos-dev/go-service-qingstor/v2"
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/google/uuid"
 )
@@ -18,6 +19,8 @@ func (x *Endpoint) ParseStorager() (types.Storager, error) {
 	switch x.GetType() {
 	case fs.Type:
 		return fs.NewStorager(pairs...)
+	case qingstor.Type:
+		return qingstor.NewStorager(pairs...)
 	default:
 		return nil, errors.New("endpoint type unsupported")
 	}

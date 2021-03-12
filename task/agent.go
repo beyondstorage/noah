@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/nats-io/nats.go"
@@ -85,10 +84,10 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 	}
 	a.queue = queue
 
-	time.Sleep(time.Second)
-	logger.Info("agent publish task",
-		zap.String("subject", a.subject))
-	return a.queue.Publish(a.subject, a.t.Job)
+	// FIXME: we need to maintain task running status instead of job's
+	rn := NewRunner(a, a.t.Job)
+
+	return rn.Async(ctx, a.t.Job)
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
