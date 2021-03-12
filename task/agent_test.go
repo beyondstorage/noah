@@ -28,7 +28,7 @@ func setupPortal(t *testing.T) *Portal {
 }
 
 // This is not a really unit test, just for developing, SHOULD be removed.
-func TestWorker(t *testing.T) {
+func testWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
@@ -48,12 +48,12 @@ func TestWorker(t *testing.T) {
 		}
 	}
 
-	copyFileJob := &proto.CopyFile{
-		Src:     0,
-		Dst:     1,
-		SrcPath: "test-256M",
-		DstPath: "test-256M",
-		// Recursive: true,
+	copyFileJob := &proto.CopyDir{
+		Src:       0,
+		Dst:       1,
+		SrcPath:   "",
+		DstPath:   "",
+		Recursive: true,
 	}
 	content, err := protobuf.Marshal(copyFileJob)
 	if err != nil {
@@ -65,9 +65,9 @@ func TestWorker(t *testing.T) {
 	copyFileTask := &proto.Task{
 		Id: uuid.NewString(),
 		Endpoints: []*proto.Endpoint{
-			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/Users/lance/tmp/"}}},
+			{Type: "fs", Pairs: []*proto.Pair{{Key: "work_dir", Value: "/tmp/"}}},
 			{Type: "qingstor", Pairs: []*proto.Pair{
-				{Key: "work_dir", Value: "/tmp3/b/"},
+				{Key: "work_dir", Value: "/tmp3/d/"},
 				{Key: "name", Value: "lance-qsctl2"},
 				{Key: "location", Value: "gd2"},
 				{Key: "credential", Value: cred.String()},
@@ -75,7 +75,7 @@ func TestWorker(t *testing.T) {
 		},
 		Job: &proto.Job{
 			Id:      uuid.NewString(),
-			Type:    TypeCopyFile,
+			Type:    TypeCopyDir,
 			Content: content,
 		},
 	}
@@ -86,5 +86,5 @@ func TestWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	time.Sleep(60 * time.Second)
+	time.Sleep(30 * time.Second)
 }

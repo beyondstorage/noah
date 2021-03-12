@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"time"
 
 	ps "github.com/aos-dev/go-storage/v3/pairs"
 	"github.com/aos-dev/go-storage/v3/pkg/iowrap"
@@ -14,7 +13,7 @@ import (
 	"github.com/aos-dev/noah/proto"
 )
 
-const defaultMultipartThreshold int64 = 128 * 1024 * 1024
+const defaultMultipartThreshold int64 = 50 * 1024 * 1024
 
 func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 	logger := rn.logger
@@ -79,18 +78,18 @@ func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error
 
 		err = rn.Async(ctx, &job)
 		if err != nil {
-			logger.Error("async job failed",
+			logger.Error("async copy dir job failed",
 				zap.Error(err),
-				zap.String("job", job.String()),
+				zap.String("object ID", o.ID),
 				zap.String("store", store.String()))
 			return err
 		}
 	}
 
 	if err = rn.Await(ctx); err != nil {
-		logger.Error("await job failed",
+		logger.Error("await copy dir job failed",
 			zap.Error(err),
-			zap.String("runner job", rn.j.String()),
+			zap.String("parent job", rn.j.Id),
 			zap.String("store", store.String()))
 		return err
 	}
@@ -149,9 +148,9 @@ func (rn *Runner) HandleCopyFile(ctx context.Context, msg protobuf.Message) erro
 		zap.String("to", arg.DstPath))
 
 	if err := rn.Sync(ctx, &job); err != nil {
-		logger.Error("sync job failed",
+		logger.Error("sync copy file job failed",
 			zap.Error(err),
-			zap.String("runner job", rn.j.String()),
+			zap.String("parent job", rn.j.Id),
 			zap.String("src", src.String()),
 			zap.String("dst", dst.String()))
 		return err
@@ -171,16 +170,18 @@ func (rn *Runner) HandleCopySingleFile(ctx context.Context, msg protobuf.Message
 	r, w := iowrap.Pipe()
 
 	go func() {
-		_, err := dst.Write(arg.DstPath, r, arg.Size)
+		_, err := src.Read(arg.SrcPath, w)
 		if err != nil {
-			logger.Error("write multipart: %v", zap.Error(err))
+			logger.Error("src read failed", zap.Error(err))
 		}
 	}()
 
-	_, err := src.Read(arg.SrcPath, w)
+	_, err := dst.Write(arg.DstPath, r, arg.Size)
 	if err != nil {
-		logger.Error("src read: %v", zap.Error(err))
+		logger.Error("write single file failed", zap.Error(err))
+		return err
 	}
+
 	defer func() {
 		err = r.Close()
 		if err != nil {
@@ -226,9 +227,6 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 			Offset:      offset,
 			MultipartId: obj.MustGetMultipartID(),
 		})
-		logger.Warn("multipart", zap.Strings("job", []string{arg.SrcPath, arg.DstPath}),
-			zap.Int64("size", size), zap.Uint32("index", index), zap.Int64("offset", offset),
-			zap.String("multipartID", obj.MustGetMultipartID()), zap.Int64("arg size", arg.Size))
 		if err != nil {
 			panic("marshal failed")
 		}
@@ -237,6 +235,7 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 		job.Content = content
 
 		if err = rn.Async(ctx, &job); err != nil {
+			logger.Error("async copy multipart failed", zap.Error(err), zap.String("parent job", rn.j.Id))
 			return err
 		}
 
@@ -253,10 +252,9 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 	}
 
 	if err := rn.Await(ctx); err != nil {
+		logger.Error("await copy multipart file failed", zap.Error(err), zap.String("parent job", rn.j.Id))
 		return err
 	}
-
-	time.Sleep(time.Second)
 
 	if err = multiparter.CompleteMultipartWithContext(ctx, obj, parts); err != nil {
 		return err
@@ -286,18 +284,19 @@ func (rn *Runner) HandleCopyMultipart(ctx context.Context, msg protobuf.Message)
 	r, w := iowrap.Pipe()
 
 	go func() {
-		o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
-		_, err := multipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
+		_, err := src.Read(arg.SrcPath, w, ps.WithSize(arg.Size), ps.WithOffset(arg.Offset))
 		if err != nil {
-			logger.Error("write multipart", zap.Error(err))
+			logger.Error("src read failed", zap.Error(err), zap.String("src", arg.SrcPath))
 		}
 	}()
 
-	_, err := src.Read(arg.SrcPath, w, ps.WithSize(arg.Size), ps.WithOffset(arg.Offset))
+	o := dst.Create(arg.DstPath, ps.WithMultipartID(arg.MultipartId))
+	_, err := multipart.WriteMultipart(o, r, arg.Size, int(arg.Index))
 	if err != nil {
-		logger.Error("src read", zap.Error(err))
+		logger.Error("write multipart failed", zap.Error(err), zap.String("dst", arg.DstPath))
 		return err
 	}
+
 	defer func() {
 		err = r.Close()
 		if err != nil {

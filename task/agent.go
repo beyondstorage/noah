@@ -72,7 +72,7 @@ func (a *Agent) parseStorage(ctx context.Context) (err error) {
 func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 	logger := a.logger
 
-	logger.Info("agent connect as server", zap.String("addr", addr))
+	logger.Info("agent connect to job queue as server", zap.String("addr", addr))
 
 	conn, err := nats.Connect(addr)
 	if err != nil {
@@ -93,7 +93,8 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	logger := a.logger
 
-	logger.Info("agent connect to job queue", zap.String("addr", addr))
+	logger.Info("agent connect to job queue as client",
+		zap.String("addr", addr), zap.String("subject", a.subject))
 
 	conn, err := nats.Connect(addr)
 	if err != nil {
@@ -106,8 +107,6 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	a.queue = queue
 
 	// FIXME: we need to handle the returning subscription.
-	logger.Warn("queue subscribe",
-		zap.String("subject", a.subject))
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
