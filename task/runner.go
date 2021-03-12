@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/aos-dev/go-storage/v3/types"
-	"github.com/aos-dev/go-toolbox/zapcontext"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -37,7 +36,7 @@ func NewRunner(a *Agent, j *proto.Job) *Runner {
 }
 
 func (rn *Runner) Handle(subject, reply string) {
-	rn.logger.Debug("start handle job", zap.String("id", rn.j.Id))
+	rn.logger.Info("runner start handle job", zap.String("id", rn.j.Id), zap.String("job", rn.j.String()))
 
 	ctx := context.Background()
 
@@ -83,11 +82,7 @@ func (rn *Runner) Handle(subject, reply string) {
 }
 
 func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
-	logger := zapcontext.From(ctx)
-
-	logger.Debug("start async job",
-		zap.String("parent_id", rn.j.Id),
-		zap.String("id", job.Id))
+	logger := rn.logger
 
 	rn.wg.Add(1)
 	// Publish new job with the specific reply subject on the task subject.
@@ -100,12 +95,14 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 		return fmt.Errorf("nats publish: %w", err)
 	}
 
+	logger.Info("published async job", zap.String("subject", rn.subject), zap.String("parent job", rn.j.Id))
 	return
 }
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
-	logger := zapcontext.From(ctx)
+	logger := rn.logger
 
+	logger.Info("wait msg for subject", zap.String("parent job", rn.j.Id))
 	// Wait for all JobReply sending to the reply subject.
 	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
 	if err != nil {
@@ -115,7 +112,7 @@ func (rn *Runner) Await(ctx context.Context) (err error) {
 
 	rn.wg.Wait()
 
-	logger.Debug("finish await jobs", zap.String("parent_id", rn.j.Id))
+	logger.Info("finish await jobs", zap.String("parent job", rn.j.Id))
 	return
 }
 
@@ -124,23 +121,20 @@ func (rn *Runner) awaitHandler(job *proto.JobReply) {
 
 	switch job.Status {
 	case JobStatusSucceed:
-		rn.logger.Info("job succeed", zap.String("id", job.Id))
-	}
-	if job.Status != JobStatusSucceed {
-		rn.logger.Error("job failed",
-			zap.String("id", job.Id),
+		rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
+	default:
+		rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("parent job", rn.j.Id),
 			zap.String("error", job.Message),
 		)
 	}
 }
 
 func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
-	logger := zapcontext.From(ctx)
+	logger := rn.logger
 
 	var reply proto.JobReply
 
-	logger.Debug("sync job",
-		zap.String("id", job.Id))
+	logger.Info("sync job", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
 
 	// NATS provides the builtin request-response style API, so that we don't need to
 	// care about the reply id.
@@ -148,14 +142,20 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 	if err != nil {
 		return fmt.Errorf("nats request: %w", err)
 	}
+
 	if reply.Status != JobStatusSucceed {
 		logger.Error("job failed", zap.String("error", reply.Message))
 		return fmt.Errorf("job failed: %v", reply.Message)
 	}
+
+	logger.Info("job synced successfully", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
 	return
 }
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
+	logger := rn.logger
+
+	logger.Info("send finish reply", zap.String("reply", reply))
 	return rn.queue.Publish(reply, &proto.JobReply{
 		Id:      rn.j.Id, // Make sure JobReply sends to the parent job.
 		Status:  JobStatusSucceed,

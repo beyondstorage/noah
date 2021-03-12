@@ -54,7 +54,7 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 
 		err = server.Run(srv)
 		if err != nil {
-			logger.Error("nats server run", zap.Error(err))
+			logger.Error("nats server run failed", zap.Error(err))
 		}
 	}()
 
@@ -73,7 +73,7 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 }
 
 func (w *Worker) Connect(ctx context.Context) (err error) {
-	logger := zapcontext.From(ctx)
+	logger := w.logger
 
 	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
 		Id:   w.id,
@@ -105,7 +105,7 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 }
 
 func (w *Worker) Handle(subject, reply string, task *proto.Task) {
-	w.logger.Debug("start handle task",
+	w.logger.Info("start handle task",
 		zap.String("subject", subject),
 		zap.String("id", task.Id))
 

@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	fs "github.com/aos-dev/go-service-fs/v2"
 	"github.com/aos-dev/go-storage/v3/types"
-	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
@@ -61,13 +59,21 @@ func (a *Agent) Handle() (err error) {
 }
 
 func (a *Agent) parseStorage(ctx context.Context) (err error) {
-	for range a.t.Endpoints {
-		a.storages = append(a.storages, &fs.Storage{})
+	for _, ep := range a.t.Endpoints {
+		store, err := ep.ParseStorager()
+		if err != nil {
+			return err
+		}
+		a.storages = append(a.storages, store)
 	}
 	return
 }
 
 func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
+	logger := a.logger
+
+	logger.Info("agent connect to job queue as server", zap.String("addr", addr))
+
 	conn, err := nats.Connect(addr)
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
@@ -85,9 +91,10 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
-	logger := zapcontext.From(ctx)
+	logger := a.logger
 
-	logger.Info("agent connect to job queue", zap.String("addr", addr))
+	logger.Info("agent connect to job queue as client",
+		zap.String("addr", addr), zap.String("subject", a.subject))
 
 	conn, err := nats.Connect(addr)
 	if err != nil {
@@ -108,5 +115,5 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
-	NewRunner(a, job).Handle(subject, reply)
+	go NewRunner(a, job).Handle(subject, reply)
 }
