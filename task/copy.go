@@ -13,7 +13,10 @@ import (
 	"github.com/aos-dev/noah/proto"
 )
 
-const defaultMultipartThreshold int64 = 50 * 1024 * 1024
+const (
+	defaultMultipartThreshold int64 = 1024 * 1024 * 1024 // 1G
+	defaultMultipartPartSize  int64 = 128 * 1024 * 1024  // 128M
+)
 
 func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error {
 	logger := rn.logger
@@ -211,9 +214,15 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 	var index uint32
 	parts := make([]*types.Part, 0)
 	for {
-		size := defaultMultipartThreshold
-		if offset+size > arg.Size {
-			size = arg.Size - offset
+		partSize, err := calculatePartSize(obj)
+		if err != nil {
+			logger.Error("calculate part size failed", zap.Error(err))
+			return err
+		}
+
+		// handle size for the last part
+		if offset+partSize > arg.Size {
+			partSize = arg.Size - offset
 		}
 
 		job := proto.NewJob()
@@ -222,7 +231,7 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 			Dst:         arg.Dst,
 			SrcPath:     arg.SrcPath,
 			DstPath:     arg.DstPath,
-			Size:        size,
+			Size:        partSize,
 			Index:       index,
 			Offset:      offset,
 			MultipartId: obj.MustGetMultipartID(),
@@ -241,11 +250,11 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 
 		parts = append(parts, &types.Part{
 			Index: int(index),
-			Size:  size,
+			Size:  partSize,
 		})
 
 		index++
-		offset += size
+		offset += partSize
 		if offset >= arg.Size {
 			break
 		}
