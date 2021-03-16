@@ -102,6 +102,15 @@ func Test_calculatePartSize(t *testing.T) {
 			expectPartSize: 214748365, // 0.2g + 1
 			hasErr:         false,
 		},
+		{
+			name:           "last part",
+			numberMax:      50,
+			partSizeMin:    512 * _1m,
+			partSizeMax:    5 * _1g,
+			length:         200 * _1m,
+			expectPartSize: 256 * _1m,
+			hasErr:         false,
+		},
 	}
 
 	for _, tt := range cases {

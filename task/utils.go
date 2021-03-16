@@ -27,9 +27,12 @@ func calculatePartSize(o *types.Object, totalSize int64) (int64, error) {
 				partSize = partSize >> 1
 				continue
 			}
-			if minOK && partSize < minSize {
-				partSize = partSize << 1
-				continue
+			// if part size >= total size, consider total object as last part, which is not limited by minimum part size
+			if partSize < totalSize {
+				if minOK && partSize < minSize {
+					partSize = partSize << 1
+					continue
+				}
 			}
 			return partSize, nil
 		}
@@ -45,10 +48,13 @@ func calculatePartSize(o *types.Object, totalSize int64) (int64, error) {
 			continue
 		}
 
-		// if partSize less than minimum, double part size
-		if minOK && partSize < minSize {
-			partSize = partSize << 1
-			continue
+		// if part size >= total size, consider total object as last part, which is not limited by minimum part size
+		if partSize < totalSize {
+			// otherwise, if partSize less than minimum, double part size
+			if minOK && partSize < minSize {
+				partSize = partSize << 1
+				continue
+			}
 		}
 
 		// if partSize too large, try to count by the max part number
