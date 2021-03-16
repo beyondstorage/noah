@@ -66,7 +66,7 @@ func calculatePartSize(o *types.Object, totalSize int64) (int64, error) {
 }
 
 // validatePartSize used to check user-input part size
-func validatePartSize(o *types.Object, partSize int64) error {
+func validatePartSize(o *types.Object, totalSize, partSize int64) error {
 	if min, ok := o.GetMultipartSizeMinimum(); ok && partSize < min {
 		return fmt.Errorf("part size must larger than {%d}", min)
 	}
@@ -75,7 +75,7 @@ func validatePartSize(o *types.Object, partSize int64) error {
 	}
 	num, ok := o.GetMultipartNumberMaximum()
 	if ok {
-		parts := o.MustGetContentLength() / partSize
+		parts := totalSize / partSize
 		if parts > int64(num) {
 			return fmt.Errorf("parts count at part size <%d> "+
 				"will be larger than max number {%d}", partSize, num)
