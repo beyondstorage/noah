@@ -6,17 +6,16 @@ import (
 	"github.com/aos-dev/go-storage/v3/types"
 )
 
-func calculatePartSize(o *types.Object) (int64, error) {
+func calculatePartSize(o *types.Object, totalSize int64) (int64, error) {
 	maxNum, numOK := o.GetMultipartNumberMaximum()
 	maxSize, maxOK := o.GetMultipartSizeMaximum()
 	minSize, minOK := o.GetMultipartSizeMinimum()
 
 	partSize := defaultMultipartPartSize
-	objSize := o.MustGetContentLength()
 
 	// assert object size too large
 	if maxOK && numOK {
-		if objSize > maxSize*int64(maxNum) {
+		if totalSize > maxSize*int64(maxNum) {
 			return 0, fmt.Errorf("calculate part size failed: {object size too large}")
 		}
 	}
@@ -38,8 +37,8 @@ func calculatePartSize(o *types.Object) (int64, error) {
 
 	// if multipart number has maximum restriction, count part size dynamically
 	for {
-		// if partSize larger than maximum, double part size
-		if objSize/partSize >= int64(maxNum) {
+		// if part number count larger than maximum, double part size
+		if totalSize/partSize >= int64(maxNum) {
 			// objSize > maxSize * maxNum has been asserted before,
 			// so we do not need check
 			partSize = partSize << 1
@@ -56,7 +55,7 @@ func calculatePartSize(o *types.Object) (int64, error) {
 		if maxOK && partSize > maxSize {
 			// Try to adjust partSize if it is too small and account for
 			// integer division truncation.
-			partSize = objSize/int64(maxNum) + 1
+			partSize = totalSize/int64(maxNum) + 1
 			return partSize, nil
 		}
 

@@ -31,15 +31,6 @@ func Test_calculatePartSize(t *testing.T) {
 			hasErr:         false,
 		},
 		{
-			name:           "object no content length",
-			numberMax:      defaultNumber,
-			partSizeMin:    0,
-			partSizeMax:    0,
-			length:         0,
-			expectPartSize: defaultMultipartPartSize,
-			hasErr:         false,
-		},
-		{
 			name:           "object too large",
 			numberMax:      100,
 			partSizeMin:    0,
@@ -124,18 +115,8 @@ func Test_calculatePartSize(t *testing.T) {
 		if tt.partSizeMin > 0 {
 			obj.SetMultipartSizeMinimum(tt.partSizeMin)
 		}
-		if tt.length > 0 {
-			obj.SetContentLength(tt.length)
-		}
 
-		if tt.length <= 0 {
-			assert.Panics(t, func() {
-				_, _ = calculatePartSize(obj)
-			}, tt.name)
-			continue
-		}
-
-		partSize, err := calculatePartSize(obj)
+		partSize, err := calculatePartSize(obj, tt.length)
 
 		if tt.hasErr {
 			assert.NotNil(t, err, tt.name)
