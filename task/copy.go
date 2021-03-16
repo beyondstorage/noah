@@ -210,16 +210,16 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 		return err
 	}
 
+	partSize, err := calculatePartSize(obj)
+	if err != nil {
+		logger.Error("calculate part size failed", zap.Error(err))
+		return err
+	}
+
 	var offset int64
 	var index uint32
 	parts := make([]*types.Part, 0)
 	for {
-		partSize, err := calculatePartSize(obj)
-		if err != nil {
-			logger.Error("calculate part size failed", zap.Error(err))
-			return err
-		}
-
 		// handle size for the last part
 		if offset+partSize > arg.Size {
 			partSize = arg.Size - offset
@@ -253,11 +253,11 @@ func (rn *Runner) HandleCopyMultipartFile(ctx context.Context, msg protobuf.Mess
 			Size:  partSize,
 		})
 
-		index++
 		offset += partSize
 		if offset >= arg.Size {
 			break
 		}
+		index++
 	}
 
 	if err := rn.Await(ctx); err != nil {
