@@ -115,3 +115,7 @@ func (w *Worker) Handle(subject, reply string, task *proto.Task) {
 		w.logger.Error("agent handle", zap.Error(err))
 	}
 }
+
+func (w *Worker) Drain() error {
+	return w.sub.Drain()
+}
