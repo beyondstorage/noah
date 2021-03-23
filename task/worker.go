@@ -32,6 +32,9 @@ type WorkerConfig struct {
 	Host string
 
 	PortalAddr string
+
+	// Queue related dir.
+	QueueStoreDir string
 }
 
 func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
@@ -49,6 +52,15 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 	srv, err := server.NewServer(&server.Options{
 		Host: cfg.Host,
 		Port: server.RANDOM_PORT,
+	})
+	if err != nil {
+		return
+	}
+
+	err = srv.EnableJetStream(&server.JetStreamConfig{
+		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
+		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
+		StoreDir:  cfg.QueueStoreDir,
 	})
 	if err != nil {
 		return

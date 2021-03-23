@@ -32,9 +32,12 @@ type Portal struct {
 }
 
 type PortalConfig struct {
-	Host      string
-	GrpcPort  int
-	QueuePort int
+	Host     string
+	GrpcPort int
+
+	// Queue related config.
+	QueuePort     int
+	QueueStoreDir string
 }
 
 func (p PortalConfig) GrpcAddr() string {
@@ -76,6 +79,16 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 		Host:  cfg.Host,
 		Port:  cfg.QueuePort,
 		Debug: true, // FIXME: allow used for developing
+	})
+	if err != nil {
+		return
+	}
+
+	// JetStream is the streaming platform for NATS, which allow at least once delivery.
+	err = srv.EnableJetStream(&server.JetStreamConfig{
+		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
+		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
+		StoreDir:  cfg.QueueStoreDir,
 	})
 	if err != nil {
 		return
