@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"time"
 
 	"github.com/aos-dev/go-toolbox/natszap"
@@ -37,7 +38,10 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 	logger := zapcontext.From(ctx)
 
 	// FIXME: we need to use ssl/tls to encrypt our channel.
-	conn, err := grpc.DialContext(ctx, cfg.PortalAddr, grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, cfg.PortalAddr,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(logger)),
+	)
 	if err != nil {
 		return
 	}
@@ -106,12 +110,13 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 func (w *Worker) Handle(subject, reply string, task *proto.Task) {
 	w.logger.Info("start handle task",
 		zap.String("subject", subject),
-		zap.String("id", task.Id))
+		zap.String("id", task.Id),
+		zap.String("node_id", w.id))
 
 	a := NewAgent(w, task)
 	err := a.Handle()
 
-	tr := &proto.TaskReply{Id: task.Id}
+	tr := &proto.TaskReply{Id: task.Id, NodeId: w.id}
 	if err == nil {
 		tr.Status = JobStatusSucceed
 	} else {

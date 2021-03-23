@@ -27,9 +27,8 @@ func TestWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
-	logger := zapcontext.From(ctx)
+	_ = zapcontext.From(ctx)
 
-	ws := make([]*Worker, 0)
 	for i := 0; i < 3; i++ {
 		w, err := NewWorker(ctx, WorkerConfig{
 			Host:       "localhost",
@@ -42,8 +41,6 @@ func TestWorker(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-
-		ws = append(ws, w)
 	}
 
 	copyFileJob := &proto.CopyDir{
@@ -71,7 +68,6 @@ func TestWorker(t *testing.T) {
 		},
 	}
 
-	logger.Info("before first publish")
 	err = p.Publish(ctx, copyFileTask)
 	if err != nil {
 		t.Error(err)

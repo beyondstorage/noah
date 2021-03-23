@@ -9,6 +9,9 @@ import (
 
 	"github.com/aos-dev/go-toolbox/natszap"
 	"github.com/aos-dev/go-toolbox/zapcontext"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
@@ -51,7 +54,11 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 	}
 
 	// Setup grpc server.
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpc.NewServer(grpc.UnaryInterceptor(
+		grpc_middleware.ChainUnaryServer(
+			grpc_zap.UnaryServerInterceptor(logger),
+			grpc_recovery.UnaryServerInterceptor(),
+		)))
 	proto.RegisterNodeServer(grpcSrv, p)
 	go func() {
 		l, err := net.Listen("tcp", cfg.GrpcAddr())
@@ -101,11 +108,8 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 }
 
 func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
-	logger := zapcontext.From(ctx)
+	_ = zapcontext.From(ctx)
 
-	logger.Info("receive register request",
-		zap.String("id", request.Id),
-		zap.String("addr", request.Addr))
 	p.nodes = append(p.nodes, request.Id)
 	p.nodeAddrMap[request.Id] = request.Addr
 
@@ -116,9 +120,8 @@ func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (
 }
 
 func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*proto.UpgradeReply, error) {
-	logger := zapcontext.From(ctx)
+	_ = zapcontext.From(ctx)
 
-	logger.Info("node addr map", zap.Reflect("map", p.nodeAddrMap))
 	return &proto.UpgradeReply{
 		NodeId:  p.nodes[0],
 		Addr:    p.nodeAddrMap[p.nodes[0]],
@@ -128,9 +131,10 @@ func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*p
 
 // Publish will publish a task on "tasks" queue.
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
-	_ = zapcontext.From(ctx)
+	logger := zapcontext.From(ctx)
 
 	// TODO: We need to maintain all tasks in db maybe.
+	logger.Info("publish task", zap.String("id", task.Id))
 	err = p.queue.PublishRequest("tasks", task.Id, task)
 	if err != nil {
 		return
@@ -149,9 +153,13 @@ func (p *Portal) Wait(ctx context.Context, task *proto.Task) (err error) {
 
 		switch tr.Status {
 		case JobStatusSucceed:
-			logger.Info("task succeed", zap.String("id", tr.Id))
+			logger.Info("task succeed",
+				zap.String("id", tr.Id),
+				zap.String("node_id", tr.NodeId))
 		default:
-			logger.Error("task failed", zap.String("id", tr.Id),
+			logger.Error("task failed",
+				zap.String("id", tr.Id),
+				zap.String("node_id", tr.NodeId),
 				zap.String("error", tr.Message),
 			)
 		}

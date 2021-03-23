@@ -13,8 +13,9 @@ message Task {
 
 message TaskReply {
     string id = 1;
-    uint32 status = 2;
-    string message = 3;
+    string node_id = 2;
+    uint32 status = 3;
+    string message = 4;
 }
 
 message Endpoint {

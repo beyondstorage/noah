@@ -45,7 +45,6 @@ func (a *Agent) Handle() (err error) {
 	if err != nil {
 		return fmt.Errorf("node upgrade: %v", err)
 	}
-	a.logger.Info("receive upgrade", zap.String("reply", reply.String()))
 
 	a.subject = reply.Subject
 
@@ -53,12 +52,15 @@ func (a *Agent) Handle() (err error) {
 	if err != nil {
 		return
 	}
+	err = a.connect(ctx, reply.Addr)
+	if err != nil {
+		return
+	}
 
 	if reply.NodeId == a.w.id {
-		err = a.handleServer(ctx, reply.Addr)
+		err = a.handleServer(ctx)
 	} else {
-		err = a.handleClient(ctx, reply.Addr)
-		a.wg.Wait()
+		err = a.handleClient(ctx)
 	}
 	if err != nil {
 		return
@@ -78,20 +80,22 @@ func (a *Agent) parseStorage(ctx context.Context) (err error) {
 	return
 }
 
-func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
-	logger := a.logger
-
-	logger.Info("agent connect to job queue as server", zap.String("addr", addr))
-
+func (a *Agent) connect(ctx context.Context, addr string) error {
 	conn, err := nats.Connect(addr)
 	if err != nil {
 		return fmt.Errorf("nats connect: %w", err)
 	}
-	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	a.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return fmt.Errorf("nats encoded connect: %w", err)
 	}
-	a.queue = queue
+	return nil
+}
+
+func (a *Agent) handleServer(ctx context.Context) (err error) {
+	logger := a.logger
+
+	logger.Info("agent handle as server", zap.String("subject", a.subject), zap.String("node_id", a.w.id))
 
 	// FIXME: we need to maintain task running status instead of job's
 	rn := NewRunner(a, a.t.Job)
@@ -103,30 +107,21 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 	return a.queue.Drain()
 }
 
-func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
+func (a *Agent) handleClient(ctx context.Context) (err error) {
 	logger := a.logger
 
-	logger.Info("agent connect to job queue as client",
-		zap.String("addr", addr), zap.String("subject", a.subject))
-
-	conn, err := nats.Connect(addr)
-	if err != nil {
-		return
-	}
-	a.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
-	if err != nil {
-		return
-	}
+	logger.Info("agent handle as client", zap.String("subject", a.subject), zap.String("node_id", a.w.id))
 
 	// FIXME: we need to handle the returning subscription.
-	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
+	_, err = a.queue.QueueSubscribe(a.subject, a.subject,
+		func(subject, reply string, job *proto.Job) {
+			a.wg.Add(1)
+			go NewRunner(a, job).Handle(subject, reply)
+		})
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}
-	return
-}
 
-func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
-	a.wg.Add(1)
-	go NewRunner(a, job).Handle(subject, reply)
+	a.wg.Wait()
+	return
 }
