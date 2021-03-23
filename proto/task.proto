@@ -11,6 +11,9 @@ message Task {
     job.Job job = 3;
 }
 
+message TaskFinish {
+}
+
 message TaskReply {
     string id = 1;
     string node_id = 2;

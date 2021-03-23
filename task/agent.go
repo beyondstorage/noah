@@ -21,18 +21,44 @@ type Agent struct {
 	subject  string // All agent will share the same task subject
 	storages []types.Storager
 
-	wg     *sync.WaitGroup // Control client runners via wait group
+	cond   *sync.Cond
 	logger *zap.Logger
 }
 
 func NewAgent(w *Worker, t *proto.Task) *Agent {
-	return &Agent{
+	a := &Agent{
 		w: w,
 		t: t,
 
-		wg:     &sync.WaitGroup{},
+		cond:   sync.NewCond(&sync.Mutex{}),
 		logger: w.logger,
 	}
+
+	a.cond.L.Lock()
+	return a
+}
+
+func (a *Agent) parseStorage(ctx context.Context) (err error) {
+	for _, ep := range a.t.Endpoints {
+		store, err := ep.ParseStorager()
+		if err != nil {
+			return err
+		}
+		a.storages = append(a.storages, store)
+	}
+	return
+}
+
+func (a *Agent) connect(ctx context.Context, addr string) error {
+	conn, err := nats.Connect(addr)
+	if err != nil {
+		return fmt.Errorf("nats connect: %w", err)
+	}
+	a.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	if err != nil {
+		return fmt.Errorf("nats encoded connect: %w", err)
+	}
+	return nil
 }
 
 func (a *Agent) Handle() (err error) {
@@ -69,29 +95,6 @@ func (a *Agent) Handle() (err error) {
 	return nil
 }
 
-func (a *Agent) parseStorage(ctx context.Context) (err error) {
-	for _, ep := range a.t.Endpoints {
-		store, err := ep.ParseStorager()
-		if err != nil {
-			return err
-		}
-		a.storages = append(a.storages, store)
-	}
-	return
-}
-
-func (a *Agent) connect(ctx context.Context, addr string) error {
-	conn, err := nats.Connect(addr)
-	if err != nil {
-		return fmt.Errorf("nats connect: %w", err)
-	}
-	a.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
-	if err != nil {
-		return fmt.Errorf("nats encoded connect: %w", err)
-	}
-	return nil
-}
-
 func (a *Agent) handleServer(ctx context.Context) (err error) {
 	logger := a.logger
 
@@ -104,7 +107,11 @@ func (a *Agent) handleServer(ctx context.Context) (err error) {
 		return err
 	}
 
-	return a.queue.Drain()
+	err = a.queue.Publish(a.subject+".finish", &proto.TaskFinish{})
+	if err != nil {
+		return err
+	}
+	return
 }
 
 func (a *Agent) handleClient(ctx context.Context) (err error) {
@@ -115,13 +122,22 @@ func (a *Agent) handleClient(ctx context.Context) (err error) {
 	// FIXME: we need to handle the returning subscription.
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject,
 		func(subject, reply string, job *proto.Job) {
-			a.wg.Add(1)
 			go NewRunner(a, job).Handle(subject, reply)
 		})
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}
 
-	a.wg.Wait()
+	go func() {
+		_, err := a.queue.Subscribe(a.subject+".finish", func(_ *proto.TaskFinish) {
+			a.cond.Signal()
+		})
+		if err != nil {
+			logger.Error("subcribe finish queue", zap.Error(err))
+			return
+		}
+	}()
+
+	a.cond.Wait()
 	return
 }

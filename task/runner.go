@@ -26,8 +26,6 @@ type Runner struct {
 }
 
 func NewRunner(a *Agent, j *proto.Job) *Runner {
-	a.wg.Add(1)
-
 	return &Runner{
 		j:     j,
 		agent: a,
@@ -159,8 +157,6 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
 	logger := rn.logger
-
-	defer rn.agent.wg.Done()
 
 	logger.Info("send reply", zap.String("job", rn.j.Id), zap.String("reply", reply))
 	return rn.queue.Publish(reply, &proto.JobReply{
