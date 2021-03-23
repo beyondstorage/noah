@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/aos-dev/go-toolbox/natszap"
@@ -125,14 +126,46 @@ func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*p
 	}, nil
 }
 
+// Publish will publish a task on "tasks" queue.
 func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
 	_ = zapcontext.From(ctx)
 
 	// TODO: We need to maintain all tasks in db maybe.
-	err = p.queue.Publish("tasks", task)
+	err = p.queue.PublishRequest("tasks", task.Id, task)
 	if err != nil {
 		return
 	}
-
 	return
+}
+
+// Wait will wait for all nodes' replies on specific task.
+func (p *Portal) Wait(ctx context.Context, task *proto.Task) (err error) {
+	logger := zapcontext.From(ctx)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(len(p.nodes))
+	sub, err := p.queue.Subscribe(task.Id, func(tr *proto.TaskReply) {
+		defer wg.Done()
+
+		switch tr.Status {
+		case JobStatusSucceed:
+			logger.Info("task succeed", zap.String("id", tr.Id))
+		default:
+			logger.Error("task failed", zap.String("id", tr.Id),
+				zap.String("error", tr.Message),
+			)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+
+	wg.Wait()
+	return
+}
+
+// Drain means portal close the queue and no new task will be published.
+func (p *Portal) Drain(ctx context.Context) (err error) {
+	return p.queue.Drain()
 }

@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/nats-io/nats.go"
@@ -20,6 +21,7 @@ type Agent struct {
 	subject  string // All agent will share the same task subject
 	storages []types.Storager
 
+	wg     *sync.WaitGroup // Control client runners via wait group
 	logger *zap.Logger
 }
 
@@ -28,6 +30,7 @@ func NewAgent(w *Worker, t *proto.Task) *Agent {
 		w: w,
 		t: t,
 
+		wg:     &sync.WaitGroup{},
 		logger: w.logger,
 	}
 }
@@ -52,10 +55,16 @@ func (a *Agent) Handle() (err error) {
 	}
 
 	if reply.NodeId == a.w.id {
-		return a.handleServer(ctx, reply.Addr)
+		err = a.handleServer(ctx, reply.Addr)
 	} else {
-		return a.handleClient(ctx, reply.Addr)
+		err = a.handleClient(ctx, reply.Addr)
+		a.wg.Wait()
 	}
+	if err != nil {
+		return
+	}
+
+	return nil
 }
 
 func (a *Agent) parseStorage(ctx context.Context) (err error) {
@@ -86,8 +95,12 @@ func (a *Agent) handleServer(ctx context.Context, addr string) (err error) {
 
 	// FIXME: we need to maintain task running status instead of job's
 	rn := NewRunner(a, a.t.Job)
+	err = rn.Sync(ctx, a.t.Job)
+	if err != nil {
+		return err
+	}
 
-	return rn.Async(ctx, a.t.Job)
+	return a.queue.Drain()
 }
 
 func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
@@ -100,11 +113,10 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 	if err != nil {
 		return
 	}
-	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	a.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return
 	}
-	a.queue = queue
 
 	// FIXME: we need to handle the returning subscription.
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject, a.handleJob)
@@ -115,5 +127,6 @@ func (a *Agent) handleClient(ctx context.Context, addr string) (err error) {
 }
 
 func (a *Agent) handleJob(subject, reply string, job *proto.Job) {
+	a.wg.Add(1)
 	go NewRunner(a, job).Handle(subject, reply)
 }

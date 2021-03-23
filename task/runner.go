@@ -14,7 +14,8 @@ import (
 )
 
 type Runner struct {
-	j *proto.Job
+	agent *Agent
+	j     *proto.Job
 
 	queue    *nats.EncodedConn
 	subject  string // All runner will share the same task subject
@@ -25,8 +26,12 @@ type Runner struct {
 }
 
 func NewRunner(a *Agent, j *proto.Job) *Runner {
+	a.wg.Add(1)
+
 	return &Runner{
-		j:        j,
+		j:     j,
+		agent: a,
+
 		queue:    a.queue,
 		subject:  a.subject, // Copy task subject from agent.
 		storages: a.storages,
@@ -154,6 +159,8 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 
 func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
 	logger := rn.logger
+
+	defer rn.agent.wg.Done()
 
 	logger.Info("send finish reply", zap.String("reply", reply))
 	return rn.queue.Publish(reply, &proto.JobReply{

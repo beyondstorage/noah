@@ -22,6 +22,7 @@ type Worker struct {
 	node proto.NodeClient
 	srv  *server.Server
 
+	queue  *nats.EncodedConn
 	sub    *nats.Subscription
 	logger *zap.Logger
 }
@@ -91,16 +92,14 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	w.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return
 	}
-	sub, err := queue.Subscribe(reply.Subject, w.Handle)
+	w.sub, err = w.queue.Subscribe(reply.Subject, w.Handle)
 	if err != nil {
 		return
 	}
-
-	w.sub = sub
 	return nil
 }
 
@@ -111,11 +110,17 @@ func (w *Worker) Handle(subject, reply string, task *proto.Task) {
 
 	a := NewAgent(w, task)
 	err := a.Handle()
-	if err != nil {
-		w.logger.Error("agent handle", zap.Error(err))
-	}
-}
 
-func (w *Worker) Drain() error {
-	return w.sub.Drain()
+	tr := &proto.TaskReply{Id: task.Id}
+	if err == nil {
+		tr.Status = JobStatusSucceed
+	} else {
+		tr.Status = JobStatusFailed
+		tr.Message = fmt.Sprintf("task handle: %v", err)
+	}
+
+	err = w.queue.Publish(reply, tr)
+	if err != nil {
+		w.logger.Error("worker publish reply", zap.Error(err))
+	}
 }

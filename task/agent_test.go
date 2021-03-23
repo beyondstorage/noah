@@ -2,14 +2,11 @@ package task
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/aos-dev/go-toolbox/zapcontext"
+	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-
-	"github.com/aos-dev/noah/proto"
+	"testing"
 )
 
 func setupPortal(t *testing.T) *Portal {
@@ -26,12 +23,13 @@ func setupPortal(t *testing.T) *Portal {
 }
 
 // This is not a really unit test, just for developing, SHOULD be removed.
-func testWorker(t *testing.T) {
+func TestWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
 	logger := zapcontext.From(ctx)
 
+	ws := make([]*Worker, 0)
 	for i := 0; i < 3; i++ {
 		w, err := NewWorker(ctx, WorkerConfig{
 			Host:       "localhost",
@@ -44,6 +42,8 @@ func testWorker(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+
+		ws = append(ws, w)
 	}
 
 	copyFileJob := &proto.CopyDir{
@@ -77,5 +77,8 @@ func testWorker(t *testing.T) {
 		t.Error(err)
 	}
 
-	time.Sleep(10 * time.Second)
+	err = p.Wait(ctx, copyFileTask)
+	if err != nil {
+		t.Error(err)
+	}
 }
