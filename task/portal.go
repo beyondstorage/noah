@@ -84,18 +84,18 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 		return
 	}
 
-	// JetStream is the streaming platform for NATS, which allow at least once delivery.
-	err = srv.EnableJetStream(&server.JetStreamConfig{
-		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
-		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
-		StoreDir:  cfg.QueueStoreDir,
-	})
-	if err != nil {
-		return
-	}
-
 	go func() {
 		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
+
+		// JetStream is the streaming platform for NATS, which allow at least once delivery.
+		err = srv.EnableJetStream(&server.JetStreamConfig{
+			MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
+			MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
+			StoreDir:  cfg.QueueStoreDir,
+		})
+		if err != nil {
+			logger.Error("server enable jetstream", zap.Error(err))
+		}
 
 		err = server.Run(srv)
 		if err != nil {
