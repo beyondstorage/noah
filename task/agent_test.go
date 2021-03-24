@@ -11,6 +11,7 @@ import (
 )
 
 func setupPortal(t *testing.T) *Portal {
+	t.Log("Start setup new portal")
 	p, err := NewPortal(context.Background(), PortalConfig{
 		Host:          "localhost",
 		GrpcPort:      7000,
@@ -31,6 +32,7 @@ func TestWorker(t *testing.T) {
 	ctx := context.Background()
 	_ = zapcontext.From(ctx)
 
+	t.Log("Start create new worker")
 	for i := 0; i < 3; i++ {
 		w, err := NewWorker(ctx, WorkerConfig{
 			Host:          "localhost",
@@ -71,6 +73,7 @@ func TestWorker(t *testing.T) {
 		},
 	}
 
+	t.Log("Start publish")
 	err = p.Publish(ctx, copyFileTask)
 	if err != nil {
 		t.Error(err)

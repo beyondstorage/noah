@@ -44,8 +44,7 @@ clean:
 
 test:
 	@echo "run test"
-	@go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
-	@go tool cover -html="coverage.txt" -o "coverage.html"
+	@go test -race -v -count=1 ./task
 	@echo "ok"
 
 tidy:

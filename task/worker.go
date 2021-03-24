@@ -57,23 +57,20 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 		return
 	}
 
+	// JetStream is the streaming platform for NATS, which allow at least once delivery.
+	err = srv.EnableJetStream(&server.JetStreamConfig{
+		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
+		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
+		StoreDir:  cfg.QueueStoreDir,
+	})
+	if err != nil {
+		logger.Error("server enable jetstream", zap.Error(err))
+	}
+
 	go func() {
 		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
 
-		// JetStream is the streaming platform for NATS, which allow at least once delivery.
-		err = srv.EnableJetStream(&server.JetStreamConfig{
-			MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
-			MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
-			StoreDir:  cfg.QueueStoreDir,
-		})
-		if err != nil {
-			logger.Error("server enable jetstream", zap.Error(err))
-		}
-
-		err = server.Run(srv)
-		if err != nil {
-			logger.Error("nats server run failed", zap.Error(err))
-		}
+		srv.Start()
 	}()
 
 	if !srv.ReadyForConnections(time.Second) {
@@ -109,6 +106,7 @@ func (w *Worker) Connect(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+
 	w.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return

@@ -84,15 +84,10 @@ func (a *Agent) Handle() (err error) {
 	}
 
 	if reply.NodeId == a.w.id {
-		err = a.handleServer(ctx)
+		return a.handleServer(ctx)
 	} else {
-		err = a.handleClient(ctx)
+		return a.handleClient(ctx)
 	}
-	if err != nil {
-		return
-	}
-
-	return nil
 }
 
 func (a *Agent) handleServer(ctx context.Context) (err error) {
@@ -128,15 +123,14 @@ func (a *Agent) handleClient(ctx context.Context) (err error) {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}
 
-	go func() {
-		_, err := a.queue.Subscribe(a.subject+".finish", func(_ *proto.TaskFinish) {
-			a.cond.Signal()
-		})
-		if err != nil {
-			logger.Error("subcribe finish queue", zap.Error(err))
-			return
-		}
-	}()
+	// Waiting for finish signal.
+	_, err = a.queue.Subscribe(a.subject+".finish", func(_ *proto.TaskFinish) {
+		a.cond.Signal()
+	})
+	if err != nil {
+		logger.Error("subcribe finish queue", zap.Error(err))
+		return
+	}
 
 	a.cond.Wait()
 	return

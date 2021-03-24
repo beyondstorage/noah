@@ -84,38 +84,34 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 		return
 	}
 
+	// JetStream is the streaming platform for NATS, which allow at least once delivery.
+	err = srv.EnableJetStream(&server.JetStreamConfig{
+		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
+		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GB storage
+		StoreDir:  cfg.QueueStoreDir,
+	})
+	if err != nil {
+		logger.Error("server enable jetstream", zap.Error(err))
+	}
+
 	go func() {
 		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
 
-		// JetStream is the streaming platform for NATS, which allow at least once delivery.
-		err = srv.EnableJetStream(&server.JetStreamConfig{
-			MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
-			MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
-			StoreDir:  cfg.QueueStoreDir,
-		})
-		if err != nil {
-			logger.Error("server enable jetstream", zap.Error(err))
-		}
-
-		err = server.Run(srv)
-		if err != nil {
-			logger.Error("server run", zap.Error(err))
-		}
+		srv.Start()
 	}()
 
 	if !srv.ReadyForConnections(time.Second) {
 		panic(fmt.Errorf("server start too slow"))
 	}
 
-	conn, err := nats.Connect(srv.Addr().String())
+	conn, err := nats.Connect(srv.ClientURL())
 	if err != nil {
 		return
 	}
-	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	p.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return
 	}
-	p.queue = queue
 
 	return p, nil
 }
