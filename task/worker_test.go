@@ -9,9 +9,8 @@ import (
 	"testing"
 )
 
-func setupPortal(t *testing.T) *Portal {
-	t.Log("Start setup new portal")
-	p, err := NewPortal(context.Background(), PortalConfig{
+func setupPortal(t *testing.T) *Manager {
+	p, err := NewManager(context.Background(), ManagerConfig{
 		Host:      "localhost",
 		GrpcPort:  7000,
 		QueuePort: 7010,
@@ -30,11 +29,10 @@ func TestWorker(t *testing.T) {
 	ctx := context.Background()
 	_ = zapcontext.From(ctx)
 
-	t.Log("Start create new worker")
 	for i := 0; i < 3; i++ {
-		w, err := NewWorker(ctx, WorkerConfig{
-			Host:       "localhost",
-			PortalAddr: "localhost:7000",
+		w, err := NewStaff(ctx, StaffConfig{
+			Host:        "localhost",
+			ManagerAddr: "localhost:7000",
 		})
 		if err != nil {
 			t.Error(err)

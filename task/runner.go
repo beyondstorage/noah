@@ -14,7 +14,7 @@ import (
 )
 
 type Runner struct {
-	agent *Agent
+	agent *Worker
 	j     *proto.Job
 
 	queue    *nats.EncodedConn
@@ -22,10 +22,11 @@ type Runner struct {
 	storages []types.Storager
 
 	wg     *sync.WaitGroup
+	sub    *nats.Subscription
 	logger *zap.Logger
 }
 
-func NewRunner(a *Agent, j *proto.Job) *Runner {
+func NewRunner(a *Worker, j *proto.Job) *Runner {
 	return &Runner{
 		j:     j,
 		agent: a,
@@ -88,12 +89,27 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 	logger := rn.logger
 
 	rn.wg.Add(1)
+
+	// Wait for all JobReply sending to the reply subject.
+	rn.sub, err = rn.queue.Subscribe(SubjectJobReply(rn.j.Id), func(job *proto.JobReply) {
+		defer rn.wg.Done()
+
+		switch job.Status {
+		case JobStatusSucceed:
+			rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("job", rn.j.Id))
+		default:
+			rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("job", rn.j.Id),
+				zap.String("error", job.Message),
+			)
+		}
+	})
+	if err != nil {
+		return err
+	}
+
 	// Publish new job with the specific reply subject on the task subject.
 	// After this job finished, the runner will send a JobReply to the reply subject.
-	//
-	// For now, we use the job id as the reply subject.
-	// This could be changed.
-	err = rn.queue.PublishRequest(rn.subject, rn.j.Id, job)
+	err = rn.queue.PublishRequest(rn.subject, SubjectJobReply(rn.j.Id), job)
 	if err != nil {
 		return fmt.Errorf("nats publish: %w", err)
 	}
@@ -103,33 +119,13 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 }
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
-	logger := rn.logger
-
-	logger.Info("start await", zap.String("job", rn.j.Id))
-	// Wait for all JobReply sending to the reply subject.
-	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
-	if err != nil {
-		return err
-	}
-	defer sub.Unsubscribe()
+	rn.logger.Info("start await", zap.String("job", rn.j.Id))
 
 	rn.wg.Wait()
+	rn.sub.Unsubscribe()
 
-	logger.Info("finish await", zap.String("job", rn.j.Id))
+	rn.logger.Info("finish await", zap.String("job", rn.j.Id))
 	return
-}
-
-func (rn *Runner) awaitHandler(job *proto.JobReply) {
-	defer rn.wg.Done()
-
-	switch job.Status {
-	case JobStatusSucceed:
-		rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("job", rn.j.Id))
-	default:
-		rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("job", rn.j.Id),
-			zap.String("error", job.Message),
-		)
-	}
 }
 
 func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {

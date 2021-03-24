@@ -21,17 +21,27 @@ import (
 	"github.com/aos-dev/noah/proto"
 )
 
-type Portal struct {
-	queue       *nats.EncodedConn
-	nodes       []string
-	nodeAddrMap map[string]string
+type Manager struct {
+	queue *nats.EncodedConn
 
-	config PortalConfig
+	staffLock  sync.RWMutex
+	staffIds   []string
+	staffAddrs map[string]string
 
-	proto.UnimplementedNodeServer
+	taskLock sync.RWMutex
+	tasks    map[string]*taskMeta
+
+	config ManagerConfig
+
+	proto.UnimplementedStaffServer
 }
 
-type PortalConfig struct {
+type taskMeta struct {
+	sub *nats.Subscription
+	wg  *sync.WaitGroup
+}
+
+type ManagerConfig struct {
 	Host     string
 	GrpcPort int
 
@@ -39,20 +49,22 @@ type PortalConfig struct {
 	QueuePort int
 }
 
-func (p PortalConfig) GrpcAddr() string {
+func (p ManagerConfig) GrpcAddr() string {
 	return fmt.Sprintf("%s:%d", p.Host, p.GrpcPort)
 }
 
-func (p PortalConfig) QueueAddr() string {
+func (p ManagerConfig) QueueAddr() string {
 	return fmt.Sprintf("%s:%d", p.Host, p.QueuePort)
 }
 
-func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
+func NewManager(ctx context.Context, cfg ManagerConfig) (p *Manager, err error) {
 	logger := zapcontext.From(ctx)
 
-	p = &Portal{
-		nodeAddrMap: map[string]string{},
-		config:      cfg,
+	p = &Manager{
+		config: cfg,
+
+		staffAddrs: make(map[string]string),
+		tasks:      make(map[string]*taskMeta),
 	}
 
 	// Setup grpc server.
@@ -61,7 +73,7 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 			grpc_zap.UnaryServerInterceptor(logger),
 			grpc_recovery.UnaryServerInterceptor(),
 		)))
-	proto.RegisterNodeServer(grpcSrv, p)
+	proto.RegisterStaffServer(grpcSrv, p)
 	go func() {
 		l, err := net.Listen("tcp", cfg.GrpcAddr())
 		if err != nil {
@@ -89,7 +101,7 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 		srv.Start()
 	}()
 
-	if !srv.ReadyForConnections(time.Second) {
+	if !srv.ReadyForConnections(10 * time.Second) {
 		panic(fmt.Errorf("server start too slow"))
 	}
 
@@ -105,49 +117,49 @@ func NewPortal(ctx context.Context, cfg PortalConfig) (p *Portal, err error) {
 	return p, nil
 }
 
-func (p *Portal) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
+func (p *Manager) Register(ctx context.Context, request *proto.RegisterRequest) (*proto.RegisterReply, error) {
 	_ = zapcontext.From(ctx)
 
-	p.nodes = append(p.nodes, request.Id)
-	p.nodeAddrMap[request.Id] = request.Addr
+	p.staffLock.Lock()
+	defer p.staffLock.Unlock()
+	p.staffIds = append(p.staffIds, request.Id)
+	p.staffAddrs[request.Id] = request.Addr
 
 	return &proto.RegisterReply{
 		Addr:    p.config.QueueAddr(),
-		Subject: "tasks",
+		Subject: SubjectTasks(),
 	}, nil
 }
 
-func (p *Portal) Upgrade(ctx context.Context, request *proto.UpgradeRequest) (*proto.UpgradeReply, error) {
+func (p *Manager) Elect(ctx context.Context, request *proto.ElectRequest) (*proto.ElectReply, error) {
 	_ = zapcontext.From(ctx)
 
-	return &proto.UpgradeReply{
-		NodeId:  p.nodes[0],
-		Addr:    p.nodeAddrMap[p.nodes[0]],
-		Subject: fmt.Sprintf("task.%s", request.TaskId),
+	p.staffLock.RLock()
+	defer p.staffLock.RUnlock()
+
+	return &proto.ElectReply{
+		Addr:      p.staffAddrs[p.staffIds[0]],
+		Subject:   SubjectTask(request.TaskId),
+		LeaderId:  p.staffIds[0],
+		WorkerIds: p.staffIds[1:],
 	}, nil
 }
 
 // Publish will publish a task on "tasks" queue.
-func (p *Portal) Publish(ctx context.Context, task *proto.Task) (err error) {
+func (p *Manager) Publish(ctx context.Context, task *proto.Task) (err error) {
 	logger := zapcontext.From(ctx)
 
 	// TODO: We need to maintain all tasks in db maybe.
 	logger.Info("publish task", zap.String("id", task.Id))
-	err = p.queue.PublishRequest("tasks", task.Id, task)
-	if err != nil {
-		return
+
+	tm := &taskMeta{
+		wg: &sync.WaitGroup{},
 	}
-	return
-}
 
-// Wait will wait for all nodes' replies on specific task.
-func (p *Portal) Wait(ctx context.Context, task *proto.Task) (err error) {
-	logger := zapcontext.From(ctx)
-
-	wg := &sync.WaitGroup{}
-	wg.Add(len(p.nodes))
-	sub, err := p.queue.Subscribe(task.Id, func(tr *proto.TaskReply) {
-		defer wg.Done()
+	tm.wg.Add(len(p.staffIds))
+	// Subscribe task reply before we publish our request.
+	tm.sub, err = p.queue.Subscribe(SubjectTaskReply(task.Id), func(tr *proto.TaskReply) {
+		defer tm.wg.Done()
 
 		switch tr.Status {
 		case JobStatusSucceed:
@@ -165,13 +177,40 @@ func (p *Portal) Wait(ctx context.Context, task *proto.Task) (err error) {
 	if err != nil {
 		return err
 	}
-	defer sub.Unsubscribe()
 
-	wg.Wait()
+	p.taskLock.Lock()
+	p.tasks[task.Id] = tm
+	p.taskLock.Unlock()
+
+	// Send task on tasks and wait for reply.
+	err = p.queue.PublishRequest(SubjectTasks(), SubjectTaskReply(task.Id), task)
+	if err != nil {
+		return
+	}
 	return
 }
 
-// Drain means portal close the queue and no new task will be published.
-func (p *Portal) Drain(ctx context.Context) (err error) {
-	return p.queue.Drain()
+// Wait will wait for all staffAddrs' replies on specific task.
+func (p *Manager) Wait(ctx context.Context, task *proto.Task) (err error) {
+	logger := zapcontext.From(ctx)
+
+	p.taskLock.RLock()
+	tm := p.tasks[task.Id]
+	p.taskLock.RUnlock()
+
+	logger.Info("waiting task to be finished",
+		zap.String("id", task.Id))
+
+	tm.wg.Wait()
+	err = tm.sub.Unsubscribe()
+	if err != nil {
+		return
+	}
+
+	logger.Info("finished task", zap.String("id", task.Id))
+
+	p.taskLock.Lock()
+	delete(p.tasks, task.Id)
+	p.taskLock.Unlock()
+	return
 }
