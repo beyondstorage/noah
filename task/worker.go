@@ -101,7 +101,14 @@ func (a *Worker) Handle(ctx context.Context) (err error) {
 	// Worker must setup before clockin.
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject,
 		func(subject, reply string, job *proto.Job) {
-			go NewRunner(a, job).Handle(subject, reply)
+			go func() {
+				rn, err := NewRunner(a, job)
+				if err != nil {
+					a.logger.Error("create new runner", zap.Error(err))
+					return
+				}
+				rn.Handle(subject, reply)
+			}()
 		})
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)

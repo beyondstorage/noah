@@ -23,12 +23,11 @@ type Runner struct {
 
 	wg     *sync.WaitGroup
 	sub    *nats.Subscription
-	once   sync.Once
 	logger *zap.Logger
 }
 
-func NewRunner(a *Worker, j *proto.Job) *Runner {
-	return &Runner{
+func NewRunner(a *Worker, j *proto.Job) (*Runner, error) {
+	rn := &Runner{
 		j:     j,
 		agent: a,
 
@@ -36,9 +35,28 @@ func NewRunner(a *Worker, j *proto.Job) *Runner {
 		subject:  a.subject, // Copy task subject from agent.
 		storages: a.storages,
 		wg:       &sync.WaitGroup{},
-		once:     sync.Once{},
 		logger:   a.logger,
 	}
+
+	var err error
+	// Wait for all JobReply sending to the reply subject.
+	rn.sub, err = rn.queue.Subscribe(SubjectJobReply(rn.j.Id), func(job *proto.JobReply) {
+		defer rn.wg.Done()
+
+		switch job.Status {
+		case JobStatusSucceed:
+			rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("job", rn.j.Id))
+		default:
+			rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("job", rn.j.Id),
+				zap.String("error", job.Message),
+			)
+		}
+	})
+	if err != nil {
+		rn.logger.Error("runner subscribe job reply", zap.Error(err))
+		return nil, err
+	}
+	return rn, nil
 }
 
 func (rn *Runner) Handle(subject, reply string) {
@@ -90,25 +108,6 @@ func (rn *Runner) Handle(subject, reply string) {
 func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 	logger := rn.logger
 
-	rn.once.Do(func() {
-		// Wait for all JobReply sending to the reply subject.
-		rn.sub, err = rn.queue.Subscribe(SubjectJobReply(rn.j.Id), func(job *proto.JobReply) {
-			defer rn.wg.Done()
-
-			switch job.Status {
-			case JobStatusSucceed:
-				rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("job", rn.j.Id))
-			default:
-				rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("job", rn.j.Id),
-					zap.String("error", job.Message),
-				)
-			}
-		})
-	})
-	if err != nil {
-		return err
-	}
-
 	rn.wg.Add(1)
 
 	// Publish new job with the specific reply subject on the task subject.
@@ -126,9 +125,6 @@ func (rn *Runner) Await(ctx context.Context) (err error) {
 	rn.logger.Info("start await", zap.String("job", rn.j.Id))
 
 	rn.wg.Wait()
-	rn.sub.Unsubscribe()
-	// Reset once so we can async again.
-	rn.once = sync.Once{}
 
 	rn.logger.Info("finish await", zap.String("job", rn.j.Id))
 	return
