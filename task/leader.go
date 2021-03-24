@@ -101,6 +101,9 @@ func (l *Leader) Handle(ctx context.Context, job *proto.Job) (err error) {
 	reply := &proto.JobReply{}
 	err = l.queue.RequestWithContext(ctx, l.subject, job, reply)
 	if err != nil {
+		l.logger.Error("leader request",
+			zap.String("subject", l.subject),
+			zap.Error(err))
 		return
 	}
 

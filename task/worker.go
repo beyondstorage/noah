@@ -96,11 +96,9 @@ func (a *Worker) clockout() {
 }
 
 func (a *Worker) Handle(ctx context.Context) (err error) {
-	// TODO: we can clockout directly if the task has been finished.
-	a.clockin()
-
 	go a.clockout()
 
+	// Worker must setup before clockin.
 	_, err = a.queue.QueueSubscribe(a.subject, a.subject,
 		func(subject, reply string, job *proto.Job) {
 			go NewRunner(a, job).Handle(subject, reply)
@@ -108,6 +106,9 @@ func (a *Worker) Handle(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("nats subscribe: %w", err)
 	}
+
+	// TODO: we can clockout directly if the task has been finished.
+	a.clockin()
 
 	a.cond.Wait()
 	return
