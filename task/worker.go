@@ -32,9 +32,6 @@ type WorkerConfig struct {
 	Host string
 
 	PortalAddr string
-
-	// Queue related dir.
-	QueueStoreDir string
 }
 
 func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
@@ -55,16 +52,6 @@ func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
 	})
 	if err != nil {
 		return
-	}
-
-	// JetStream is the streaming platform for NATS, which allow at least once delivery.
-	err = srv.EnableJetStream(&server.JetStreamConfig{
-		MaxMemory: 512 * 1024 * 1024,       // Allow using 512MB memory
-		MaxStore:  10 * 1024 * 1024 * 1024, // Allow using 10GM storage
-		StoreDir:  cfg.QueueStoreDir,
-	})
-	if err != nil {
-		logger.Error("server enable jetstream", zap.Error(err))
 	}
 
 	go func() {

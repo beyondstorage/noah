@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"fmt"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
@@ -13,10 +12,9 @@ import (
 func setupPortal(t *testing.T) *Portal {
 	t.Log("Start setup new portal")
 	p, err := NewPortal(context.Background(), PortalConfig{
-		Host:          "localhost",
-		GrpcPort:      7000,
-		QueuePort:     7010,
-		QueueStoreDir: "/tmp/portal",
+		Host:      "localhost",
+		GrpcPort:  7000,
+		QueuePort: 7010,
 	})
 	if err != nil {
 		t.Error(err)
@@ -35,9 +33,8 @@ func TestWorker(t *testing.T) {
 	t.Log("Start create new worker")
 	for i := 0; i < 3; i++ {
 		w, err := NewWorker(ctx, WorkerConfig{
-			Host:          "localhost",
-			PortalAddr:    "localhost:7000",
-			QueueStoreDir: fmt.Sprintf("/tmp/worker%d", i),
+			Host:       "localhost",
+			PortalAddr: "localhost:7000",
 		})
 		if err != nil {
 			t.Error(err)
