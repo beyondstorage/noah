@@ -108,6 +108,7 @@ func (l *Leader) clockoutWorkers() {
 
 func (l *Leader) Handle(ctx context.Context, job *proto.Job) (err error) {
 	l.clockinWorkers()
+	defer l.clockoutWorkers()
 
 	reply := &proto.JobReply{}
 	err = l.queue.RequestWithContext(ctx, l.subject, job, reply)
@@ -117,8 +118,6 @@ func (l *Leader) Handle(ctx context.Context, job *proto.Job) (err error) {
 			zap.Error(err))
 		return
 	}
-
-	l.clockoutWorkers()
 	return
 }
 
