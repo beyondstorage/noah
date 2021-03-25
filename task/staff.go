@@ -74,22 +74,22 @@ func NewStaff(ctx context.Context, cfg StaffConfig) (s *Staff, err error) {
 }
 
 // Connect will connect to portal task queue.
-func (w *Staff) Connect(ctx context.Context) (err error) {
-	logger := w.logger
+func (s *Staff) Connect(ctx context.Context) (err error) {
+	logger := s.logger
 
 	// FIXME: we need to use ssl/tls to encrypt our channel.
-	grpcConn, err := grpc.DialContext(ctx, w.cfg.ManagerAddr,
+	grpcConn, err := grpc.DialContext(ctx, s.cfg.ManagerAddr,
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(grpc_zap.UnaryClientInterceptor(logger)),
 	)
 	if err != nil {
 		return
 	}
-	w.grpcClient = proto.NewStaffClient(grpcConn)
+	s.grpcClient = proto.NewStaffClient(grpcConn)
 
-	reply, err := w.grpcClient.Register(ctx, &proto.RegisterRequest{
-		Id:   w.id,
-		Addr: w.addr,
+	reply, err := s.grpcClient.Register(ctx, &proto.RegisterRequest{
+		Id:   s.id,
+		Addr: s.addr,
 	})
 	if err != nil {
 		return
@@ -104,18 +104,18 @@ func (w *Staff) Connect(ctx context.Context) (err error) {
 		return
 	}
 
-	w.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
+	s.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
 		return
 	}
-	w.sub, err = w.queue.Subscribe(reply.Subject,
+	s.sub, err = s.queue.Subscribe(reply.Subject,
 		func(subject, reply string, task *proto.Task) {
-			w.logger.Info("start handle task",
+			s.logger.Info("start handle task",
 				zap.String("subject", subject),
 				zap.String("id", task.Id),
-				zap.String("node_id", w.id))
+				zap.String("staff_id", s.id))
 
-			go w.Handle(reply, task)
+			go s.Handle(reply, task)
 		})
 	if err != nil {
 		return
@@ -124,44 +124,46 @@ func (w *Staff) Connect(ctx context.Context) (err error) {
 }
 
 // Handle will create a new agent to handle task.
-func (w *Staff) Handle(reply string, task *proto.Task) {
+func (s *Staff) Handle(reply string, task *proto.Task) {
 	// Parse storage
 	storages := make([]types.Storager, 0)
 	for _, ep := range task.Endpoints {
 		store, err := ep.ParseStorager()
 		if err != nil {
-			w.logger.Error("xxx")
+			s.logger.Error("parse storager", zap.Error(err))
 			return
 		}
 		storages = append(storages, store)
 	}
 
 	// Send upgrade
-	electReply, err := w.grpcClient.Elect(w.ctx, &proto.ElectRequest{
-		StaffId: w.id,
+	electReply, err := s.grpcClient.Elect(s.ctx, &proto.ElectRequest{
+		StaffId: s.id,
 		TaskId:  task.Id,
 	})
 	if err != nil {
-		w.logger.Error("xxx")
+		s.logger.Error("staff elect", zap.String("id", s.id), zap.Error(err))
 		return
 	}
 
-	if electReply.LeaderId == w.id {
-		err = HandleAsLeader(w.ctx, electReply.Addr, electReply.Subject, electReply.WorkerIds, task.Job)
-	} else {
-		err = HandleAsWorker(w.ctx, electReply.Addr, electReply.Subject, storages)
-	}
+	tr := &proto.TaskReply{Id: task.Id, StaffId: s.id}
 
-	tr := &proto.TaskReply{Id: task.Id, NodeId: w.id}
+	if electReply.LeaderId == s.id {
+		err = HandleAsLeader(s.ctx, electReply.Addr, electReply.Subject, electReply.WorkerIds, task.Job)
+	} else {
+		err = HandleAsWorker(s.ctx, electReply.Addr, electReply.Subject, storages)
+	}
 	if err == nil {
 		tr.Status = JobStatusSucceed
 	} else {
 		tr.Status = JobStatusFailed
 		tr.Message = fmt.Sprintf("task handle: %v", err)
 	}
+	err = nil
 
-	err = w.queue.Publish(reply, tr)
+	err = s.queue.Publish(reply, tr)
 	if err != nil {
-		w.logger.Error("worker publish reply", zap.Error(err))
+		s.logger.Error("staff reply",
+			zap.String("id", s.id), zap.Error(err))
 	}
 }

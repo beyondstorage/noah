@@ -2,13 +2,15 @@ package task
 
 import (
 	"context"
+	"sync"
+
 	"github.com/aos-dev/go-toolbox/zapcontext"
-	"github.com/aos-dev/noah/proto"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
-	"sync"
+
+	"github.com/aos-dev/noah/proto"
 )
 
 type Leader struct {
@@ -35,7 +37,6 @@ func NewLeader(ctx context.Context, addr, subject string, workerIds []string) (l
 		logger:      logger,
 		workerClock: &sync.WaitGroup{},
 	}
-	l.workerClock.Add(len(l.workerIds))
 
 	conn, err := nats.Connect(addr)
 	if err != nil {
@@ -50,9 +51,13 @@ func NewLeader(ctx context.Context, addr, subject string, workerIds []string) (l
 	return
 }
 
+// clockinWorkers will subscribe on clockin queue.
 func (l *Leader) clockinWorkers() {
+	l.workerClock.Add(len(l.workerIds))
+
 	// TODO: we need to unsubscribe after we finished this task.
-	_, err := l.queue.Subscribe(SubjectClockin(l.subject),
+	_, err := l.queue.Subscribe(
+		SubjectClockin(l.subject),
 		func(subject, reply string, arg *proto.ClockinRequest) {
 			defer l.workerClock.Done()
 
@@ -61,23 +66,31 @@ func (l *Leader) clockinWorkers() {
 				l.logger.Error("publish clockin reply", zap.Error(err))
 				return
 			}
-		})
+		},
+	)
 	if err != nil {
 		l.logger.Error("subscribe clockin",
+			zap.String("id", l.id),
 			zap.String("subject", SubjectClockin(l.subject)),
 			zap.Error(err),
 		)
 	}
+
+	l.workerClock.Wait()
 	return
 }
 
+// clockoutWorkers will subcriibe on clockout queue.
 func (l *Leader) clockoutWorkers() {
+	l.workerClock.Add(len(l.workerIds))
+
 	_, err := l.queue.Subscribe(SubjectClockout(l.subject),
 		func(subject, reply string, arg *proto.Acknowledgement) {
 			l.workerClock.Done()
 		})
 	if err != nil {
 		l.logger.Error("subscribe clockout",
+			zap.String("id", l.id),
 			zap.String("subject", SubjectClockin(l.subject)),
 			zap.Error(err),
 		)
@@ -94,9 +107,7 @@ func (l *Leader) clockoutWorkers() {
 }
 
 func (l *Leader) Handle(ctx context.Context, job *proto.Job) (err error) {
-	go l.clockinWorkers()
-	// All staff are clocked in, we can start work now.
-	l.workerClock.Wait()
+	l.clockinWorkers()
 
 	reply := &proto.JobReply{}
 	err = l.queue.RequestWithContext(ctx, l.subject, job, reply)
@@ -107,15 +118,16 @@ func (l *Leader) Handle(ctx context.Context, job *proto.Job) (err error) {
 		return
 	}
 
-	// Reset to prepare for staff chock out.
-	l.workerClock.Add(len(l.workerIds))
 	l.clockoutWorkers()
 	return
 }
 
 func HandleAsLeader(ctx context.Context, addr, subject string, workerIds []string, job *proto.Job) (err error) {
+	logger := zapcontext.From(ctx)
+
 	l, err := NewLeader(ctx, addr, subject, workerIds)
 	if err != nil {
+		logger.Error("create new leader", zap.Error(err))
 		return
 	}
 

@@ -72,26 +72,29 @@ func NewManager(ctx context.Context, cfg ManagerConfig) (p *Manager, err error) 
 		grpc_middleware.ChainUnaryServer(
 			grpc_zap.UnaryServerInterceptor(logger),
 			grpc_recovery.UnaryServerInterceptor(),
-		)))
+		)),
+	)
 	proto.RegisterStaffServer(grpcSrv, p)
 	go func() {
 		l, err := net.Listen("tcp", cfg.GrpcAddr())
 		if err != nil {
+			logger.Error("grpc server listen", zap.Error(err))
 			return
 		}
 		err = grpcSrv.Serve(l)
 		if err != nil {
+			logger.Error("grpc server serve", zap.Error(err))
 			return
 		}
 	}()
 
 	// Setup queue server.
 	srv, err := server.NewServer(&server.Options{
-		Host:  cfg.Host,
-		Port:  cfg.QueuePort,
-		Debug: true, // FIXME: allow used for developing
+		Host: cfg.Host,
+		Port: cfg.QueuePort,
 	})
 	if err != nil {
+		logger.Error("create nats server", zap.Error(err))
 		return
 	}
 
@@ -107,10 +110,14 @@ func NewManager(ctx context.Context, cfg ManagerConfig) (p *Manager, err error) 
 
 	conn, err := nats.Connect(srv.ClientURL())
 	if err != nil {
+		logger.Error("connect nats queue",
+			zap.String("addr", srv.ClientURL()), zap.Error(err))
 		return
 	}
 	p.queue, err = nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
 	if err != nil {
+		logger.Error("connect encoded nats queue",
+			zap.String("addr", srv.ClientURL()), zap.Error(err))
 		return
 	}
 
@@ -150,7 +157,7 @@ func (p *Manager) Publish(ctx context.Context, task *proto.Task) (err error) {
 	logger := zapcontext.From(ctx)
 
 	// TODO: We need to maintain all tasks in db maybe.
-	logger.Info("publish task", zap.String("id", task.Id))
+	logger.Info("manager publish task", zap.String("id", task.Id))
 
 	tm := &taskMeta{
 		wg: &sync.WaitGroup{},
@@ -165,11 +172,11 @@ func (p *Manager) Publish(ctx context.Context, task *proto.Task) (err error) {
 		case JobStatusSucceed:
 			logger.Info("task succeed",
 				zap.String("id", tr.Id),
-				zap.String("node_id", tr.NodeId))
+				zap.String("staff_id", tr.StaffId))
 		default:
 			logger.Error("task failed",
 				zap.String("id", tr.Id),
-				zap.String("node_id", tr.NodeId),
+				zap.String("staff_id", tr.StaffId),
 				zap.String("error", tr.Message),
 			)
 		}
@@ -198,7 +205,7 @@ func (p *Manager) Wait(ctx context.Context, task *proto.Task) (err error) {
 	tm := p.tasks[task.Id]
 	p.taskLock.RUnlock()
 
-	logger.Info("waiting task to be finished",
+	logger.Info("manager wait task to be finished",
 		zap.String("id", task.Id))
 
 	tm.wg.Wait()
@@ -207,7 +214,7 @@ func (p *Manager) Wait(ctx context.Context, task *proto.Task) (err error) {
 		return
 	}
 
-	logger.Info("finished task", zap.String("id", task.Id))
+	logger.Info("manager finished task", zap.String("id", task.Id))
 
 	p.taskLock.Lock()
 	delete(p.tasks, task.Id)
