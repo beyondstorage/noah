@@ -96,6 +96,8 @@ func (rn *Runner) HandleCopyDir(ctx context.Context, msg protobuf.Message) error
 			zap.String("store", store.String()))
 		return err
 	}
+
+	logger.Info("copy dir job finished.")
 	return nil
 }
 

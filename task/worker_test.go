@@ -2,18 +2,15 @@ package task
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/aos-dev/go-toolbox/zapcontext"
+	"github.com/aos-dev/noah/proto"
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-
-	"github.com/aos-dev/noah/proto"
+	"testing"
 )
 
-func setupPortal(t *testing.T) *Portal {
-	p, err := NewPortal(context.Background(), PortalConfig{
+func setupPortal(t *testing.T) *Manager {
+	p, err := NewManager(context.Background(), ManagerConfig{
 		Host:      "localhost",
 		GrpcPort:  7000,
 		QueuePort: 7010,
@@ -26,16 +23,16 @@ func setupPortal(t *testing.T) *Portal {
 }
 
 // This is not a really unit test, just for developing, SHOULD be removed.
-func testWorker(t *testing.T) {
+func TestWorker(t *testing.T) {
 	p := setupPortal(t)
 
 	ctx := context.Background()
-	logger := zapcontext.From(ctx)
+	_ = zapcontext.From(ctx)
 
 	for i := 0; i < 3; i++ {
-		w, err := NewWorker(ctx, WorkerConfig{
-			Host:       "localhost",
-			PortalAddr: "localhost:7000",
+		w, err := NewStaff(ctx, StaffConfig{
+			Host:        "localhost",
+			ManagerAddr: "localhost:7000",
 		})
 		if err != nil {
 			t.Error(err)
@@ -71,11 +68,14 @@ func testWorker(t *testing.T) {
 		},
 	}
 
-	logger.Info("before first publish")
+	t.Log("Start publish")
 	err = p.Publish(ctx, copyFileTask)
 	if err != nil {
 		t.Error(err)
 	}
 
-	time.Sleep(10 * time.Second)
+	err = p.Wait(ctx, copyFileTask)
+	if err != nil {
+		t.Error(err)
+	}
 }

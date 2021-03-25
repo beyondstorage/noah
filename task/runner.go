@@ -14,29 +14,59 @@ import (
 )
 
 type Runner struct {
-	j *proto.Job
+	agent *Worker
+	j     *proto.Job
 
 	queue    *nats.EncodedConn
 	subject  string // All runner will share the same task subject
 	storages []types.Storager
 
 	wg     *sync.WaitGroup
+	sub    *nats.Subscription
 	logger *zap.Logger
 }
 
-func NewRunner(a *Agent, j *proto.Job) *Runner {
-	return &Runner{
-		j:        j,
+func NewRunner(a *Worker, j *proto.Job) (*Runner, error) {
+	rn := &Runner{
+		j:     j,
+		agent: a,
+
 		queue:    a.queue,
 		subject:  a.subject, // Copy task subject from agent.
 		storages: a.storages,
 		wg:       &sync.WaitGroup{},
 		logger:   a.logger,
 	}
+
+	var err error
+	// Wait for all JobReply sending to the reply subject.
+	rn.sub, err = rn.queue.Subscribe(SubjectJobReply(rn.j.Id), func(job *proto.JobReply) {
+		defer rn.wg.Done()
+
+		switch job.Status {
+		case JobStatusSucceed:
+			rn.logger.Info("job succeed",
+				zap.String("id", job.Id),
+				zap.String("job", rn.j.Id))
+		default:
+			rn.logger.Error("job failed",
+				zap.String("id", job.Id),
+				zap.String("job", rn.j.Id),
+				zap.String("error", job.Message),
+			)
+		}
+	})
+	if err != nil {
+		rn.logger.Error("runner subscribe job reply", zap.Error(err))
+		return nil, err
+	}
+	return rn, nil
 }
 
-func (rn *Runner) Handle(subject, reply string) {
-	rn.logger.Info("runner start handle job", zap.String("id", rn.j.Id), zap.String("job", rn.j.String()))
+func (rn *Runner) Handle(reply string) {
+	rn.logger.Info("runner start job",
+		zap.String("id", rn.j.Id),
+		zap.Uint32("type", rn.j.Type))
 
 	ctx := context.Background()
 
@@ -65,19 +95,15 @@ func (rn *Runner) Handle(subject, reply string) {
 
 	err := protobuf.Unmarshal(rn.j.Content, t)
 	if err != nil {
-		panic("unmarshal failed")
+		panic(fmt.Errorf("job unmarshal, %w", err))
 	}
 
 	err = fn(ctx, t)
-	if err != nil {
-		// TODO: reply to message sender the response.
-		panic(fmt.Errorf("handle task: %s", err))
-	}
 
 	// Send JobReply after the job has been handled.
-	err = rn.Finish(ctx, reply)
+	err = rn.Finish(ctx, reply, err)
 	if err != nil {
-		return
+		rn.logger.Error("runner finish", zap.Error(err))
 	}
 }
 
@@ -85,48 +111,31 @@ func (rn *Runner) Async(ctx context.Context, job *proto.Job) (err error) {
 	logger := rn.logger
 
 	rn.wg.Add(1)
+
 	// Publish new job with the specific reply subject on the task subject.
 	// After this job finished, the runner will send a JobReply to the reply subject.
-	//
-	// For now, we use the job id as the reply subject.
-	// This could be changed.
-	err = rn.queue.PublishRequest(rn.subject, rn.j.Id, job)
+	err = rn.queue.PublishRequest(rn.subject, SubjectJobReply(rn.j.Id), job)
 	if err != nil {
+		logger.Error("runner publish", zap.Error(err))
 		return fmt.Errorf("nats publish: %w", err)
 	}
 
-	logger.Info("published async job", zap.String("subject", rn.subject), zap.String("parent job", rn.j.Id))
+	logger.Info("runner publish async job",
+		zap.String("subject", rn.subject),
+		zap.String("job", rn.j.Id),
+		zap.String("id", job.Id))
 	return
 }
 
 func (rn *Runner) Await(ctx context.Context) (err error) {
-	logger := rn.logger
-
-	logger.Info("wait msg for subject", zap.String("parent job", rn.j.Id))
-	// Wait for all JobReply sending to the reply subject.
-	sub, err := rn.queue.Subscribe(rn.j.Id, rn.awaitHandler)
-	if err != nil {
-		return err
-	}
-	defer sub.Unsubscribe()
+	rn.logger.Info("runner start await job",
+		zap.String("job", rn.j.Id))
 
 	rn.wg.Wait()
 
-	logger.Info("finish await jobs", zap.String("parent job", rn.j.Id))
+	rn.logger.Info("runner finish await job",
+		zap.String("job", rn.j.Id))
 	return
-}
-
-func (rn *Runner) awaitHandler(job *proto.JobReply) {
-	defer rn.wg.Done()
-
-	switch job.Status {
-	case JobStatusSucceed:
-		rn.logger.Info("job succeed", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
-	default:
-		rn.logger.Error("job failed", zap.String("id", job.Id), zap.String("parent job", rn.j.Id),
-			zap.String("error", job.Message),
-		)
-	}
 }
 
 func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
@@ -134,31 +143,49 @@ func (rn *Runner) Sync(ctx context.Context, job *proto.Job) (err error) {
 
 	var reply proto.JobReply
 
-	logger.Info("sync job", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
+	logger.Info("runner start sync job",
+		zap.String("subject", rn.subject),
+		zap.String("job", rn.j.Id),
+		zap.String("id", job.Id))
 
 	// NATS provides the builtin request-response style API, so that we don't need to
 	// care about the reply id.
 	err = rn.queue.RequestWithContext(ctx, rn.subject, job, &reply)
 	if err != nil {
+		logger.Error("runner request", zap.Error(err))
 		return fmt.Errorf("nats request: %w", err)
 	}
 
 	if reply.Status != JobStatusSucceed {
-		logger.Error("job failed", zap.String("error", reply.Message))
+		logger.Error("job synced",
+			zap.String("job", reply.Id),
+			zap.String("error", reply.Message))
 		return fmt.Errorf("job failed: %v", reply.Message)
 	}
 
-	logger.Info("job synced successfully", zap.String("id", job.Id), zap.String("parent job", rn.j.Id))
+	logger.Info("runner synced job",
+		zap.String("subject", rn.subject),
+		zap.String("job", rn.j.Id),
+		zap.String("id", job.Id))
 	return
 }
 
-func (rn *Runner) Finish(ctx context.Context, reply string) (err error) {
+func (rn *Runner) Finish(ctx context.Context, reply string, err error) error {
 	logger := rn.logger
 
-	logger.Info("send finish reply", zap.String("reply", reply))
-	return rn.queue.Publish(reply, &proto.JobReply{
-		Id:      rn.j.Id, // Make sure JobReply sends to the parent job.
-		Status:  JobStatusSucceed,
-		Message: "",
-	})
+	logger.Info("runner reply",
+		zap.String("job", rn.j.Id),
+		zap.String("reply", reply))
+
+	jp := &proto.JobReply{
+		Id: rn.j.Id, // Make sure JobReply sends to the parent job.
+	}
+
+	if err == nil {
+		jp.Status = JobStatusSucceed
+	} else {
+		jp.Status = JobStatusFailed
+		jp.Message = err.Error()
+	}
+	return rn.queue.Publish(reply, jp)
 }

@@ -2,120 +2,130 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
-	"github.com/aos-dev/go-toolbox/natszap"
+	"github.com/aos-dev/go-storage/v3/types"
 	"github.com/aos-dev/go-toolbox/zapcontext"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	natsproto "github.com/nats-io/nats.go/encoders/protobuf"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 
 	"github.com/aos-dev/noah/proto"
 )
 
 type Worker struct {
-	id   string
-	node proto.NodeClient
-	srv  *server.Server
+	id      string
+	subject string
 
-	sub    *nats.Subscription
+	queue    *nats.EncodedConn
+	storages []types.Storager
+
+	ctx    context.Context
+	cond   *sync.Cond
 	logger *zap.Logger
 }
 
-type WorkerConfig struct {
-	Host string
-
-	PortalAddr string
-}
-
-func NewWorker(ctx context.Context, cfg WorkerConfig) (w *Worker, err error) {
+func NewWorker(ctx context.Context, addr, subject string, storages []types.Storager) (*Worker, error) {
 	logger := zapcontext.From(ctx)
 
-	// FIXME: we need to use ssl/tls to encrypt our channel.
-	conn, err := grpc.DialContext(ctx, cfg.PortalAddr, grpc.WithInsecure())
-	if err != nil {
-		return
-	}
+	w := &Worker{
+		id:       uuid.NewString(),
+		subject:  subject,
+		storages: storages,
 
-	srv, err := server.NewServer(&server.Options{
-		Host: cfg.Host,
-		Port: server.RANDOM_PORT,
-	})
-	if err != nil {
-		return
-	}
-
-	go func() {
-		srv.SetLoggerV2(natszap.NewLog(logger), false, false, false)
-
-		err = server.Run(srv)
-		if err != nil {
-			logger.Error("nats server run failed", zap.Error(err))
-		}
-	}()
-
-	if !srv.ReadyForConnections(time.Second) {
-		panic(fmt.Errorf("server start too slow"))
-	}
-
-	w = &Worker{
-		id:   uuid.New().String(),
-		node: proto.NewNodeClient(conn),
-		srv:  srv,
-
+		ctx:    ctx,
+		cond:   sync.NewCond(&sync.Mutex{}),
 		logger: logger,
 	}
+	w.cond.L.Lock()
+
+	// Connect to queue
+	queueConn, err := nats.Connect(addr)
+	if err != nil {
+		return nil, err
+	}
+	w.queue, err = nats.NewEncodedConn(queueConn, natsproto.PROTOBUF_ENCODER)
+	if err != nil {
+		return nil, fmt.Errorf("nats encoded connect: %w", err)
+	}
+
+	logger.Info("worker has been setup", zap.String("id", w.id))
+	return w, nil
+}
+
+func (w *Worker) clockin() {
+	w.logger.Info("worker start clockin", zap.String("id", w.id))
+
+	reply := &proto.ClockinReply{}
+
+	for {
+		err := w.queue.RequestWithContext(w.ctx, SubjectClockin(w.subject),
+			&proto.ClockinRequest{}, reply)
+		if err != nil && errors.Is(err, nats.ErrNoResponders) {
+			time.Sleep(25 * time.Millisecond)
+			continue
+		}
+		if err != nil {
+			w.logger.Error("worker clockin", zap.String("id", w.id), zap.Error(err))
+			return
+		}
+		break
+	}
+}
+
+func (w *Worker) clockout() {
+	w.logger.Info("worker start waiting for clockout", zap.String("id", w.id))
+
+	_, err := w.queue.Subscribe(SubjectClockoutNotify(w.subject),
+		func(subject, reply string, req *proto.ClockoutRequest) {
+			err := w.queue.Publish(reply, &proto.Acknowledgement{})
+			if err != nil {
+				w.logger.Error("publish ack", zap.Error(err))
+				return
+			}
+
+			w.cond.Signal()
+		})
+	if err != nil {
+		return
+	}
+}
+
+func (w *Worker) Handle(ctx context.Context) (err error) {
+	go w.clockout()
+
+	// Worker must setup before clockin.
+	_, err = w.queue.QueueSubscribe(w.subject, w.subject,
+		func(subject, reply string, job *proto.Job) {
+			go func() {
+				rn, err := NewRunner(w, job)
+				if err != nil {
+					w.logger.Error("create new runner", zap.Error(err))
+					return
+				}
+				rn.Handle(reply)
+			}()
+		})
+	if err != nil {
+		return fmt.Errorf("nats subscribe: %w", err)
+	}
+
+	// TODO: we can clockout directly if the task has been finished.
+	w.clockin()
+
+	w.cond.Wait()
 	return
 }
 
-func (w *Worker) Connect(ctx context.Context) (err error) {
-	logger := w.logger
-
-	reply, err := w.node.Register(ctx, &proto.RegisterRequest{
-		Id:   w.id,
-		Addr: w.srv.Addr().String(),
-	})
+func HandleAsWorker(ctx context.Context, addr, subject string, storages []types.Storager) (err error) {
+	w, err := NewWorker(ctx, addr, subject, storages)
 	if err != nil {
 		return
 	}
 
-	logger.Info("connect to task queue",
-		zap.String("addr", reply.Addr),
-		zap.String("subject", reply.Subject))
-
-	conn, err := nats.Connect(reply.Addr)
-	if err != nil {
-		return
-	}
-	queue, err := nats.NewEncodedConn(conn, natsproto.PROTOBUF_ENCODER)
-	if err != nil {
-		return
-	}
-	sub, err := queue.Subscribe(reply.Subject, w.Handle)
-	if err != nil {
-		return
-	}
-
-	w.sub = sub
-	return nil
-}
-
-func (w *Worker) Handle(subject, reply string, task *proto.Task) {
-	w.logger.Info("start handle task",
-		zap.String("subject", subject),
-		zap.String("id", task.Id))
-
-	a := NewAgent(w, task)
-	err := a.Handle()
-	if err != nil {
-		w.logger.Error("agent handle", zap.Error(err))
-	}
-}
-
-func (w *Worker) Drain() error {
-	return w.sub.Drain()
+	return w.Handle(ctx)
 }
