@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"time"
 
 	"github.com/aos-dev/go-storage/v2/types/pairs"
 
@@ -43,6 +44,24 @@ func (t *SegmentFileCopyTask) run(ctx context.Context) {
 		}),
 	)
 	if err != nil {
+		for i := 0; i < 3; i++ {
+			reader, err := t.GetSourceStorage().ReadWithContext(ctx, t.GetSourcePath(), pairs.WithSize(t.GetSize()), pairs.WithOffset(t.GetOffset()))
+			if err != nil {
+				t.TriggerFault(types.NewErrUnhandled(err))
+				return
+			}
+			defer reader.Close()
+			err = t.GetDestinationIndexSegmenter().WriteIndexSegmentWithContext(ctx, seg, reader, t.GetIndex(), t.GetSize(),
+				pairs.WithReadCallbackFunc(func(b []byte) {
+					writeDone += len(b)
+					progress.UpdateState(t.GetID(), int64(writeDone))
+				}),
+			)
+			if err == nil {
+				return
+			}
+			time.Sleep(3 * time.Second)
+		}
 		t.TriggerFault(types.NewErrUnhandled(err))
 		return
 	}
