@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/aos-dev/go-service-fs/v2 v2.0.1-0.20210304102732-f57fecf4e68a
 	github.com/aos-dev/go-service-qingstor/v2 v2.0.1-0.20210312025010-4de2be7a21bb
-	github.com/aos-dev/go-storage/v3 v3.4.2
+	github.com/aos-dev/go-storage/v3 v3.6.0
 	github.com/aos-dev/go-toolbox v0.0.0-20210310073023-db4ad0026279
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.4.3
@@ -23,7 +23,6 @@ require (
 	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
 	google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98 // indirect
 	google.golang.org/grpc v1.36.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
